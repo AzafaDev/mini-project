@@ -1,0 +1,109 @@
+// --- Tables ---
+
+Table users {
+  id int [pk, increment]
+  email varchar [unique]
+  password varchar
+  fullName varchar
+  profilePicture varchar
+  role role [default: 'CUSTOMER']
+  referralCode varchar [unique, note: 'Generated on signup']
+  referredBy varchar
+  createdAt timestamp [default: `now()`]
+  updatedAt timestamp
+}
+
+Table events {
+  id int [pk, increment]
+  organizerId int [ref: > users.id]
+  title varchar
+  description text
+  location varchar
+  category varchar
+  price int [note: 'In IDR']
+  startDate timestamp
+  endDate timestamp
+  totalSeats int
+  availableSeats int
+  createdAt timestamp [default: `now()`]
+  updatedAt timestamp
+}
+
+Table point_logs {
+  id int [pk, increment]
+  userId int [ref: > users.id]
+  amount int
+  remainingAmount int
+  expiresAt timestamp
+  isExpired boolean [default: false]
+  createdAt timestamp [default: `now()`]
+}
+
+Table coupons {
+  id int [pk, increment]
+  userId int [ref: > users.id]
+  code varchar [unique]
+  discountValue int
+  isUsed boolean [default: false]
+  expiresAt timestamp
+  createdAt timestamp [default: `now()`]
+}
+
+Table vouchers {
+  id int [pk, increment]
+  eventId int [ref: > events.id]
+  code varchar [unique]
+  discountValue int
+  startDate timestamp
+  endDate timestamp
+  usageLimit int
+  usageCount int [default: 0]
+  createdAt timestamp [default: `now()`]
+}
+
+Table transactions {
+  id int [pk, increment]
+  customerId int [ref: > users.id]
+  eventId int [ref: > events.id]
+  basePrice int
+  pointUsed int [default: 0]
+  couponId int [unique, ref: - coupons.id]
+  voucherId int [ref: > vouchers.id]
+  totalPrice int
+  status transaction_status [default: 'WAITING_FOR_PAYMENT']
+  paymentProof varchar
+  paymentExpiresAt timestamp
+  createdAt timestamp [default: `now()`]
+  updatedAt timestamp
+}
+
+Table reviews {
+  id int [pk, increment]
+  userId int [ref: > users.id]
+  eventId int [ref: > events.id]
+  transactionId int [unique, ref: - transactions.id]
+  rating int
+  comment text
+  createdAt timestamp [default: `now()`]
+}
+
+// --- Enums ---
+
+Enum role {
+  CUSTOMER
+  ORGANIZER
+}
+
+Enum transaction_status {
+  WAITING_FOR_PAYMENT
+  WAITING_FOR_ADMIN_CONFIRMATION
+  DONE
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
+// --- Notes & Logic ---
+// One-to-one relationship between Transaction and Coupon
+// Many-to-one between User and Transactions
+// Points have a FIFO logic for deduction
