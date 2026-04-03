@@ -1,0 +1,175 @@
+// Use dbdiagram.io to visualize this schema
+
+Enum Role {
+  CUSTOMER
+  ORGANIZER
+}
+
+Enum TransactionStatus {
+  WAITING_PAYMENT
+  WAITING_CONFIRMATION
+  DONE
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
+Table User {
+  id String [pk]
+  email String [unique]
+  password String
+  fullName String
+  phoneNumber String
+  profilePicture String
+  role Role
+  referralCode String [unique]
+  referredBy String
+  points Int [default: 0]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  isVerified Boolean [default: false]
+  verifyToken String
+  verifyTokenExpiresAt DateTime
+  resetPasswordToken String
+  resetPasswordTokenExpiresAt DateTime
+
+  Note: 'ReferredBy links to referralCode for self-relation'
+}
+
+Table PointTransaction {
+  id String [pk]
+  userId String
+  amount Int
+  reason String
+  expiresAt DateTime
+  createdAt DateTime [default: `now()`]
+}
+
+Table Category {
+  id String [pk]
+  name String [unique]
+  slug String [unique]
+}
+
+Table Event {
+  id String [pk]
+  organizerId String
+  categoryId String
+  name String
+  description String
+  location String
+  city String
+  province String
+  startDate DateTime
+  endDate DateTime
+  availableSeats Int
+  totalSeats Int
+  isFree Boolean [default: false]
+  basePrice Int [default: 0]
+  images "String[]"
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table TicketType {
+  id String [pk]
+  eventId String
+  name String
+  price Int
+  quantity Int
+  sold Int [default: 0]
+  description String
+  isActive Boolean [default: true]
+}
+
+Table Voucher {
+  id String [pk]
+  eventId String
+  code String [unique]
+  discountType String
+  discountValue Int
+  minPurchase Int [default: 0]
+  maxDiscount Int
+  usageLimit Int
+  usedCount Int [default: 0]
+  startDate DateTime
+  endDate DateTime
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+}
+
+Table Coupon {
+  id String [pk]
+  code String [unique]
+  discountType String
+  discountValue Int
+  minPurchase Int [default: 0]
+  maxDiscount Int
+  usageLimit Int
+  usedCount Int [default: 0]
+  startDate DateTime
+  endDate DateTime
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  userId String
+}
+
+Table Transaction {
+  id String [pk]
+  userId String
+  eventId String
+  couponId String
+  status TransactionStatus [default: 'WAITING_PAYMENT']
+  subtotal Int
+  voucherDiscount Int [default: 0]
+  couponDiscount Int [default: 0]
+  pointsUsed Int [default: 0]
+  pointsDiscount Int [default: 0]
+  totalAmount Int
+  paymentProof String
+  paymentProofAt DateTime
+  paymentDeadline DateTime
+  autoCancelAt DateTime
+  notes String
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table LineItem {
+  id String [pk]
+  transactionId String
+  ticketTypeId String
+  voucherId String
+  quantity Int
+  pricePerItem Int
+  totalPrice Int
+}
+
+Table Review {
+  id String [pk]
+  userId String
+  eventId String
+  rating Int
+  comment String
+  isVerified Boolean [default: false]
+  createdAt DateTime [default: `now()`]
+}
+
+// Relationships
+
+Ref: User.referralCode < User.referredBy // Self-relation for referrals
+Ref: PointTransaction.userId > User.id
+Ref: Event.organizerId > User.id
+Ref: Event.categoryId > Category.id
+Ref: TicketType.eventId > Event.id [delete: cascade]
+Ref: Voucher.eventId > Event.id [delete: cascade]
+Ref: Coupon.userId > User.id
+Ref: Transaction.userId > User.id
+Ref: Transaction.eventId > Event.id
+Ref: Transaction.couponId > Coupon.id
+Ref: LineItem.transactionId > Transaction.id [delete: cascade]
+Ref: LineItem.ticketTypeId > TicketType.id
+Ref: LineItem.voucherId > Voucher.id
+Ref: Review.userId > User.id
+Ref: Review.eventId > Event.id [delete: cascade]
