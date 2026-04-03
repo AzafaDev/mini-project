@@ -30,8 +30,8 @@ model User {
   points         Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  isVerified     Boolean  @default(false)
 
+  isVerified                  Boolean   @default(false)
   verifyToken                 String?
   verifyTokenExpiresAt        DateTime?
   resetPasswordToken          String?
