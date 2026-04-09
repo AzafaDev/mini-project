@@ -7,7 +7,7 @@ export default function Login() {
   const [role, setRole] = useState("customer"); // Default role
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#1E293B] via-[#A855F7] to-[#FF00E5] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* LOGO REPLICA */}
         <div className="flex justify-center">
@@ -15,10 +15,10 @@ export default function Login() {
             <span className="text-white font-bold text-2xl">E</span>
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-[#DDB7FF]">
           Sign in to your account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-[#DDB7FF]">
           Or{" "}
           <Link to="/register" className="font-medium text-pink-600 hover:text-pink-500">
             create a new account
@@ -152,6 +152,30 @@ export default function Login() {
               </button>
             </div>
           </div>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500 font-medium">Don't Have an account?</span>
+              </div>
+            </div>
+
+            {/* CREATE NEW ACCOUNT */}
+            <div className="mt-6">
+            <a href="/register" className="w-full flex justify-center">
+                  <button
+                type="submit"
+                className="py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gray-900 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-all active:scale-95 shadow-lg shadow-gray-200"
+              >
+                Create a New Account
+              </button>
+            </a>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
