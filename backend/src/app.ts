@@ -1,10 +1,13 @@
 import express from "express";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
+import path from "node:path";
 import cookieParser from "cookie-parser";
 
-import authRoute from "./modules/auth/auth.route";
-import path from "path";
+import authRouter from "./modules/auth/auth.route";
+import eventRouter from "./modules/events/event.route";
+import { errorHandler } from "./middleware/errorHandler";
+import { apiLimiter } from "./middleware/rateLimiter";
 
 dotenv.config();
 
@@ -12,33 +15,24 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 const __dirname = path.resolve();
 
-// Parse JSON bodies
-app.use(express.json());
-
-// Parse URL-encoded bodies
-app.use(express.urlencoded({ extended: true }));
-
-// Parse cookies
-app.use(cookieParser());
-
-// File upload middleware
 app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: path.join(__dirname, "temp"),
-    createParentPath: true,
   }),
 );
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cookieParser());
 
-// Debug middleware to log cookies
-app.use((req, res, next) => {
-  console.log("[APP] Cookies:", req.cookies);
-  console.log("[APP] Raw Cookie Header:", req.headers.cookie);
-  next();
-});
+// Apply global rate limiter (disabled for testing)
+// app.use("/api/", apiLimiter);
 
-// Routes
-app.use("/api/auth", authRoute);
+app.use("/api/auth", authRouter);
+app.use("/api/events", eventRouter);
+
+// Error handler must be registered after all routes
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
