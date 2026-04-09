@@ -1,26 +1,74 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 import { authController } from "./auth.controller";
-import { authMiddleware } from "../../middleware/auth.middleware";
+import { authMiddleware } from "./auth.middleware";
+import { validate } from "../../middleware/validate";
+import { authLimiter } from "../../middleware/rateLimiter";
+import {
+  registerSchema,
+  loginSchema,
+  verifyEmailSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "./auth.schema";
 
-const authRoute = Router();
+const authRouter = Router();
 
-// Debug middleware to log requests
-const logRequest = (req: Request, res: Response, next: NextFunction) => {
-  console.log(`[AUTH ROUTE] ${req.method} ${req.path}`);
-  console.log(`[AUTH ROUTE] Headers:`, req.headers["content-type"]);
-  next();
-};
-
-// POST /api/auth/register
-authRoute.post("/register", logRequest, authController.register);
-
-// POST /api/auth/verify-email
-authRoute.post("/verify-email", authController.verifyEmail);
-
-authRoute.post(
-  "/resend",
-  authMiddleware.verifyToken,
-  authController.resendVerifyEmail,
+// Apply stricter rate limiter for auth endpoints
+authRouter.post(
+  "/register",
+  authLimiter,
+  validate(registerSchema),
+  authController.register,
+);
+authRouter.post(
+  "/verify-email",
+  authLimiter,
+  validate(verifyEmailSchema),
+  authController.verifyEmail,
+);
+authRouter.post(
+  "/resend-verification",
+  authLimiter,
+  authMiddleware.verifyTempToken,
+  authController.resendVerification,
+);
+authRouter.post(
+  "/login",
+  authLimiter,
+  validate(loginSchema),
+  authController.login,
+);
+authRouter.post("/logout", authController.logout);
+authRouter.get(
+  "/me",
+  authMiddleware.verifyAuthToken,
+  authController.getCurrentUser,
+);
+authRouter.put(
+  "/update-profile",
+  authMiddleware.verifyAuthToken,
+  validate(updateProfileSchema),
+  authController.updateProfile,
+);
+authRouter.put(
+  "/change-password",
+  authMiddleware.verifyAuthToken,
+  validate(changePasswordSchema),
+  authController.changePassword,
+);
+authRouter.post(
+  "/forgot-password",
+  authLimiter,
+  validate(forgotPasswordSchema),
+  authController.forgotPassword,
+);
+authRouter.post(
+  "/reset-password/:token",
+  authLimiter,
+  validate(resetPasswordSchema),
+  authController.resetPassword,
 );
 
-export default authRoute;
+export default authRouter;

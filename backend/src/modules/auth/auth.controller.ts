@@ -1,123 +1,346 @@
 import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import { UploadedFile } from "express-fileupload";
+
+import { handleFileUpload } from "../../utils/handleFileUpload";
+import {
+  AuthRegister,
+  AuthRequest,
+  ForgotPassword,
+  Login,
+  ResetPassword,
+  VerifyEmail,
+} from "./auth.type";
 import { authService } from "./auth.service";
-import { registerSchema } from "../../schemas/auth.schema";
-import { uploadToCloudinary } from "../../utils/uploadToCloudinary.js";
-import generateTokenAndSetCookie from "../../utils/generateTokenAndSetCookie";
+import { prisma } from "../../config/prisma";
+import {
+  generateTokenForAuth,
+  generateVerificationCode,
+} from "../../utils/generateToken";
+import { sendEmail } from "../../utils/sendEmail";
+
+const sanitizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const sendVerificationAndSetCookie = async (
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+    verifyToken: string | null;
+  },
+  res: Response,
+) => {
+  let emailSent = true;
+  try {
+    await sendEmail.verificationEmail({
+      email: user.email,
+      token: user.verifyToken as string,
+      username: user.fullName,
+    });
+  } catch (error) {
+    emailSent = false;
+    console.error("[EMAIL_FAILED]", error);
+  }
+
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+    expiresIn: "30m",
+  });
+  res.cookie("temp_token", token, {
+    maxAge: 30 * 60 * 1000,
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Verification code has been sent to your email",
+    emailSent,
+  });
+};
 
 export const authController = {
   register: async (req: Request, res: Response) => {
     try {
-      // Validate request body
-      const validatedData = registerSchema.parse(req.body);
+      let imageUrl;
+      const {
+        email,
+        password,
+        fullName,
+        phoneNumber,
+        role,
+        referrerCode,
+      }: AuthRegister = req.body;
 
-      let profilePicture: string | undefined;
+      const sanitizedEmail = sanitizeEmail(email);
 
-      // Upload profile picture if provided
-      console.log("[AUTH CONTROLLER] req.files:", req.files);
-      console.log(
-        "[AUTH CONTROLLER] Has profilePictureFile:",
-        req.files && "profilePictureFile" in req.files,
-      );
-
-      if (req.files && "profilePictureFile" in req.files) {
-        const profilePictureFile = req.files.profilePictureFile as any;
-        console.log("[AUTH CONTROLLER] File info:", {
-          name: profilePictureFile.name,
-          size: profilePictureFile.size,
-          mimetype: profilePictureFile.mimetype,
-          tempFilePath: profilePictureFile.tempFilePath,
-        });
-
-        const fs = await import("fs");
-        const tempFilePath = profilePictureFile.tempFilePath;
-
-        if (tempFilePath) {
-          console.log("[AUTH CONTROLLER] Reading file from:", tempFilePath);
-          const fileBuffer = fs.readFileSync(tempFilePath);
-          console.log("[AUTH CONTROLLER] File buffer size:", fileBuffer.length);
-
-          console.log("[AUTH CONTROLLER] Uploading to Cloudinary...");
-          const uploadResult = await uploadToCloudinary(fileBuffer, "profiles");
-          console.log("[AUTH CONTROLLER] Upload result:", uploadResult);
-
-          profilePicture = uploadResult.secure_url;
-          console.log("[AUTH CONTROLLER] Profile picture URL:", profilePicture);
-        } else {
-          console.log("[AUTH CONTROLLER] No tempFilePath found!");
+      if (req.files && "imageFile" in req.files) {
+        const imageFile = req.files.imageFile as UploadedFile;
+        try {
+          imageUrl = await handleFileUpload(imageFile, {
+            folder: "profile-picture",
+          });
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: "Failed to upload profile picture",
+          });
         }
-      } else {
-        console.log("[AUTH CONTROLLER] No profile picture file uploaded");
       }
 
-      console.log(
-        "[AUTH CONTROLLER] Final profilePicture value:",
-        profilePicture,
-      );
-
-      // Register user
-      const { user, verifyToken } = await authService.register({
-        email: validatedData.email,
-        password: validatedData.password,
-        fullName: validatedData.fullName,
-        phoneNumber: validatedData.phoneNumber,
-        profilePicture,
-        role: validatedData.role,
-        referralCode: validatedData.referralCode,
+      const existingUser = await prisma.user.findUnique({
+        where: { email: sanitizedEmail },
       });
 
-      generateTokenAndSetCookie(res, user.id, user.role);
+      if (existingUser) {
+        if (existingUser.isVerified) {
+          return res.status(409).json({
+            success: false,
+            message:
+              "Email already exists. Please login or use forgot password.",
+          });
+        }
 
-      // Return success response (exclude sensitive data)
-      res.status(201).json({
-        message: "Registration successful",
-        data: {
+        const newToken = generateVerificationCode();
+        const updatedUser = await authService.rehashAndUpdateUser(
+          existingUser.email,
+          password,
+          {
+            phoneNumber,
+            profilePicture: imageUrl,
+            fullName,
+            role,
+          },
+          newToken,
+        );
+
+        return sendVerificationAndSetCookie(
+          {
+            id: updatedUser.id,
+            email: updatedUser.email,
+            fullName: updatedUser.fullName,
+            verifyToken: newToken,
+          },
+          res,
+        );
+      }
+
+      const result = await authService.register({
+        email: sanitizedEmail,
+        password,
+        fullName,
+        phoneNumber,
+        role,
+        referrerCode,
+        imageUrl,
+      });
+
+      return sendVerificationAndSetCookie(
+        {
+          id: result.newUser.id,
+          email: result.newUser.email,
+          fullName: result.newUser.fullName,
+          verifyToken: result.newUser.verifyToken,
+        },
+        res,
+      );
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  verifyEmail: async (req: Request, res: Response) => {
+    try {
+      const { token }: VerifyEmail = req.body;
+      if (!token.trim() || token.trim().length < 6) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Token is required" });
+      }
+      const user = await authService.verifyEmail({ token });
+      generateTokenForAuth({ res, userId: user.id, userRole: user.role });
+      res.clearCookie("temp_token");
+      res
+        .status(200)
+        .json({ success: true, message: "Verify email successfully", user });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  resendVerification: async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.userId;
+      await authService.resendVerification(userId);
+      res.status(200).json({
+        success: true,
+        message: "Verification email resent successfully",
+      });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  login: async (req: Request, res: Response) => {
+    const { email, password }: Login = req.body;
+
+    const { user, requiresVerification } = await authService.login({
+      email: sanitizeEmail(email),
+      password,
+    });
+
+    if (requiresVerification) {
+      return sendVerificationAndSetCookie(
+        {
           id: user.id,
           email: user.email,
           fullName: user.fullName,
-          role: user.role,
-          referralCode: user.referralCode,
-          profilePicture: user.profilePicture,
-          verifyToken,
+          verifyToken: user.verifyToken,
         },
+        res,
+      );
+    }
+
+    generateTokenForAuth({ res, userId: user.id, userRole: user.role });
+    res.clearCookie("temp_token");
+
+    res.status(200).json({
+      success: true,
+      message: "Login successfully",
+      user,
+    });
+  },
+
+  logout: async (req: AuthRequest, res: Response) => {
+    try {
+      res.clearCookie("auth_token", {
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      });
+      res.clearCookie("temp_token", {
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      });
+      res.status(200).json({ success: true, message: "Logout successfully" });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  getCurrentUser: async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.userId;
+      if (!userId)
+        return res
+          .status(400)
+          .json({ success: false, message: "User id not found" });
+      const user = await authService.getCurrentUser(userId);
+      res.status(200).json({ success: true, user });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  updateProfile: async (req: AuthRequest, res: Response) => {
+    try {
+      const { fullName, phoneNumber } = req.body;
+      const userId = req.userId;
+      if (!userId)
+        return res
+          .status(400)
+          .json({ success: false, message: "User id not found" });
+      let imageUrl;
+      if (req.files && "imageFile" in req.files) {
+        const imageFile = req.files.imageFile as UploadedFile;
+        try {
+          imageUrl = await handleFileUpload(imageFile, {
+            folder: "profile-picture",
+          });
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: "Failed to upload profile picture",
+          });
+        }
+      }
+      const user = await authService.updateProfile({
+        fullName,
+        phoneNumber,
+        imageUrl,
+        userId,
+      });
+      res
+        .status(200)
+        .json({ success: true, message: "Updated profile successfully", user });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  changePassword: async (req: AuthRequest, res: Response) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.userId;
+      if (!userId)
+        return res
+          .status(400)
+          .json({ success: false, message: "User id not found" });
+      const user = await authService.changePassword({
+        currentPassword,
+        newPassword,
+        userId,
+      });
+      res.status(200).json({
+        success: true,
+        message: "Changed password successfully",
+        user,
       });
     } catch (error: any) {
-      if (error.name === "ZodError") {
-        res.status(400).json({
-          message: "Validation error",
-          errors: error.errors,
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  forgotPassword: async (req: Request, res: Response) => {
+    try {
+      const { email }: ForgotPassword = req.body;
+      if (!email.trim())
+        return res
+          .status(400)
+          .json({ success: false, message: "Email is required" });
+      await authService.forgotPassword(sanitizeEmail(email));
+      res.status(200).json({
+        success: true,
+        message: "If the email exists, a reset link has been sent",
+      });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  resetPassword: async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      const { newPassword }: ResetPassword = req.body;
+      if (!newPassword.trim() || newPassword.trim().length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 8 characters",
         });
-        return;
       }
-      res.status(400).json({ message: error.message });
-    }
-  },
-  verifyEmail: async (req: Request, res: Response) => {
-    try {
-      const { token } = req.body;
-      const result = await authService.verifyEmail(token);
-      res.status(200).json(result);
+      const user = await authService.resetPassword({
+        token: token as string,
+        newPassword,
+      });
+      res
+        .status(200)
+        .json({ success: true, message: "Reset password successfully", user });
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  },
-  resendVerifyEmail: async (req: Request, res: Response) => {
-    console.log("[AUTH CONTROLLER] resendVerifyEmail called");
-    console.log("[AUTH CONTROLLER] User from middleware:", req.user);
-
-    try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        throw new Error("User ID not found");
-      }
-      console.log("[AUTH CONTROLLER] User ID:", userId);
-
-      const result = await authService.resendVerifyEmail(userId);
-      console.log("[AUTH CONTROLLER] Service result:", result);
-
-      res.status(200).json(result);
-    } catch (error: any) {
-      console.log("[AUTH CONTROLLER] Error:", error.message);
-      res.status(400).json({ message: error.message });
+      res.status(400).json({ success: false, message: error.message });
     }
   },
 };

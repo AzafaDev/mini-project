@@ -1,310 +1,321 @@
-import { Role } from "../../../generated/prisma/enums";
-import { prisma } from "../../config/prisma";
+import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { hashPassword } from "../../utils/hashPassword";
+
+import { prisma } from "../../config/prisma";
+import { Role } from "../../../generated/prisma/enums";
+import { AuthRegister, Login, VerifyEmail } from "./auth.type";
 import {
-  sendVerificationEmail,
-  sendResendVerificationEmail,
-} from "../../utils/sendEmail";
+  generateUniqueReferralCode,
+  generateVerificationCode,
+} from "../../utils/generateToken";
+import { sendEmail } from "../../utils/sendEmail";
+import { AppError } from "../../utils/AppError";
 
-interface RegisterInput {
-  email: string;
-  password: string;
-  fullName: string;
-  phoneNumber?: string;
-  profilePicture?: string;
-  role: Role;
-  referralCode?: string;
-}
+const DISCOUNT_PERCENTAGE = 10;
+const REFERRAL_POINT = 10000;
 
-/**
- * Generate referral code (8 chars alphanumeric)
- */
-function generateReferralCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let result = "";
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-/**
- * Generate coupon code
- */
-function generateCouponCode(): string {
-  return "REF-" + crypto.randomBytes(3).toString("hex").toUpperCase();
-}
-
-/**
- * Generate unique referral code with retry
- */
-async function generateUniqueReferralCode(tx: any): Promise<string> {
-  let code = generateReferralCode();
-  let existing = await tx.user.findUnique({
-    where: { referralCode: code },
-  });
-  while (existing) {
-    code = generateReferralCode();
-    existing = await tx.user.findUnique({ where: { referralCode: code } });
-  }
-  return code;
-}
-
-/**
- * Generate unique coupon code with retry
- */
-async function generateUniqueCouponCode(tx: any): Promise<string> {
-  let code = generateCouponCode();
-  let existing = await tx.coupon.findUnique({ where: { code } });
-  while (existing) {
-    code = generateCouponCode();
-    existing = await tx.coupon.findUnique({ where: { code } });
-  }
-  return code;
-}
-
-/**
- * Generate 6-digit verification token
- */
-function generateVerificationToken(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
+const sanitizeUser = (user: any) => {
+  const {
+    password,
+    resetPasswordToken,
+    resetPasswordTokenExpiresAt,
+    verifyToken,
+    verifyTokenExpiresAt,
+    ...rest
+  } = user;
+  return rest;
+};
 
 export const authService = {
-  /**
-   * Register a new user
-   */
-  register: async (data: RegisterInput) => {
-    try {
-      // Normalize email to lowercase and trim
-      const email = data.email.toLowerCase().trim();
-      const fullName = data.fullName.trim();
-      const referralCode = data.referralCode?.trim();
+  register: async ({
+    email,
+    password,
+    fullName,
+    phoneNumber,
+    role,
+    referrerCode,
+    imageUrl,
+  }: AuthRegister) => {
+    let referrer: { id: string } | null;
+    if (referrerCode) {
+      referrer = await prisma.user.findFirst({
+        where: { referralCode: { equals: referrerCode, mode: 'insensitive' } },
+      });
+      if (!referrer) throw new AppError("Invalid referral code", 409);
+    }
 
-      // Check if email already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
+    const verifyToken = generateVerificationCode();
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const referralCode = await generateUniqueReferralCode();
+
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          fullName,
+          phoneNumber,
+          referralCode,
+          role,
+          referredBy: referrerCode || null,
+          profilePicture: imageUrl,
+          verifyToken: verifyToken,
+          verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
       });
 
-      if (existingUser) {
-        throw new Error("Email is already registered");
-      }
-
-      // Validate referral code if provided
-      let referrer = null;
-      if (referralCode) {
-        referrer = await prisma.user.findUnique({
-          where: { referralCode },
-        });
-
-        if (!referrer) {
-          throw new Error("Invalid referral code");
-        }
-      }
-
-      // Hash password with bcrypt
-      const hashedPassword = await hashPassword(data.password);
-
-      // Use transaction for all related operations
-      const result = await prisma.$transaction(async (tx) => {
-        // Generate unique referral code for new user
-        const newReferralCode = await generateUniqueReferralCode(tx);
-
-        // Generate verification token
-        const verifyToken = generateVerificationToken();
-        const verifyTokenExpiresAt = new Date();
-        verifyTokenExpiresAt.setHours(verifyTokenExpiresAt.getHours() + 24);
-
-        // Generate unique coupon code if referral is used
-        const couponCode = referrer ? await generateUniqueCouponCode(tx) : null;
-
-        // Create the new user
-        const user = await tx.user.create({
+      if (referrer) {
+        await tx.pointTransaction.create({
           data: {
-            email,
-            password: hashedPassword,
-            fullName,
-            phoneNumber: data.phoneNumber || null,
-            profilePicture: data.profilePicture || null,
-            role: data.role,
-            referralCode: newReferralCode,
-            referredBy: referrer?.referralCode || null,
-            verifyToken,
-            verifyTokenExpiresAt,
+            userId: referrer.id,
+            amount: REFERRAL_POINT,
+            reason: `Referral bonus: ${newUser.fullName} registered`,
+            expiresAt: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
           },
         });
 
-        // If referred, handle referral rewards
-        if (referrer) {
-          // 1. Give 10,000 points to referrer (expires in 3 months)
-          const pointsExpiry = new Date();
-          pointsExpiry.setMonth(pointsExpiry.getMonth() + 3);
-
-          await tx.pointTransaction.create({
-            data: {
-              userId: referrer.id,
-              amount: 10000,
-              reason: "referral_reward",
-              expiresAt: pointsExpiry,
-            },
-          });
-
-          // Update referrer's points
-          await tx.user.update({
-            where: { id: referrer.id },
-            data: {
-              points: {
-                increment: 10000,
-              },
-            },
-          });
-
-          // 2. Create referral coupon for new user (expires in 3 months)
-          const couponExpiry = new Date();
-          couponExpiry.setMonth(couponExpiry.getMonth() + 3);
-
-          await tx.coupon.create({
-            data: {
-              code: couponCode!,
-              discountType: "percentage",
-              discountValue: 10,
-              minPurchase: 0,
-              startDate: new Date(),
-              endDate: couponExpiry,
-              userId: user.id,
-            },
-          });
-        }
-
-        return { user, verifyToken };
-      });
-
-      // Send verification email (outside transaction, non-blocking)
-      console.log(
-        "[AUTH SERVICE] Sending verification email to:",
-        result.user.email,
-      );
-      console.log("[AUTH SERVICE] Verification token:", result.verifyToken);
-
-      sendVerificationEmail({
-        to: result.user.email,
-        name: result.user.fullName,
-        token: result.verifyToken,
-      })
-        .then(() => {
-          console.log("[AUTH SERVICE] Verification email sent successfully");
-        })
-        .catch((error) => {
-          console.error(
-            "[AUTH SERVICE] Failed to send verification email:",
-            error.message,
-          );
-          console.error("[AUTH SERVICE] Error details:", error);
+        const couponCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+        await tx.coupon.create({
+          data: {
+            code: couponCode,
+            discountType: "PERCENTAGE",
+            discountValue: DISCOUNT_PERCENTAGE,
+            startDate: new Date(Date.now()),
+            endDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
+            userId: newUser.id,
+          },
         });
+      }
 
-      return { user: result.user, verifyToken: result.verifyToken };
-    } catch (error: any) {
-      throw new Error(error.message);
-    }
-  },
-  verifyEmail: async (token: string) => {
-    // Find user with valid token that hasn't expired
-    const user = await prisma.user.findFirst({
-      where: {
-        verifyToken: token,
-        verifyTokenExpiresAt: { gte: new Date() },
-      },
+      return { newUser };
     });
 
-    if (!user) {
-      throw new Error("Token is expired or invalid");
-    }
+    return result;
+  },
 
-    // Update user to verified
-    await prisma.user.update({
-      where: { id: user.id },
+  rehashAndUpdateUser: async (
+    email: string,
+    password: string,
+    updateData: {
+      phoneNumber: string;
+      profilePicture: string | undefined;
+      fullName: string;
+      role: Role;
+    },
+    newVerifyToken: string,
+  ) => {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const updatedUser = await prisma.user.update({
+      where: { email },
       data: {
-        isVerified: true,
+        password: hashedPassword,
+        phoneNumber: updateData.phoneNumber,
+        profilePicture: updateData.profilePicture,
+        fullName: updateData.fullName,
+        role: updateData.role,
+        verifyToken: newVerifyToken,
+        verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    });
+    return updatedUser;
+  },
+
+  verifyEmail: async ({ token }: VerifyEmail) => {
+    const userWithValidToken = await prisma.user.findFirst({
+      where: { verifyToken: token, verifyTokenExpiresAt: { gt: new Date() } },
+    });
+    if (!userWithValidToken) {
+      throw new AppError("Invalid or expired token", 400);
+    }
+    const updatedUser = await prisma.user.update({
+      where: { id: userWithValidToken.id },
+      data: {
         verifyToken: null,
         verifyTokenExpiresAt: null,
+        isVerified: true,
+      },
+    });
+    return sanitizeUser(updatedUser);
+  },
+
+  resendVerification: async (userId?: string) => {
+    if (!userId) throw new AppError("User not found", 404);
+    const newToken = generateVerificationCode();
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        verifyToken: newToken,
+        verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
 
-    return { message: "Email verified successfully", email: user.email };
+    await sendEmail.verificationEmail({
+      email: user.email,
+      token: newToken,
+      username: user.fullName,
+    });
   },
 
-  /**
-   * Resend verification email with new token
-   */
-  resendVerifyEmail: async (userId: string) => {
-    console.log("[AUTH SERVICE] resendVerifyEmail called with userId:", userId);
+  login: async ({ email, password }: Login) => {
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    // Find user by ID
-    console.log("[AUTH SERVICE] Looking up user by ID...");
+    if (!user) throw new AppError("Invalid email or password", 401);
+
+    const isCorrectPassword = await bcrypt.compare(password, user.password);
+    if (!isCorrectPassword)
+      throw new AppError("Invalid email or password", 401);
+
+    if (!user.isVerified) {
+      return { user: sanitizeUser(user), requiresVerification: true };
+    }
+
+    return { user: sanitizeUser(user), requiresVerification: false };
+  },
+
+  getCurrentUser: async (userId: string) => {
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phoneNumber: true,
+        profilePicture: true,
+        role: true,
+        referralCode: true,
+        points: true,
+        isVerified: true,
+        createdAt: true,
+      },
     });
+    if (!user) throw new AppError("User not found", 404);
+    return user;
+  },
 
-    console.log("[AUTH SERVICE] User found:", !!user);
-    if (!user) {
-      console.log("[AUTH SERVICE] User not found for ID:", userId);
-      throw new Error("User not found");
-    }
+  updateProfile: async ({
+    userId,
+    fullName,
+    phoneNumber,
+    imageUrl,
+  }: {
+    userId: string;
+    fullName?: string;
+    phoneNumber?: string;
+    imageUrl?: string;
+  }) => {
+    const data: any = {};
+    if (fullName !== undefined) data.fullName = fullName;
+    if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
+    if (imageUrl !== undefined) data.profilePicture = imageUrl;
 
-    // Check if already verified
-    console.log("[AUTH SERVICE] User verified status:", user.isVerified);
-    if (user.isVerified) {
-      console.log("[AUTH SERVICE] User already verified");
-      throw new Error("Email is already verified");
-    }
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phoneNumber: true,
+        profilePicture: true,
+        role: true,
+        referralCode: true,
+        points: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+    return updatedUser;
+  },
 
-    // Generate new verification token
-    const newToken = Math.floor(100000 + Math.random() * 900000).toString();
-    const newExpiry = new Date();
-    newExpiry.setHours(newExpiry.getHours() + 24);
+  changePassword: async ({
+    currentPassword,
+    newPassword,
+    userId,
+  }: {
+    currentPassword: string;
+    newPassword: string;
+    userId: string;
+  }) => {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError("User not found", 404);
+    const isCorrectPassword = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+    if (!isCorrectPassword) throw new AppError("Invalid current password", 400);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phoneNumber: true,
+        profilePicture: true,
+        role: true,
+        referralCode: true,
+        points: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+    return sanitizeUser(updatedUser);
+  },
 
-    console.log("[AUTH SERVICE] New token generated:", newToken);
-    console.log("[AUTH SERVICE] Token expires at:", newExpiry);
-
-    // Update user with new token
-    console.log("[AUTH SERVICE] Updating user with new token...");
+  forgotPassword: async (email: string) => {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return;
+    const resetToken = crypto.randomBytes(32).toString("hex");
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        verifyToken: newToken,
-        verifyTokenExpiresAt: newExpiry,
+        resetPasswordToken: resetToken,
+        resetPasswordTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
-    console.log("[AUTH SERVICE] User updated successfully");
-
-    // Send resend verification email
-    console.log(
-      "[AUTH SERVICE] Sending resend verification email to:",
-      user.email,
-    );
-    console.log("[AUTH SERVICE] Verification token:", newToken);
-
-    sendResendVerificationEmail({
-      to: user.email,
-      name: user.fullName,
-      token: newToken,
-    })
-      .then(() => {
-        console.log(
-          "[AUTH SERVICE] Resend verification email sent successfully",
-        );
-      })
-      .catch((error) => {
-        console.error(
-          "[AUTH SERVICE] Failed to send resend verification email:",
-          error.message,
-        );
-      });
-
-    return {
-      message: "Verification email sent successfully",
+    await sendEmail.resetPassword({
       email: user.email,
-    };
+      token: resetToken,
+      username: user.fullName,
+    });
+  },
+
+  resetPassword: async ({
+    token,
+    newPassword,
+  }: {
+    token: string;
+    newPassword: string;
+  }) => {
+    const user = await prisma.user.findFirst({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordTokenExpiresAt: { gt: new Date() },
+      },
+    });
+    if (!user) throw new AppError("Invalid or expired token", 400);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: null,
+        resetPasswordTokenExpiresAt: null,
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phoneNumber: true,
+        profilePicture: true,
+        role: true,
+        referralCode: true,
+        points: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+    return updatedUser;
   },
 };
