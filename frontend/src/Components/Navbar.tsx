@@ -6,14 +6,14 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 w-full bg-white border-b border-gray-100 z-50 shadow-sm">
+    <nav className="fixed top-0 w-full w-full bg-[#0F172A]  border-b border-[#A855F7]  z-50 shadow-lg mb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           
           {/* LEFT: LOGO */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center gap-2 group">
-              <span className="font-bold text-2xl tracking-tight text-gray-800">
+              <span className="font-bold text-2xl tracking-tight text-[#FF00E5]">
                 Event<span className="text-sky-500">nique</span>
               </span>
             </Link>
@@ -35,17 +35,17 @@ export default function Navbar() {
 
           {/* RIGHT: NAVIGATION LINKS */}
           <div className="hidden xl:flex items-center gap-8">
-            <a href="#" className="flex items-center gap-2 text-gray-600 hover:text-sky-600 font-semibold transition-all">
+            <a href="#" className="flex items-center gap-2 text-[#FAECFF] hover:text-[#A855F7] font-semibold transition-all">
               <MapPin size={20} />
               <span>Find Events</span>
             </a>
-            <a href="#" className="flex items-center gap-2 text-gray-600 hover:text-sky-600 font-semibold transition-all">
+            <a href="#" className="flex items-center gap-2 text-[#FAECFF] hover:text-[#A855F7] font-semibold transition-all">
               <PlusCircle size={20} />
               <span>Create Event</span>
             </a>
             
             <Link to="/login">
-              <button className="ml-4 px-8 py-2.5 rounded-xl bg-gray-900 text-white font-bold hover:bg-sky-600 transform hover:-translate-y-0.5 transition-all shadow-md active:scale-95">
+              <button className="ml-4 px-8 py-2.5 rounded-xl bg-gray-900 text-white font-bold hover:bg-[#FF00E5] transform hover:-translate-y-0.5 transition-all shadow-md active:scale-95">
                 Sign In
               </button>
             </Link>
