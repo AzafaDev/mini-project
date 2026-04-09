@@ -2,6 +2,22 @@ import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 import { CreateEvent, UpdateEvent } from "./event.type";
 
+const parseDate = (dateStr: string, fieldName: string): Date => {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    throw new AppError(`Invalid date format for ${fieldName}`, 400);
+  }
+  return date;
+};
+
+const parseNumber = (value: any, fieldName: string): number => {
+  const num = Number(value);
+  if (isNaN(num)) {
+    throw new AppError(`Invalid numeric value for ${fieldName}`, 400);
+  }
+  return num;
+};
+
 export const eventService = {
   getAllEvents: async ({
     search,
@@ -60,19 +76,15 @@ export const eventService = {
       if (maxPrice) where.price.lte = parseInt(maxPrice);
     }
 
-    // Build sort order
     const orderBy: any = {};
     const validSortFields = ["name", "startDate", "price", "createdAt"];
     if (validSortFields.includes(currentSortBy)) {
       orderBy[currentSortBy] = currentSortOrder === "desc" ? "desc" : "asc";
     } else {
-      orderBy.startDate = "asc"; // default sort
+      orderBy.startDate = "asc";
     }
 
-    // Calculate pagination
     const skip = (currentPage - 1) * currentLimit;
-
-    // Get total count for pagination
     const total = await prisma.event.count({ where });
 
     const events = await prisma.event.findMany({
@@ -158,17 +170,35 @@ export const eventService = {
     imageUrl,
     organizerId,
   }: CreateEvent) => {
+    if (!name?.trim() || !description?.trim() || !location?.trim() || !category?.trim()) {
+      throw new AppError("All fields are required", 400);
+    }
+
+    const parsedStartDate = typeof startDate === 'string' ? parseDate(startDate, "startDate") : startDate;
+    const parsedEndDate = typeof endDate === 'string' ? parseDate(endDate, "endDate") : endDate;
+
+    if (parsedStartDate > parsedEndDate) {
+      throw new AppError("startDate must be before endDate", 400);
+    }
+
+    const parsedTotalSeats = parseNumber(totalSeats, "totalSeats");
+    const parsedPrice = parseNumber(price, "price");
+
+    const fixedAvailableSeats = availableSeats
+      ? parseNumber(availableSeats, "availableSeats")
+      : parsedTotalSeats;
+
     const newEvent = await prisma.event.create({
       data: {
         name,
         description,
         location,
         category,
-        startDate,
-        endDate,
-        totalSeats,
-        price,
-        availableSeats: availableSeats ?? totalSeats,
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        totalSeats: parsedTotalSeats,
+        price: parsedPrice,
+        availableSeats: fixedAvailableSeats,
         imageUrl,
         organizer: {
           connect: { id: organizerId },
@@ -191,19 +221,53 @@ export const eventService = {
     price,
     imageUrl,
   }: UpdateEvent) => {
-    // Build update data with only provided fields
+    const existingEvent = await prisma.event.findUnique({
+      where: { id, isDeleted: false },
+    });
+    if (!existingEvent) throw new AppError("Event not found", 404);
+
     const data: any = {};
-    if (name !== undefined) data.name = name;
-    if (description !== undefined) data.description = description;
-    if (location !== undefined) data.location = location;
-    if (category !== undefined) data.category = category;
-    if (startDate !== undefined) data.startDate = new Date(startDate);
-    if (endDate !== undefined) data.endDate = new Date(endDate);
-    if (totalSeats !== undefined) data.totalSeats = Number(totalSeats);
-    if (availableSeats !== undefined)
-      data.availableSeats = Number(availableSeats);
-    if (price !== undefined) data.price = Number(price);
-    if (imageUrl !== undefined) data.imageUrl = imageUrl;
+
+    if (name !== undefined) {
+      if (!name.trim()) throw new AppError("Name cannot be empty", 400);
+      data.name = name;
+    }
+    if (description !== undefined) {
+      if (!description.trim()) throw new AppError("Description cannot be empty", 400);
+      data.description = description;
+    }
+    if (location !== undefined) {
+      if (!location.trim()) throw new AppError("Location cannot be empty", 400);
+      data.location = location;
+    }
+    if (category !== undefined) {
+      if (!category.trim()) throw new AppError("Category cannot be empty", 400);
+      data.category = category;
+    }
+
+    if (startDate !== undefined || endDate !== undefined) {
+      const parsedStart = startDate ? (typeof startDate === 'string' ? parseDate(startDate, "startDate") : startDate) : existingEvent.startDate;
+      const parsedEnd = endDate ? (typeof endDate === 'string' ? parseDate(endDate, "endDate") : endDate) : existingEvent.endDate;
+      if (parsedStart > parsedEnd) {
+        throw new AppError("startDate must be before endDate", 400);
+      }
+      data.startDate = parsedStart;
+      data.endDate = parsedEnd;
+    }
+
+    if (totalSeats !== undefined) {
+      data.totalSeats = parseNumber(totalSeats, "totalSeats");
+    }
+    if (availableSeats !== undefined) {
+      data.availableSeats = parseNumber(availableSeats, "availableSeats");
+    }
+    if (price !== undefined) {
+      data.price = parseNumber(price, "price");
+    }
+
+    if (imageUrl !== undefined) {
+      data.imageUrl = imageUrl;
+    }
 
     const updatedEvent = await prisma.event.update({
       where: { id, isDeleted: false },
@@ -213,13 +277,11 @@ export const eventService = {
   },
 
   deleteEvent: async ({ id, userId }: { id: string; userId: string }) => {
-    // Check if event exists and user is the organizer
     const event = await prisma.event.findUnique({
       where: { id, organizerId: userId, isDeleted: false },
     });
     if (!event) throw new AppError("Event not found", 404);
 
-    // Soft delete: set isDeleted = true, deletedAt = now(), deletedBy = userId
     const deletedEvent = await prisma.event.update({
       where: { id, isDeleted: false },
       data: {
@@ -231,6 +293,7 @@ export const eventService = {
 
     return deletedEvent;
   },
+
   getMyEvents: async ({ id }: { id: string }) => {
     const events = await prisma.event.findMany({
       where: {

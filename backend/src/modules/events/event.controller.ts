@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { eventService } from "./event.service";
-import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
+import { handleFileUpload } from "../../utils/handleFileUpload";
 import { UploadedFile } from "express-fileupload";
 import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
@@ -35,11 +35,13 @@ export const eventController = {
     });
     res.status(200).json({ success: true, data, pagination });
   },
+
   getEventById: async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     const event = await eventService.getEventById({ id: id as string });
     res.status(200).json({ success: true, data: event });
   },
+
   createEvent: async (req: AuthRequest, res: Response) => {
     const {
       name,
@@ -55,58 +57,19 @@ export const eventController = {
     const organizerId = req.userId;
     if (!organizerId)
       return res.status(401).json({ success: false, message: "Unauthorized" });
-    if (
-      !name?.trim() ||
-      !description?.trim() ||
-      !location?.trim() ||
-      !category?.trim() ||
-      !startDate ||
-      !endDate ||
-      !totalSeats ||
-      !price
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
-    }
 
-    // Parse and validate dates
-    const parsedStartDate = new Date(startDate);
-    const parsedEndDate = new Date(endDate);
-
-    if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid date format" });
-    }
-
-    // Parse numeric fields
-    const parsedTotalSeats = Number(totalSeats);
-    const parsedPrice = Number(price);
-    const parsedAvailableSeats = availableSeats
-      ? Number(availableSeats)
-      : undefined;
-
-    if (isNaN(parsedTotalSeats) || isNaN(parsedPrice)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid numeric values for totalSeats or price",
-      });
-    }
-
-    const fixedAvailableSeats = parsedAvailableSeats ?? parsedTotalSeats;
     let imageUrl: string | undefined;
     if (req.files && "imageFile" in req.files) {
       const imageFile = req.files.imageFile as UploadedFile;
       try {
-        imageUrl = await uploadToCloudinary(
-          imageFile.tempFilePath,
-          "events-image",
-        );
+        imageUrl = await handleFileUpload(imageFile, {
+          folder: "events-image",
+        });
       } catch (error) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Upload image failed" });
+        return res.status(400).json({
+          success: false,
+          message: "Upload image failed",
+        });
       }
     }
 
@@ -115,11 +78,11 @@ export const eventController = {
       description,
       location,
       category,
-      startDate: parsedStartDate,
-      endDate: parsedEndDate,
-      totalSeats: parsedTotalSeats,
-      price: parsedPrice,
-      availableSeats: fixedAvailableSeats,
+      startDate: startDate as any,
+      endDate: endDate as any,
+      totalSeats: totalSeats as any,
+      price: price as any,
+      availableSeats: availableSeats as any,
       imageUrl,
       organizerId,
     });
@@ -130,6 +93,7 @@ export const eventController = {
       data: event,
     });
   },
+
   updateEvent: async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
     const organizerId = req.userId;
@@ -148,7 +112,6 @@ export const eventController = {
       price,
     } = req.body;
 
-    // Check if event exists and user is owner
     const existingEvent = await eventService.getEventById({ id });
     if (existingEvent.organizerId !== organizerId) {
       return res
@@ -156,58 +119,18 @@ export const eventController = {
         .json({ success: false, message: "Forbidden: Not the event owner" });
     }
 
-    // Validate dates if provided
-    if (startDate || endDate) {
-      const parsedStart = startDate
-        ? new Date(startDate)
-        : existingEvent.startDate;
-      const parsedEnd = endDate ? new Date(endDate) : existingEvent.endDate;
-      if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid date format" });
-      }
-      if (parsedStart > parsedEnd) {
-        return res.status(400).json({
-          success: false,
-          message: "startDate must be before endDate",
-        });
-      }
-    }
-
-    // Validate numeric fields if provided
-    const finalTotalSeats =
-      totalSeats !== undefined ? Number(totalSeats) : undefined;
-    const finalPrice = price !== undefined ? Number(price) : undefined;
-    const finalAvailableSeats =
-      availableSeats !== undefined ? Number(availableSeats) : undefined;
-
-    if (finalTotalSeats !== undefined && isNaN(finalTotalSeats)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid value for totalSeats",
-      });
-    }
-    if (finalPrice !== undefined && isNaN(finalPrice)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid value for price",
-      });
-    }
-
-    // Handle image upload
     let imageUrl: string | undefined;
     if (req.files && "imageFile" in req.files) {
       const imageFile = req.files.imageFile as UploadedFile;
       try {
-        imageUrl = await uploadToCloudinary(
-          imageFile.tempFilePath,
-          "events-image",
-        );
+        imageUrl = await handleFileUpload(imageFile, {
+          folder: "events-image",
+        });
       } catch (error) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Upload image failed" });
+        return res.status(400).json({
+          success: false,
+          message: "Upload image failed",
+        });
       }
     }
 
@@ -231,6 +154,7 @@ export const eventController = {
       data: event,
     });
   },
+
   deleteEvent: async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.userId;
@@ -245,6 +169,7 @@ export const eventController = {
       message: "Deleted event successfully",
     });
   },
+
   getMyEvents: async (req: AuthRequest, res: Response) => {
     const userId = req.userId;
     if (!userId)
