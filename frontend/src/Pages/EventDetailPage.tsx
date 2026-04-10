@@ -62,7 +62,7 @@ const recommended = [
   },
 ];
 
-export default function EventDetailPPage() {
+export default function EventDetailPage() {
   const [selectedTicket, setSelectedTicket] = useState("standard");
   const [quantity, setQuantity] = useState(1);
 
