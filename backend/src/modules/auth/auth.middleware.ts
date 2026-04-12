@@ -60,6 +60,11 @@ export const authMiddleware = {
         userRole: string;
       };
 
+      if (!decoded)
+        return res
+          .status(400)
+          .json({ success: false, message: "Unauthorized: No token provided" });
+
       // Check if user still exists and is not deleted
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },

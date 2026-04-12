@@ -1,20 +1,35 @@
-import { Routes, Route } from "react-router-dom";
-import LoginNew from "./Pages/LoginPage";
-import RegisterPage from "./Pages/RegisterPage";
-import EventDetailPage from "./Pages/EventDetailPage";
-import Navbar from "./Components/Navbar";
-import HomePage from "./Pages/HomePage";
+import { Route, Routes } from "react-router-dom";
 
-export default function App() {
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import DashboardPage from "./pages/DashboardPage";
+import MyTicketsPage from "./pages/MyTicketsPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import EventDetaiPage from "./pages/EventDetaiPage";
+import TransactionsPage from "./pages/TransactionsPage";
+import ProfilePage from "./pages/ProfilePage";
+import VerifyEmail from "./pages/VerifyEmail";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+
+const App = () => {
   return (
-    <>
-      <Navbar />
+    <div className="min-h-screen">
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginNew />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/events/:id" element={<EventDetailPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/my-tickets" element={<MyTicketsPage />} />
+        <Route path="/checkout/:id" element={<CheckoutPage />} />
+        <Route path="/events/:id" element={<EventDetaiPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/reset-password/:id" element={<ResetPasswordPage />} />
       </Routes>
-    </>
+    </div>
   );
-}
+};
+
+export default App;
