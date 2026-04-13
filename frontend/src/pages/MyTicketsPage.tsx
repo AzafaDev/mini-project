@@ -31,7 +31,7 @@ const StatCard = ({
 
 // --- Sub-komponen: Ticket Card ---
 const TicketCard = ({
-  type,
+
   title,
   date,
   location,

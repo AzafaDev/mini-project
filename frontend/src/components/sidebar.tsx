@@ -1,26 +1,5 @@
-import { LayoutDashboard, Ticket, History, User } from "lucide-react"; // atau pakai material icons sesuai seleramu
-
 export const Sidebar = () => {
   return (
-    // <aside className="h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] z-[60] hidden md:flex flex-col p-6 border-r border-white/5">
-    //   <div className="mb-10 text-xl font-bold text-indigo-200">Organizer</div>
-    //   <nav className="space-y-2">
-    //     <a
-    //       href="/dashboard"
-    //       className="flex items-center gap-3 p-3 bg-white/5 rounded-lg text-white"
-    //     >
-    //       <LayoutDashboard size={20} /> Dashboard
-    //     </a>
-    //     <a
-    //       href="/transactions"
-    //       className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg text-[#c7c4d8]"
-    //     >
-    //       <History size={20} /> Transactions
-    //     </a>
-    //     {/* Tambahkan menu lainnya */}
-    //   </nav>
-    // </aside>
-
     <aside className="h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] z-[60] hidden md:flex flex-col p-6 border-r border-white/5">
       <div className="flex items-center gap-3 px-3 py-6">
         <div className="w-10 h-10 rounded bg-[#4B4DD8] flex items-center justify-center">
