@@ -11,7 +11,7 @@ import TransactionsPage from "./pages/TransactionsPage";
 import ProfilePage from "./pages/ProfilePage";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import { Navbar } from "./components/Navbar";
+import { Navbar } from "./components/navbar";
 import { Footer } from "./components/footer";
 
 const App = () => {

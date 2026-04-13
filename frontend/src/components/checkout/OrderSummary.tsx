@@ -1,0 +1,94 @@
+import React from "react";
+
+interface OrderSummaryProps {
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+  serviceFee: number;
+  discount?: number;
+  total: number;
+}
+
+const formatIDR = (amount: number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount).replace("Rp", "IDR");
+};
+
+export const OrderSummary: React.FC<OrderSummaryProps> = ({
+  items,
+  serviceFee,
+  discount,
+  total,
+}) => {
+  return (
+    <div className="bg-[#2a2a2a] rounded-xl p-8 shadow-2xl relative overflow-hidden">
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#c0c1ff]/10 blur-[100px] rounded-full"></div>
+      <h3 className="text-xl font-bold tracking-tight text-[#e5e2e1] mb-8">
+        Order Summary
+      </h3>
+
+      <div className="space-y-4 border-b border-[#464555]/15 pb-8 mb-8">
+        {items.map((item, idx) => (
+          <div key={idx} className="flex justify-between text-sm">
+            <span className="text-[#c7c4d8]">
+              {item.name} ({item.quantity}x)
+            </span>
+            <span className="text-[#e5e2e1] font-medium">
+              {formatIDR(item.price * item.quantity)}
+            </span>
+          </div>
+        ))}
+        <div className="flex justify-between text-sm">
+          <span className="text-[#c7c4d8]">Service Fee</span>
+          <span className="text-[#e5e2e1] font-medium">
+            {formatIDR(serviceFee)}
+          </span>
+        </div>
+      </div>
+
+      {discount !== undefined && discount > 0 && (
+        <div className="space-y-4 border-b border-[#464555]/15 pb-8 mb-8">
+          <div className="flex justify-between text-sm items-center">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-xs text-[#ffb4ab]">
+                stars
+              </span>
+              <span className="text-[#c7c4d8]">Points Applied</span>
+            </div>
+            <span className="text-[#ffb4ab] font-medium">
+              - {formatIDR(discount)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-end mb-10">
+        <div>
+          <p className="text-[10px] text-[#c7c4d8] uppercase tracking-[0.2em] font-bold mb-1">
+            Total Payable
+          </p>
+          <p className="text-3xl font-black text-[#e5e2e1] tracking-tighter">
+            {formatIDR(total)}
+          </p>
+        </div>
+        <p className="text-[10px] text-[#c7c4d8]">incl. VAT 11%</p>
+      </div>
+
+      <button className="w-full bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_25px_rgba(75,77,216,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+        Proceed to Payment
+        <span className="material-symbols-outlined">arrow_forward</span>
+      </button>
+
+      <div className="mt-6 flex justify-center items-center gap-4 grayscale opacity-40">
+        <span className="material-symbols-outlined text-2xl">credit_card</span>
+        <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+        <span className="material-symbols-outlined text-2xl">qr_code_2</span>
+      </div>
+    </div>
+  );
+};
