@@ -3,10 +3,17 @@ import { AppError } from "../utils/AppError";
 
 export const errorHandler = (
   err: Error | AppError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
+  console.log("[DEBUG Error Handler] Error occurred:", {
+    message: err.message,
+    path: req.path,
+    method: req.method,
+    statusCode: err instanceof AppError ? err.statusCode : 500,
+  });
+
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -15,7 +22,7 @@ export const errorHandler = (
   }
 
   // Unknown error = 500
-  console.error("Unhandled error:", err);
+  console.error("[DEBUG Error Handler] Unhandled error:", err);
   return res.status(500).json({
     success: false,
     message: "Internal server error",

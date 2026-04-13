@@ -36,19 +36,46 @@ export const authService = {
     referrerCode,
     imageUrl,
   }: AuthRegister) => {
+    console.log("[DEBUG register service] received:", {
+      email,
+      fullName,
+      role,
+      referrerCode,
+      hasImageUrl: !!imageUrl,
+    });
+
     let referrer: { id: string } | null;
     if (referrerCode) {
+      console.log(
+        "[DEBUG register service] checking referrer code:",
+        referrerCode,
+      );
       referrer = await prisma.user.findFirst({
-        where: { referralCode: { equals: referrerCode, mode: 'insensitive' } },
+        where: { referralCode: { equals: referrerCode, mode: "insensitive" } },
       });
+      console.log(
+        "[DEBUG register service] referrer found:",
+        referrer ? referrer.id : null,
+      );
       if (!referrer) throw new AppError("Invalid referral code", 409);
+    } else {
+      console.log("[DEBUG register service] no referrer code provided");
     }
 
     const verifyToken = generateVerificationCode();
+    console.log("[DEBUG register service] verifyToken generated");
+
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("[DEBUG register service] password hashed");
+
     const referralCode = await generateUniqueReferralCode();
+    console.log(
+      "[DEBUG register service] referralCode generated:",
+      referralCode,
+    );
 
     const result = await prisma.$transaction(async (tx) => {
+      console.log("[DEBUG register service] creating user in transaction");
       const newUser = await tx.user.create({
         data: {
           email,
@@ -63,8 +90,13 @@ export const authService = {
           verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
+      console.log("[DEBUG register service] user created with id:", newUser.id);
 
       if (referrer) {
+        console.log(
+          "[DEBUG register service] creating referral bonus for referrer:",
+          referrer.id,
+        );
         await tx.pointTransaction.create({
           data: {
             userId: referrer.id,
@@ -75,6 +107,10 @@ export const authService = {
         });
 
         const couponCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+        console.log(
+          "[DEBUG register service] creating coupon for new user, code:",
+          couponCode,
+        );
         await tx.coupon.create({
           data: {
             code: couponCode,
@@ -85,11 +121,26 @@ export const authService = {
             userId: newUser.id,
           },
         });
+
+        console.log(
+          "[DEBUG register service] updating referrer points balance:",
+          referrer.id,
+        );
+        await tx.user.update({
+          where: { id: referrer.id },
+          data: {
+            points: { increment: REFERRAL_POINT },
+          },
+        });
       }
 
       return { newUser };
     });
 
+    console.log("[DEBUG register service] registration complete, returning:", {
+      userId: result.newUser.id,
+      email: result.newUser.email,
+    });
     return result;
   },
 
@@ -104,7 +155,19 @@ export const authService = {
     },
     newVerifyToken: string,
   ) => {
+    console.log(
+      "[DEBUG rehashAndUpdateUser] email:",
+      email,
+      "fullName:",
+      updateData.fullName,
+      "role:",
+      updateData.role,
+    );
+
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("[DEBUG rehashAndUpdateUser] password rehashed");
+
+    console.log("[DEBUG rehashAndUpdateUser] updating user in database");
     const updatedUser = await prisma.user.update({
       where: { email },
       data: {
@@ -117,6 +180,10 @@ export const authService = {
         verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
+    console.log(
+      "[DEBUG rehashAndUpdateUser] user updated, id:",
+      updatedUser.id,
+    );
     return updatedUser;
   },
 
@@ -157,7 +224,10 @@ export const authService = {
   },
 
   login: async ({ email, password }: Login) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: { ownedCoupons: true }
+    });
 
     if (!user) throw new AppError("Invalid email or password", 401);
 
@@ -165,31 +235,43 @@ export const authService = {
     if (!isCorrectPassword)
       throw new AppError("Invalid email or password", 401);
 
+    console.log("[DEBUG Service] user.isVerified:", user.isVerified);
+    console.log("[DEBUG Service] user.verifyToken:", user.verifyToken);
+
     if (!user.isVerified) {
-      return { user: sanitizeUser(user), requiresVerification: true };
+      console.log(
+        "[DEBUG Service] isVerified FALSE - generate new token & send email",
+      );
+      const newVerifyToken = generateVerificationCode();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verifyToken: newVerifyToken,
+          verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+      console.log("[DEBUG Service] new verifyToken generated:", newVerifyToken);
+      return {
+        user: { ...sanitizeUser(user), verifyToken: newVerifyToken },
+        requiresVerification: true,
+      };
     }
 
+    console.log(
+      "[DEBUG Service] isVerified TRUE - return requiresVerification: false",
+    );
     return { user: sanitizeUser(user), requiresVerification: false };
   },
 
   getCurrentUser: async (userId: string) => {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        phoneNumber: true,
-        profilePicture: true,
-        role: true,
-        referralCode: true,
-        points: true,
-        isVerified: true,
-        createdAt: true,
+      include: {
+        ownedCoupons: true,
       },
     });
     if (!user) throw new AppError("User not found", 404);
-    return user;
+    return sanitizeUser(user);
   },
 
   updateProfile: async ({
@@ -203,28 +285,26 @@ export const authService = {
     phoneNumber?: string;
     imageUrl?: string;
   }) => {
+    console.log("[DEBUG authService.updateProfile] received:", {
+      userId,
+      fullName,
+      phoneNumber,
+      imageUrl,
+    });
     const data: any = {};
     if (fullName !== undefined) data.fullName = fullName;
     if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
     if (imageUrl !== undefined) data.profilePicture = imageUrl;
+    console.log("[DEBUG authService.updateProfile] data to update:", data);
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data,
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        phoneNumber: true,
-        profilePicture: true,
-        role: true,
-        referralCode: true,
-        points: true,
-        isVerified: true,
-        createdAt: true,
+      include: {
+        ownedCoupons: true,
       },
     });
-    return updatedUser;
+    return sanitizeUser(updatedUser);
   },
 
   changePassword: async ({

@@ -53,6 +53,7 @@ export const generateTokenForAuth = ({
   userId: string;
   userRole: string;
 }) => {
+  console.log("[DEBUG Token] generateTokenForAuth - userId:", userId, "userRole:", userRole);
   const token = jwt.sign({ userId, userRole }, process.env.JWT_SECRET!, {
     expiresIn: "7d",
   });
@@ -63,4 +64,5 @@ export const generateTokenForAuth = ({
     secure: process.env.NODE_ENV === "production",
     path: "/",
   });
+  console.log("[DEBUG Token] auth_token cookie sudah di-set");
 };

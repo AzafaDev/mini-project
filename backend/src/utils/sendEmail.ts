@@ -6,8 +6,21 @@ type VerificatonEmail = {
   username: string;
 };
 
+type TransactionEmail = {
+  email: string;
+  username: string;
+  eventName: string;
+  finalPrice: number;
+  quantity: number;
+  status?: "ACCEPTED" | "REJECTED";
+};
+
+console.log("[DEBUG sendEmail] Utility loaded");
+
 export const sendEmail = {
   verificationEmail: async ({ email, token, username }: VerificatonEmail) => {
+    console.log("[DEBUG sendEmail] verificationEmail sending to:", email, "username:", username);
+
     const { data, error } = await resend.emails.send({
       from: "Eventry <noreply@azafadev.web.id>",
       to: [email],
@@ -22,10 +35,15 @@ export const sendEmail = {
     });
 
     if (error) {
+      console.log("[DEBUG sendEmail] verificationEmail failed:", error);
       throw new Error("Failed to send verification email");
     }
+
+    console.log("[DEBUG sendEmail] verificationEmail success, messageId:", data?.id);
   },
   resetPassword: async ({ email, token, username }: VerificatonEmail) => {
+    console.log("[DEBUG sendEmail] resetPassword sending to:", email, "username:", username);
+
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     const { data, error } = await resend.emails.send({
@@ -46,7 +64,66 @@ export const sendEmail = {
     });
 
     if (error) {
+      console.log("[DEBUG sendEmail] resetPassword failed:", error);
       throw new Error("Failed to send reset email");
     }
+
+    console.log("[DEBUG sendEmail] resetPassword success, messageId:", data?.id);
+  },
+  transactionAccepted: async ({ email, username, eventName, finalPrice, quantity }: TransactionEmail) => {
+    console.log("[DEBUG sendEmail] transactionAccepted sending to:", email, "event:", eventName);
+
+    const { data, error } = await resend.emails.send({
+      from: "Eventry <noreply@azafadev.web.id>",
+      to: [email],
+      subject: "🎉 Your ticket has been confirmed!",
+      html: `
+        <h1>Hello, ${username}!</h1>
+        <p>Great news! Your transaction has been <strong>accepted</strong>.</p>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h2 style="margin-top: 0;">Order Details</h2>
+          <p><strong>Event:</strong> ${eventName}</p>
+          <p><strong>Tickets:</strong> ${quantity}</p>
+          <p><strong>Total Paid:</strong> IDR ${finalPrice.toLocaleString("id-ID")}</p>
+        </div>
+        <p>Thank you for your purchase! We look forward to seeing you at the event.</p>
+        <p>If you have any questions, please contact the event organizer.</p>
+      `,
+    });
+
+    if (error) {
+      console.log("[DEBUG sendEmail] transactionAccepted failed:", error);
+      // Don't throw - email failure shouldn't block transaction
+    }
+
+    console.log("[DEBUG sendEmail] transactionAccepted success, messageId:", data?.id);
+  },
+  transactionRejected: async ({ email, username, eventName, finalPrice, quantity }: TransactionEmail) => {
+    console.log("[DEBUG sendEmail] transactionRejected sending to:", email, "event:", eventName);
+
+    const { data, error } = await resend.emails.send({
+      from: "Eventry <noreply@azafadev.web.id>",
+      to: [email],
+      subject: "❌ Transaction Rejected",
+      html: `
+        <h1>Hello, ${username}!</h1>
+        <p>Unfortunately, your transaction has been <strong>rejected</strong>.</p>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h2 style="margin-top: 0;">Order Details</h2>
+          <p><strong>Event:</strong> ${eventName}</p>
+          <p><strong>Tickets:</strong> ${quantity}</p>
+          <p><strong>Amount:</strong> IDR ${finalPrice.toLocaleString("id-ID")}</p>
+        </div>
+        <p><strong>Note:</strong> Any points, vouchers, or coupons used in this transaction have been returned to your account.</p>
+        <p>If you believe this is a mistake, please contact the event organizer.</p>
+      `,
+    });
+
+    if (error) {
+      console.log("[DEBUG sendEmail] transactionRejected failed:", error);
+      // Don't throw - email failure shouldn't block transaction
+    }
+
+    console.log("[DEBUG sendEmail] transactionRejected success, messageId:", data?.id);
   },
 };

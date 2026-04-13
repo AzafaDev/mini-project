@@ -1,14 +1,100 @@
 import { prisma } from "../src/config/prisma";
+import bcrypt from "bcrypt";
 
-const categories = ["Music", "Workshop", "Sports", "Seminar", "Entertainment", "Conference"];
+const SALT_ROUNDS = 10;
 
-const locations = ["Jakarta", "Bandung", "Surabaya", "Bali", "Yogyakarta", "Medan"];
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, SALT_ROUNDS);
+}
 
-const events = [
-  // Music (5 events)
+const organizerUsers = [
+  { email: "organizer1@eventry.com", fullName: "Organizer Satu" },
+  { email: "organizer2@eventry.com", fullName: "Organizer Dua" },
+  { email: "organizer3@eventry.com", fullName: "Organizer Tiga" },
+];
+
+const customerUsers = [
+  { email: "customer1@test.com", fullName: "Customer Satu" },
+  { email: "customer2@test.com", fullName: "Customer Dua" },
+  { email: "customer3@test.com", fullName: "Customer Tiga" },
+];
+
+// PAST EVENTS - events that already ended (before April 11, 2026)
+const pastEvents = [
+  {
+    name: "Jakarta Music Festival 2025",
+    description:
+      "Annual music festival featuring local and international artists - PAST EVENT",
+    category: "Music",
+    location: "Jakarta",
+    price: 500000,
+    totalSeats: 5000,
+    startDate: "2025-06-15",
+    endDate: "2025-06-17",
+    tickets: [
+      { name: "VIP", price: 1500000, quantity: 500 },
+      { name: "Regular", price: 500000, quantity: 3000 },
+    ],
+  },
+  {
+    name: "Tech Conference 2025",
+    description:
+      "Annual technology conference with industry leaders - PAST EVENT",
+    category: "Conference",
+    location: "Jakarta",
+    price: 1000000,
+    totalSeats: 1000,
+    startDate: "2025-10-01",
+    endDate: "2025-10-03",
+    tickets: [
+      { name: "VIP", price: 2000000, quantity: 100 },
+      { name: "Regular", price: 1000000, quantity: 900 },
+    ],
+  },
+  {
+    name: "React Workshop March 2026",
+    description: "Learn React fundamentals from scratch - ALREADY ENDED",
+    category: "Workshop",
+    location: "Jakarta",
+    price: 0,
+    totalSeats: 50,
+    startDate: "2026-03-10",
+    endDate: "2026-03-11",
+    tickets: [{ name: "Free Pass", price: 0, quantity: 50 }],
+  },
+  {
+    name: "Jazz Night February",
+    description: "Romantic jazz evening with live performances - PAST",
+    category: "Music",
+    location: "Bali",
+    price: 350000,
+    totalSeats: 300,
+    startDate: "2026-02-15",
+    endDate: "2026-02-15",
+    tickets: [
+      { name: "Premium", price: 700000, quantity: 50 },
+      { name: "Regular", price: 350000, quantity: 250 },
+    ],
+  },
+  {
+    name: "Startup Seminar January",
+    description: "Learn from successful startup founders - ALREADY ENDED",
+    category: "Seminar",
+    location: "Bandung",
+    price: 0,
+    totalSeats: 300,
+    startDate: "2026-01-25",
+    endDate: "2026-01-25",
+    tickets: [{ name: "Free Pass", price: 0, quantity: 300 }],
+  },
+];
+
+// UPCOMING EVENTS - events in the future
+const upcomingEvents = [
   {
     name: "Jakarta Music Festival 2026",
-    description: "Annual music festival featuring local and international artists",
+    description:
+      "Annual music festival featuring local and international artists",
     category: "Music",
     location: "Jakarta",
     price: 500000,
@@ -77,7 +163,6 @@ const events = [
       { name: "Regular", price: 100000, quantity: 1800 },
     ],
   },
-  // Workshop (5 events)
   {
     name: "React Workshop for Beginners",
     description: "Learn React fundamentals from scratch",
@@ -87,23 +172,7 @@ const events = [
     totalSeats: 50,
     startDate: "2026-05-10",
     endDate: "2026-05-11",
-    tickets: [
-      { name: "Free Pass", price: 0, quantity: 50 },
-    ],
-  },
-  {
-    name: "UI/UX Design Masterclass",
-    description: "Master UI/UX design principles with hands-on projects",
-    category: "Workshop",
-    location: "Bandung",
-    price: 250000,
-    totalSeats: 40,
-    startDate: "2026-06-01",
-    endDate: "2026-06-02",
-    tickets: [
-      { name: "Premium", price: 500000, quantity: 10 },
-      { name: "Regular", price: 250000, quantity: 30 },
-    ],
+    tickets: [{ name: "Free Pass", price: 0, quantity: 50 }],
   },
   {
     name: "Python Data Science Bootcamp",
@@ -128,9 +197,7 @@ const events = [
     totalSeats: 100,
     startDate: "2026-08-10",
     endDate: "2026-08-10",
-    tickets: [
-      { name: "Regular", price: 150000, quantity: 100 },
-    ],
+    tickets: [{ name: "Regular", price: 150000, quantity: 100 }],
   },
   {
     name: "Mobile App Development Workshop",
@@ -146,7 +213,6 @@ const events = [
       { name: "Regular", price: 200000, quantity: 35 },
     ],
   },
-  // Sports (5 events)
   {
     name: "Jakarta Marathon 2026",
     description: "Annual marathon through the streets of Jakarta",
@@ -218,7 +284,6 @@ const events = [
       { name: "Spectator", price: 50000, quantity: 450 },
     ],
   },
-  // Seminar (5 events)
   {
     name: "Tech Startup Seminar",
     description: "Learn from successful startup founders",
@@ -228,9 +293,7 @@ const events = [
     totalSeats: 300,
     startDate: "2026-05-25",
     endDate: "2026-05-25",
-    tickets: [
-      { name: "Free Pass", price: 0, quantity: 300 },
-    ],
+    tickets: [{ name: "Free Pass", price: 0, quantity: 300 }],
   },
   {
     name: "Financial Planning Seminar",
@@ -241,9 +304,7 @@ const events = [
     totalSeats: 150,
     startDate: "2026-06-10",
     endDate: "2026-06-10",
-    tickets: [
-      { name: "Regular", price: 100000, quantity: 150 },
-    ],
+    tickets: [{ name: "Regular", price: 100000, quantity: 150 }],
   },
   {
     name: "AI in Business Seminar",
@@ -268,9 +329,7 @@ const events = [
     totalSeats: 250,
     startDate: "2026-08-05",
     endDate: "2026-08-05",
-    tickets: [
-      { name: "Regular", price: 75000, quantity: 250 },
-    ],
+    tickets: [{ name: "Regular", price: 75000, quantity: 250 }],
   },
   {
     name: "Health & Wellness Seminar",
@@ -286,7 +345,6 @@ const events = [
       { name: "Regular", price: 150000, quantity: 150 },
     ],
   },
-  // Entertainment (5 events)
   {
     name: "Comedy Night Special",
     description: "Stand-up comedy show with top comedians",
@@ -310,9 +368,7 @@ const events = [
     totalSeats: 1000,
     startDate: "2026-06-15",
     endDate: "2026-06-30",
-    tickets: [
-      { name: "Regular", price: 50000, quantity: 1000 },
-    ],
+    tickets: [{ name: "Regular", price: 50000, quantity: 1000 }],
   },
   {
     name: "Theater: Romeo & Juliet",
@@ -356,7 +412,6 @@ const events = [
       { name: "Regular", price: 250000, quantity: 500 },
     ],
   },
-  // Conference (5 events)
   {
     name: "Tech Conference 2026",
     description: "Annual technology conference with industry leaders",
@@ -432,26 +487,56 @@ const events = [
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // Find or create an organizer user
-  let organizer = await prisma.user.findFirst({
-    where: { role: "ORGANIZER" },
-  });
+  const hashedPassword = await hashPassword("12345678");
 
-  if (!organizer) {
-    organizer = await prisma.user.create({
-      data: {
-        email: "organizer@eventry.com",
-        password: "$2b$10$rH9v3q8Z5qK5qK5qK5qK5.qK5qK5qK5qK5qK5qK5qK5qK5qK5qK5q",
-        fullName: "Event Organizer",
-        role: "ORGANIZER",
-        isVerified: true,
-      },
-    });
-    console.log("✅ Created organizer user:", organizer.email);
-  }
+  const organizers = await Promise.all(
+    organizerUsers.map((org) =>
+      prisma.user.upsert({
+        where: { email: org.email },
+        update: {},
+        create: {
+          email: org.email,
+          password: hashedPassword,
+          fullName: org.fullName,
+          role: "ORGANIZER",
+          isVerified: true,
+        },
+      }),
+    ),
+  );
+  console.log(`✅ Created ${organizers.length} organizer users`);
 
-  // Create events
-  for (const eventData of events) {
+  const customers = await Promise.all(
+    customerUsers.map((cust) =>
+      prisma.user.upsert({
+        where: { email: cust.email },
+        update: {},
+        create: {
+          email: cust.email,
+          password: hashedPassword,
+          fullName: cust.fullName,
+          role: "CUSTOMER",
+          isVerified: true,
+        },
+      }),
+    ),
+  );
+  console.log(`✅ Created ${customers.length} customer users`);
+
+  // Clear existing events to avoid duplicates
+  console.log("🗑️ Clearing existing events...");
+  await prisma.ticket.deleteMany({ where: {} });
+  await prisma.transaction.deleteMany({ where: {} });
+  await prisma.review.deleteMany({ where: {} });
+  await prisma.event.deleteMany({ where: {} });
+
+  // Create past events first
+  console.log("\n📅 Creating PAST events...");
+  const createdPastEvents = [];
+  for (let i = 0; i < pastEvents.length; i++) {
+    const eventData = pastEvents[i];
+    const organizerIndex = i % organizers.length;
+    const organizer = organizers[organizerIndex];
     const startDate = new Date(eventData.startDate);
     const endDate = new Date(eventData.endDate);
 
@@ -466,14 +551,15 @@ async function main() {
         availableSeats: eventData.totalSeats,
         startDate,
         endDate,
-        imageUrl: `https://picsum.photos/seed/${eventData.name.replace(/\s/g, "")}/800/400`,
+        imageUrl: `https://picsum.photos/seed/${eventData.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}/800/400`,
         organizerId: organizer.id,
       },
     });
+    createdPastEvents.push(event);
+    console.log(
+      `✅ [PAST] Created: ${event.name} (${eventData.startDate} - ${eventData.endDate})`,
+    );
 
-    console.log(`✅ Created event: ${event.name}`);
-
-    // Create tickets for the event
     for (const ticketData of eventData.tickets) {
       await prisma.ticket.create({
         data: {
@@ -487,8 +573,140 @@ async function main() {
     }
   }
 
+  // Create upcoming events
+  console.log("\n📅 Creating UPCOMING events...");
+  for (let i = 0; i < upcomingEvents.length; i++) {
+    const eventData = upcomingEvents[i];
+    const organizerIndex = i % organizers.length;
+    const organizer = organizers[organizerIndex];
+    const startDate = new Date(eventData.startDate);
+    const endDate = new Date(eventData.endDate);
+
+    const event = await prisma.event.create({
+      data: {
+        name: eventData.name,
+        description: eventData.description,
+        category: eventData.category,
+        location: eventData.location,
+        price: eventData.price,
+        totalSeats: eventData.totalSeats,
+        availableSeats: eventData.totalSeats,
+        startDate,
+        endDate,
+        imageUrl: `https://picsum.photos/seed/${eventData.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}/800/400`,
+        organizerId: organizer.id,
+      },
+    });
+    console.log(
+      `✅ [UPCOMING] Created: ${event.name} (${eventData.startDate})`,
+    );
+
+    for (const ticketData of eventData.tickets) {
+      await prisma.ticket.create({
+        data: {
+          eventId: event.id,
+          name: ticketData.name,
+          price: ticketData.price,
+          quantity: ticketData.quantity,
+          available: ticketData.quantity,
+        },
+      });
+    }
+  }
+
+  // Create sample transactions for past events (customers who attended)
+  console.log("\n🎫 Creating sample transactions (DONE status)...");
+  const customer1 = customers[0];
+  const customer2 = customers[1];
+
+  for (const event of createdPastEvents) {
+    // Customer 1 transaction
+    const ticket = await prisma.ticket.findFirst({
+      where: { eventId: event.id },
+    });
+    if (ticket) {
+      const tx1 = await prisma.transaction.create({
+        data: {
+          userId: customer1.id,
+          eventId: event.id,
+          ticketId: ticket.id,
+          quantity: 2,
+          totalPrice: ticket.price * 2,
+          discount: 0,
+          pointsUsed: 0,
+          finalPrice: ticket.price * 2,
+          status: "DONE",
+          paidAt: new Date(),
+          expiresAt: new Date(),
+          autoCancelAt: new Date(),
+        },
+      });
+
+      // Create review for this transaction
+      await prisma.review.create({
+        data: {
+          userId: customer1.id,
+          eventId: event.id,
+          rating: Math.floor(Math.random() * 3) + 3, // Random rating 3-5
+          comment: `Great event! Really enjoyed ${event.name}.`,
+        },
+      });
+
+      console.log(
+        `✅ Created DONE transaction for ${customer1.fullName} on ${event.name} with review`,
+      );
+    }
+  }
+
+  // Customer 2 transaction for first past event
+  const firstPastEvent = createdPastEvents[0];
+  const ticket2 = await prisma.ticket.findFirst({
+    where: { eventId: firstPastEvent.id },
+  });
+  if (ticket2) {
+    await prisma.transaction.create({
+      data: {
+        userId: customer2.id,
+        eventId: firstPastEvent.id,
+        ticketId: ticket2.id,
+        quantity: 1,
+        totalPrice: ticket2.price,
+        discount: 0,
+        pointsUsed: 0,
+        finalPrice: ticket2.price,
+        status: "DONE",
+        paidAt: new Date(),
+        expiresAt: new Date(),
+        autoCancelAt: new Date(),
+      },
+    });
+
+    await prisma.review.create({
+      data: {
+        userId: customer2.id,
+        eventId: firstPastEvent.id,
+        rating: 5,
+        comment: "Amazing experience! Will definitely attend again.",
+      },
+    });
+
+    console.log(
+      `✅ Created DONE transaction for ${customer2.fullName} on ${firstPastEvent.name} with review`,
+    );
+  }
+
   console.log("\n🎉 Seeding completed!");
-  console.log(`📊 Total events created: ${events.length}`);
+  console.log(`\n📊 Summary:`);
+  console.log(`   - ${pastEvents.length} PAST events (can write reviews)`);
+  console.log(`   - ${upcomingEvents.length} UPCOMING events`);
+  console.log(`   - Sample reviews created for past events`);
+  console.log(`\n📊 Login credentials:`);
+  console.log(`   Organizers: organizer1/2/3@eventry.com / 12345678`);
+  console.log(`   Customers: customer1/2/3@test.com / 12345678`);
+  console.log(`\n💡 To test reviews:`);
+  console.log(`   1. Login as customer1@test.com`);
+  console.log(`   2. Go to past event (e.g., Jakarta Music Festival 2025)`);
+  console.log(`   3. See "Write a Review" button (already has transaction)`);
 }
 
 main()

@@ -13,10 +13,10 @@ export const createEventSchema = z.object({
     endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
       message: "Invalid end date format",
     }),
-    totalSeats: z.number().int().positive("Total seats must be a positive integer"),
-    price: z.number().min(0, "Price must be a non-negative number"),
+    totalSeats: z.coerce.number().int().positive("Total seats must be a positive integer"),
+    price: z.coerce.number().min(0, "Price must be a non-negative number"),
     availableSeats: z
-      .number()
+      .coerce.number()
       .int()
       .positive("Available seats must be a positive integer")
       .optional(),
@@ -42,14 +42,10 @@ export const updateEventSchema = z.object({
         message: "Invalid end date format",
       })
       .optional(),
-    totalSeats: z
-      .number()
-      .int()
-      .positive("Total seats must be a positive integer")
-      .optional(),
-    price: z.number().min(0, "Price must be a non-negative number").optional(),
+    totalSeats: z.coerce.number().int().positive("Total seats must be a positive integer").optional(),
+    price: z.coerce.number().min(0, "Price must be a non-negative number").optional(),
     availableSeats: z
-      .number()
+      .coerce.number()
       .int()
       .positive("Available seats must be a positive integer")
       .optional(),

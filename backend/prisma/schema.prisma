@@ -115,8 +115,8 @@ model Transaction {
   user                   User              @relation(fields: [userId], references: [id])
   eventId                String
   event                  Event             @relation(fields: [eventId], references: [id])
-  ticketId               String
-  ticket                 Ticket            @relation(fields: [ticketId], references: [id])
+  ticketId               String?
+  ticket                 Ticket?           @relation(fields: [ticketId], references: [id])
   quantity               Int
   totalPrice             Int
   discount               Int               @default(0)
@@ -157,7 +157,7 @@ model Review {
 
 model Voucher {
   id            String       @id @default(uuid())
-  code          String       @unique
+  code          String
   discountType  DiscountType @default(PERCENTAGE)
   discountValue Int
   startDate     DateTime
@@ -171,6 +171,7 @@ model Voucher {
   event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
+  @@unique([code, eventId])
   @@index([eventId])
   @@index([code])
 }

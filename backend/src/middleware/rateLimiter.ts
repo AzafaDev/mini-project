@@ -1,5 +1,7 @@
 import rateLimit from "express-rate-limit";
 
+console.log("[DEBUG RateLimiter] Middleware loaded");
+
 // General API rate limiter
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
