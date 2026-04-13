@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma";
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 import { AppError } from "../../utils/AppError";
 import { CreateEvent, UpdateEvent } from "./event.type";
 
@@ -52,6 +53,8 @@ export const eventService = {
       totalPages: number;
     };
   }> => {
+    console.log("[DEBUG Event Service] getAllEvents input:", { search, category, location, startDate, endDate, minPrice, maxPrice, page, limit, sortBy, sortOrder });
+
     const currentPage = Math.max(1, page || 1);
     const currentLimit = Math.max(1, Math.min(100, limit || 10));
     const currentSortBy = sortBy || "startDate";
@@ -76,6 +79,8 @@ export const eventService = {
       if (maxPrice) where.price.lte = parseInt(maxPrice);
     }
 
+    console.log("[DEBUG Event Service] getAllEvents where clause:", JSON.stringify(where));
+
     const orderBy: any = {};
     const validSortFields = ["name", "startDate", "price", "createdAt"];
     if (validSortFields.includes(currentSortBy)) {
@@ -87,6 +92,8 @@ export const eventService = {
     const skip = (currentPage - 1) * currentLimit;
     const total = await prisma.event.count({ where });
 
+    console.log("[DEBUG Event Service] getAllEvents total count:", total);
+
     const events = await prisma.event.findMany({
       where,
       orderBy,
@@ -97,12 +104,15 @@ export const eventService = {
           select: {
             id: true,
             fullName: true,
+            email: true,
             profilePicture: true,
           },
         },
         tickets: true,
       },
     });
+
+    console.log("[DEBUG Event Service] getAllEvents fetched events:", events.length);
 
     return {
       data: events,
@@ -116,6 +126,8 @@ export const eventService = {
   },
 
   getEventById: async ({ id }: { id: string }) => {
+    console.log("[DEBUG Event Service] getEventById input:", { id });
+
     const now = new Date();
     const event = await prisma.event.findUnique({
       where: { id, isDeleted: false },
@@ -124,6 +136,7 @@ export const eventService = {
           select: {
             id: true,
             fullName: true,
+            email: true,
             profilePicture: true,
           },
         },
@@ -134,6 +147,7 @@ export const eventService = {
               select: {
                 id: true,
                 fullName: true,
+            email: true,
                 profilePicture: true,
               },
             },
@@ -148,13 +162,48 @@ export const eventService = {
         },
       },
     });
+
+    console.log("[DEBUG Event Service] getEventById result:", !!event);
+
     if (!event) throw new AppError("Event not found", 404);
     const averageRating =
       event.reviews.length > 0
         ? event.reviews.reduce((sum, r) => sum + r.rating, 0) /
           event.reviews.length
         : 0;
-    return { ...event, averageRating };
+
+    const organizerEvents = await prisma.event.findMany({
+      where: { organizerId: event.organizerId, isDeleted: false },
+      include: {
+        reviews: true,
+      },
+    });
+
+    const allReviews = organizerEvents.flatMap((e) => e.reviews);
+    const organizerRating =
+      allReviews.length > 0
+        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+        : 0;
+    const reviewCount = allReviews.length;
+
+    const transformedOrganizer = {
+      id: event.organizer.id,
+      name: event.organizer.fullName,
+      imageUrl: event.organizer.profilePicture,
+      rating: organizerRating,
+      reviewCount: reviewCount,
+    };
+
+    // Transform reviews to flatten user data
+    const transformedReviews = event.reviews.map((r) => ({
+      ...r,
+      userId: r.user?.id,
+      userName: r.user?.fullName,
+      userImage: r.user?.profilePicture,
+      user: undefined,
+    }));
+
+    return { ...event, reviews: transformedReviews, averageRating, organizer: transformedOrganizer };
   },
 
   createEvent: async ({
@@ -170,12 +219,16 @@ export const eventService = {
     imageUrl,
     organizerId,
   }: CreateEvent) => {
+    console.log("[DEBUG Event Service] createEvent input:", { name, description, location, category, totalSeats, price, availableSeats, organizerId, hasImage: !!imageUrl });
+
     if (!name?.trim() || !description?.trim() || !location?.trim() || !category?.trim()) {
       throw new AppError("All fields are required", 400);
     }
 
     const parsedStartDate = typeof startDate === 'string' ? parseDate(startDate, "startDate") : startDate;
     const parsedEndDate = typeof endDate === 'string' ? parseDate(endDate, "endDate") : endDate;
+
+    console.log("[DEBUG Event Service] createEvent parsed dates:", { parsedStartDate, parsedEndDate });
 
     if (parsedStartDate > parsedEndDate) {
       throw new AppError("startDate must be before endDate", 400);
@@ -188,6 +241,9 @@ export const eventService = {
       ? parseNumber(availableSeats, "availableSeats")
       : parsedTotalSeats;
 
+    console.log("[DEBUG Event Service] createEvent parsed numbers:", { parsedTotalSeats, parsedPrice, fixedAvailableSeats });
+
+    console.log("[DEBUG Event Service] creating event in DB");
     const newEvent = await prisma.event.create({
       data: {
         name,
@@ -205,6 +261,9 @@ export const eventService = {
         },
       },
     });
+
+    console.log("[DEBUG Event Service] createEvent success, eventId:", newEvent.id);
+
     return newEvent;
   },
 
@@ -221,9 +280,13 @@ export const eventService = {
     price,
     imageUrl,
   }: UpdateEvent) => {
+    console.log("[DEBUG Event Service] updateEvent input:", { id, name, description, location, category, totalSeats, availableSeats, price, hasImage: !!imageUrl });
+
     const existingEvent = await prisma.event.findUnique({
       where: { id, isDeleted: false },
     });
+    console.log("[DEBUG Event Service] updateEvent existingEvent:", !!existingEvent);
+
     if (!existingEvent) throw new AppError("Event not found", 404);
 
     const data: any = {};
@@ -269,19 +332,30 @@ export const eventService = {
       data.imageUrl = imageUrl;
     }
 
+    console.log("[DEBUG Event Service] updateEvent data to update:", data);
+
     const updatedEvent = await prisma.event.update({
       where: { id, isDeleted: false },
       data,
     });
+
+    console.log("[DEBUG Event Service] updateEvent success, eventId:", updatedEvent.id);
+
     return updatedEvent;
   },
 
   deleteEvent: async ({ id, userId }: { id: string; userId: string }) => {
+    console.log("[DEBUG Event Service] deleteEvent input:", { id, userId });
+
     const event = await prisma.event.findUnique({
       where: { id, organizerId: userId, isDeleted: false },
     });
+
+    console.log("[DEBUG Event Service] deleteEvent event found:", !!event);
+
     if (!event) throw new AppError("Event not found", 404);
 
+    console.log("[DEBUG Event Service] soft deleting event in DB");
     const deletedEvent = await prisma.event.update({
       where: { id, isDeleted: false },
       data: {
@@ -291,16 +365,306 @@ export const eventService = {
       },
     });
 
+    console.log("[DEBUG Event Service] deleteEvent success");
+
     return deletedEvent;
   },
 
   getMyEvents: async ({ id }: { id: string }) => {
+    console.log("[DEBUG Event Service] getMyEvents input:", { id });
+
     const events = await prisma.event.findMany({
       where: {
         organizerId: id,
         isDeleted: false,
       },
     });
+
+    console.log("[DEBUG Event Service] getMyEvents result count:", events.length);
+
     return events;
+  },
+
+  getEventStats: async ({ id, organizerId }: { id: string; organizerId: string }) => {
+    console.log("[DEBUG Event Service] getEventStats input:", { id, organizerId });
+
+    const event = await prisma.event.findUnique({
+      where: { id: id, organizerId: organizerId, isDeleted: false },
+    });
+
+    if (!event) {
+      throw new AppError("Event not found", 404);
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: { eventId: id, status: "DONE" },
+    });
+
+    const totalRevenue = transactions.reduce((sum, tx) => sum + tx.finalPrice, 0);
+    const totalTicketsSold = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
+    const attendeeCount = transactions.length;
+
+    console.log("[DEBUG Event Service] getEventStats result:", { totalRevenue, totalTicketsSold, attendeeCount });
+
+    return {
+      totalRevenue,
+      totalTicketsSold,
+      attendeeCount,
+      eventName: event.name,
+    };
+  },
+
+  getOrganizerStats: async ({ organizerId, year, month, day }: { organizerId: string; year?: number; month?: number; day?: number }) => {
+    console.log("[DEBUG Event Service] getOrganizerStats input:", { organizerId, year, month, day });
+
+    const currentYear = year || new Date().getFullYear();
+    const currentMonth = month;
+    const currentDay = day;
+
+    const where: any = {
+      organizerId,
+      isDeleted: false,
+    };
+
+    if (currentYear && currentMonth) {
+      const startDate = new Date(currentYear, currentMonth - 1, currentDay || 1);
+      const endDate = currentDay 
+        ? new Date(currentYear, currentMonth - 1, currentDay + 1)
+        : new Date(currentYear, currentMonth, 0);
+      where.startDate = { gte: startDate, lte: endDate };
+    } else if (currentYear) {
+      where.startDate = { gte: new Date(currentYear, 0, 1), lte: new Date(currentYear, 11, 31) };
+    }
+
+    const events = await prisma.event.findMany({
+      where,
+      select: { id: true },
+    });
+
+    const eventIds = events.map(e => e.id);
+
+    const transactionWhere: any = {
+      eventId: { in: eventIds },
+      status: "DONE",
+    };
+
+    const transactions = await prisma.transaction.findMany({
+      where: transactionWhere,
+    });
+
+    const totalRevenue = transactions.reduce((sum, tx) => sum + tx.finalPrice, 0);
+    const totalTicketsSold = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
+    const totalEvents = events.length;
+    const totalAttendees = transactions.length;
+
+    const monthlyData: { month: string; revenue: number; tickets: number }[] = [];
+    const dailyData: { day: string; revenue: number; tickets: number }[] = [];
+
+    const allOrganizerEvents = await prisma.event.findMany({
+      where: {
+        organizerId,
+        isDeleted: false,
+        startDate: { gte: new Date(currentYear, 0, 1), lte: new Date(currentYear, 11, 31) },
+      },
+      select: { id: true, startDate: true },
+    });
+
+    const allEventIds = allOrganizerEvents.map(e => e.id);
+
+    const yearTransactionWhere: any = {
+      eventId: { in: allEventIds },
+      status: "DONE",
+    };
+
+    const yearTransactions = await prisma.transaction.findMany({
+      where: yearTransactionWhere,
+    });
+
+    for (let m = 1; m <= 12; m++) {
+      const monthTransactions = yearTransactions.filter(tx => {
+        const txDate = new Date(tx.createdAt);
+        return txDate.getMonth() + 1 === m && txDate.getFullYear() === currentYear;
+      });
+
+      monthlyData.push({
+        month: MONTH_NAMES[m - 1],
+        revenue: monthTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0),
+        tickets: monthTransactions.reduce((sum, tx) => sum + tx.quantity, 0),
+      });
+    }
+
+    if (currentMonth) {
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayTransactions = yearTransactions.filter(tx => {
+          const txDate = new Date(tx.createdAt);
+          return txDate.getDate() === d && 
+                 (txDate.getMonth() + 1) === currentMonth && 
+                 txDate.getFullYear() === currentYear;
+        });
+
+        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        
+        dailyData.push({
+          day: String(d),
+          revenue: dayTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0),
+          tickets: dayTransactions.reduce((sum, tx) => sum + tx.quantity, 0),
+        });
+      }
+    }
+
+    console.log("[DEBUG Event Service] getOrganizerStats result:", { totalRevenue, totalTicketsSold, totalEvents, totalAttendees, monthlyData: monthlyData.length, dailyData: dailyData.length });
+
+    return {
+      totalRevenue,
+      totalTicketsSold,
+      totalEvents,
+      totalAttendees,
+      monthlyData,
+      dailyData,
+    };
+  },
+
+  getOrganizerProfile: async ({ organizerId }: { organizerId: string }) => {
+    console.log("[DEBUG Event Service] getOrganizerProfile input:", { organizerId });
+
+    const organizer = await prisma.user.findUnique({
+      where: { id: organizerId },
+      select: {
+        id: true,
+        fullName: true,
+        profilePicture: true,
+        createdAt: true,
+      },
+    });
+
+    if (!organizer) throw new AppError("Organizer not found", 404);
+
+    // Get all events by this organizer
+    const events = await prisma.event.findMany({
+      where: { organizerId, isDeleted: false },
+      include: {
+        reviews: true,
+      },
+    });
+
+    // Calculate rating from all reviews
+    const allReviews = events.flatMap((e) => e.reviews);
+    const organizerRating =
+      allReviews.length > 0
+        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+        : 0;
+    const reviewCount = allReviews.length;
+
+    // Get reviews with user details for the profile
+    const reviews = await prisma.review.findMany({
+      where: {
+        event: { organizerId },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            profilePicture: true,
+          },
+        },
+        event: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    console.log("[DEBUG Event Service] getOrganizerProfile result:", {
+      organizerName: organizer.fullName,
+      eventCount: events.length,
+      reviewCount,
+      organizerRating,
+    });
+
+    return {
+      id: organizer.id,
+      name: organizer.fullName,
+      imageUrl: organizer.profilePicture,
+      createdAt: organizer.createdAt,
+      events: events.map((e) => ({
+        id: e.id,
+        name: e.name,
+        imageUrl: e.imageUrl,
+        location: e.location,
+        category: e.category,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        price: e.price,
+        availableSeats: e.availableSeats,
+        totalSeats: e.totalSeats,
+        reviewCount: e.reviews.length,
+      })),
+      rating: organizerRating,
+      reviewCount,
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        userName: r.user.fullName,
+        userImage: r.user.profilePicture,
+        eventName: r.event.name,
+      })),
+    };
+  },
+  getEventAttendees: async ({ eventId, organizerId }: { eventId: string; organizerId: string }) => {
+    console.log("[DEBUG Event Service] getEventAttendees input:", { eventId, organizerId });
+
+    if (!eventId) {
+      throw new AppError("Event ID is required", 400);
+    }
+
+    if (!organizerId) {
+      throw new AppError("Organizer ID is required", 400);
+    }
+
+    const event = await prisma.event.findFirst({
+      where: { id: eventId, organizerId, isDeleted: false },
+    });
+
+    if (!event) {
+      throw new AppError("Event not found or unauthorized", 404);
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        eventId,
+        status: "DONE",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    console.log("[DEBUG Event Service] getEventAttendees result count:", transactions.length);
+
+    return transactions.map((tx) => ({
+      userId: tx.user.id,
+      userName: tx.user.fullName,
+      userEmail: tx.user.email,
+      quantity: tx.quantity,
+      totalPrice: tx.finalPrice,
+      status: tx.status,
+    }));
   },
 };

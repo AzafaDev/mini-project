@@ -30,7 +30,10 @@ const sendVerificationAndSetCookie = async (
   },
   res: Response,
 ) => {
-  let emailSent = true;
+  // LOG 1: Cek data user sebelum pembuatan temp_token
+  console.log("[DEBUG Register] Preparing temp_token for UserID:", user.id);
+  console.log("[DEBUG Register] verifyToken:", user.verifyToken);
+
   try {
     await sendEmail.verificationEmail({
       email: user.email,
@@ -38,13 +41,21 @@ const sendVerificationAndSetCookie = async (
       username: user.fullName,
     });
   } catch (error) {
-    emailSent = false;
-    console.error("[EMAIL_FAILED]", error);
+    console.error("[DEBUG Register] Email Failed:", error);
+  }
+
+  // LOG 2: Pastikan JWT_SECRET terdefinisi
+  if (!process.env.JWT_SECRET) {
+    console.error("[DEBUG Register] CRITICAL: JWT_SECRET is undefined in .env");
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
     expiresIn: "30m",
   });
+
+  // LOG 3: Verifikasi isi token yang baru dibuat (opsional)
+  console.log("[DEBUG Register] temp_token generated successfully");
+
   res.cookie("temp_token", token, {
     maxAge: 30 * 60 * 1000,
     httpOnly: true,
@@ -56,7 +67,6 @@ const sendVerificationAndSetCookie = async (
   return res.status(200).json({
     success: true,
     message: "Verification code has been sent to your email",
-    emailSent,
   });
 };
 
@@ -73,14 +83,19 @@ export const authController = {
         referrerCode,
       }: AuthRegister = req.body;
 
+      console.log("[DEBUG register] incoming body:", { email, fullName, role, referrerCode, phoneNumber });
+
       const sanitizedEmail = sanitizeEmail(email);
 
-      if (req.files && "imageFile" in req.files) {
-        const imageFile = req.files.imageFile as UploadedFile;
+      console.log("[DEBUG register] sanitizedEmail:", sanitizedEmail);
+
+      if (req.files && "profilePicture" in req.files) {
+        const imageFile = req.files.profilePicture as UploadedFile;
         try {
           imageUrl = await handleFileUpload(imageFile, {
             folder: "profile-picture",
           });
+          console.log("[DEBUG register] image uploaded, url:", imageUrl);
         } catch (error) {
           return res.status(500).json({
             success: false,
@@ -93,8 +108,11 @@ export const authController = {
         where: { email: sanitizedEmail },
       });
 
+      console.log("[DEBUG register] existingUser check:", existingUser ? "found" : "not found");
+
       if (existingUser) {
         if (existingUser.isVerified) {
+          console.log("[DEBUG register] user exists and is verified - rejecting");
           return res.status(409).json({
             success: false,
             message:
@@ -102,6 +120,7 @@ export const authController = {
           });
         }
 
+        console.log("[DEBUG register] user exists but not verified - rehash flow");
         const newToken = generateVerificationCode();
         const updatedUser = await authService.rehashAndUpdateUser(
           existingUser.email,
@@ -126,6 +145,7 @@ export const authController = {
         );
       }
 
+      console.log("[DEBUG register] calling authService.register with:", { email: sanitizedEmail, fullName, role, referrerCode, phoneNumber, imageUrl: !!imageUrl });
       const result = await authService.register({
         email: sanitizedEmail,
         password,
@@ -135,6 +155,8 @@ export const authController = {
         referrerCode,
         imageUrl,
       });
+
+      console.log("[DEBUG register] authService.register result:", { userId: result.newUser.id, email: result.newUser.email, role: result.newUser.role });
 
       return sendVerificationAndSetCookie(
         {
@@ -146,6 +168,7 @@ export const authController = {
         res,
       );
     } catch (error: any) {
+      console.log("[DEBUG register] error:", error.message);
       res.status(400).json({ success: false, message: error.message });
     }
   },
@@ -178,19 +201,27 @@ export const authController = {
         message: "Verification email resent successfully",
       });
     } catch (error: any) {
-      res.status(400).json({ success: false, message: error.message });
+      res.status(400).json({ success: false, message: error.message });login: (email: string, password: string) => Promise<void>;
     }
   },
 
   login: async (req: Request, res: Response) => {
     const { email, password }: Login = req.body;
 
+    console.log("[DEBUG Login] ====== START LOGIN ======");
+    console.log("[DEBUG Login] email:", email);
+
     const { user, requiresVerification } = await authService.login({
       email: sanitizeEmail(email),
       password,
     });
 
+    console.log("[DEBUG Login] requiresVerification:", requiresVerification);
+    console.log("[DEBUG Login] user.isVerified:", user.isVerified);
+    console.log("[DEBUG Login] user.id:", user.id);
+
     if (requiresVerification) {
+      console.log("[DEBUG Login] requiresVerification = TRUE - akan kirim ulang kode verifikasi");
       return sendVerificationAndSetCookie(
         {
           id: user.id,
@@ -202,6 +233,7 @@ export const authController = {
       );
     }
 
+    console.log("[DEBUG Login] requiresVerification = FALSE - login berhasil");
     generateTokenForAuth({ res, userId: user.id, userRole: user.role });
     res.clearCookie("temp_token");
 
@@ -232,52 +264,86 @@ export const authController = {
     }
   },
 
+  // backend/src/modules/auth/auth.controller.ts
+
   getCurrentUser: async (req: AuthRequest, res: Response) => {
     try {
       const userId = req.userId;
-      if (!userId)
+      const userRole = req.userRole;
+
+      // LOG 3: Cek data yang diteruskan dari middleware
+      console.log("------------------- GET CURRENT USER -------------------");
+      console.log("[DEBUG Controller] Request UserID:", userId);
+      console.log("[DEBUG Controller] Request UserRole:", userRole);
+
+      if (!userId) {
+        console.log("[DEBUG Controller] FAILED: userId is missing");
         return res
           .status(400)
           .json({ success: false, message: "User id not found" });
+      }
+
       const user = await authService.getCurrentUser(userId);
+
+      // LOG 4: Cek data final dari Database via Service
+      if (!user) {
+        console.log(
+          "[DEBUG Controller] FAILED: user object is null from service",
+        );
+      } else {
+        console.log("[DEBUG Controller] SUCCESS: user fetched for", user.email);
+      }
+
       res.status(200).json({ success: true, user });
     } catch (error: any) {
+      console.log("[DEBUG Controller] CRITICAL ERROR:", error.message);
       res.status(400).json({ success: false, message: error.message });
     }
   },
 
   updateProfile: async (req: AuthRequest, res: Response) => {
     try {
-      const { fullName, phoneNumber } = req.body;
+      console.log("[DEBUG updateProfile] req.body:", req.body);
+      console.log("[DEBUG updateProfile] req.files:", req.files);
+      console.log("[DEBUG updateProfile] has profilePicture:", "profilePicture" in (req.files || {}));
+
+      const { fullName, phoneNumber } = req.body || {};
       const userId = req.userId;
       if (!userId)
         return res
           .status(400)
           .json({ success: false, message: "User id not found" });
       let imageUrl;
-      if (req.files && "imageFile" in req.files) {
-        const imageFile = req.files.imageFile as UploadedFile;
+      if (req.files && "profilePicture" in req.files) {
+        const imageFile = req.files.profilePicture as UploadedFile;
+        console.log("[DEBUG updateProfile] imageFile:", imageFile.name, imageFile.size, imageFile.mimetype);
+        console.log("[DEBUG updateProfile] tempFilePath:", imageFile.tempFilePath);
         try {
           imageUrl = await handleFileUpload(imageFile, {
             folder: "profile-picture",
           });
-        } catch (error) {
+          console.log("[DEBUG updateProfile] imageUrl:", imageUrl);
+        } catch (error: any) {
+          console.log("[DEBUG updateProfile] upload error:", error);
           return res.status(500).json({
             success: false,
             message: "Failed to upload profile picture",
           });
         }
       }
+      console.log("[DEBUG updateProfile] calling authService.updateProfile with:", { fullName, phoneNumber, imageUrl, userId });
       const user = await authService.updateProfile({
         fullName,
         phoneNumber,
         imageUrl,
         userId,
       });
+      console.log("[DEBUG updateProfile] success, user:", user);
       res
         .status(200)
         .json({ success: true, message: "Updated profile successfully", user });
     } catch (error: any) {
+      console.log("[DEBUG updateProfile] catch error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   },
@@ -317,7 +383,7 @@ export const authController = {
         success: true,
         message: "If the email exists, a reset link has been sent",
       });
-    } catch (error: any) {
+  } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
     }
   },

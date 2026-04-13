@@ -38,6 +38,7 @@ export const updateProfileSchema = z.object({
   body: z.object({
     fullName: z.string().min(1, "Full name is required").optional(),
     phoneNumber: z.string().optional(),
+    profilePicture: z.any().optional(),
   }),
 });
 
