@@ -33,49 +33,6 @@ const EventDetailPage: React.FC = () => {
 
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
-      {/* Navbar */}
-      <header className="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-        <div className="flex items-center justify-between px-8 h-16 w-full max-w-7xl mx-auto">
-          <div className="flex items-center gap-8">
-            <span className="text-xl font-bold tracking-tighter text-[#E5E2E1]">
-              Kinetix Events
-            </span>
-            <nav className="hidden md:flex gap-6 tracking-tight">
-              <a
-                className="text-[#C0C1FF] border-b-2 border-[#C0C1FF] pb-1"
-                href="#"
-              >
-                Discover
-              </a>
-              <a
-                className="text-[#C7C4D8] hover:text-[#E5E2E1] transition-colors"
-                href="#"
-              >
-                Calendar
-              </a>
-              <a
-                className="text-[#C7C4D8] hover:text-[#E5E2E1] transition-colors"
-                href="#"
-              >
-                Tickets
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-sm transition-all active:scale-95">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
-            <div className="h-8 w-8 rounded-full overflow-hidden ml-2 ring-1 ring-white/10">
-              <img
-                alt="User"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqlXPpFcHza5Em9cuAZHlDkCGr6pODaYazsdHW01Z_QbNKpBH1UHadNNP4VFlFiRFKsILUrPZ2kuDsg9M1ClcOL6vyJ2vYVIJfmylzR-WzvMhMEtx1bLwkoPuI_NztsOiuVAHJdbmApFpaefvYOxcSWxb9Cgknj8o14u9Up8snYFEQi1NB7crVdsgVNeaJOPSBaPDJAca0f7OQEGLpN_5dVm3kGTQf-zDkmdhDU_tkddpMNMO8rK2bNlycnI1synwuRFj9P3bMYBWm"
-                className="object-cover w-full h-full"
-              />
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="pt-16 min-h-screen">
         {/* Hero Section */}
         <section className="relative w-full h-[60vh] md:h-[614px] overflow-hidden">

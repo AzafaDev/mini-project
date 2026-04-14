@@ -1,152 +1,100 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-// --- Sub-Components ---
-
-const EventCard = ({ event }: { event: any }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    exit={{ opacity: 0, scale: 0.9 }}
-    whileHover={{ y: -8 }}
-    className="group relative bg-[#1c1b1b] rounded-xl overflow-hidden border border-white/5 shadow-2xl"
-  >
-    <div className="h-64 relative overflow-hidden">
-      <motion.img
-        whileHover={{ scale: 1.1 }}
-        transition={{ duration: 0.6 }}
-        className="w-full h-full object-cover"
-        src={event.image}
-        alt={event.title}
-      />
-      <div className="absolute top-4 right-4 bg-[#131313]/80 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-bold border border-white/10 text-white">
-        {event.date}
-      </div>
-    </div>
-    <div className="p-6">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-          {event.category}
-        </span>
-      </div>
-      <h3 className="text-xl font-bold mb-2 group-hover:text-[#c0c1ff] transition-colors text-[#e5e2e1] line-clamp-1">
-        {event.title}
-      </h3>
-      <div className="flex flex-col gap-2 text-sm text-[#c7c4d8]">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-lg text-[#c0c1ff]">
-            location_on
-          </span>{" "}
-          {event.location}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-lg text-[#c0c1ff]">
-            payments
-          </span>{" "}
-          {event.price}
-        </div>
-      </div>
-      <div className="mt-6 flex items-center justify-between">
-        <div className="flex -space-x-2">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`w-8 h-8 rounded-full border-2 border-[#1c1b1b] bg-slate-700 flex items-center justify-center text-[8px]`}
-            >
-              <img
-                src={`https://i.pravatar.cc/150?u=${event.title}${i}`}
-                className="rounded-full"
-              />
-            </div>
-          ))}
-          <div className="w-8 h-8 rounded-full border-2 border-[#1c1b1b] bg-[#353534] flex items-center justify-center text-[10px] font-bold text-white">
-            +{event.attendees}
-          </div>
-        </div>
-        <button className="text-[#c0c1ff] font-bold text-sm flex items-center gap-1 group-hover:gap-3 transition-all">
-          Get Tickets{" "}
-          <span className="material-symbols-outlined">arrow_forward</span>
-        </button>
-      </div>
-    </div>
-  </motion.div>
-);
+import { useEventStore } from "../stores/useEventStore";
+import { useDebounce } from "../lib/useDebounce";
+import { EventCard } from "../components/home/EventCard";
 
 // --- Main Page Component ---
 
 export default function KinetixEvents() {
   const [activeCategory, setActiveCategory] = useState("All Events");
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  
+  const debouncedLocation = useDebounce(locationQuery, 800);
+  
+  const { events, loading, error, fetchEvents, pagination } = useEventStore();
 
   const categories = [
     { icon: "all_inclusive", label: "All Events" },
     { icon: "music_note", label: "Music" },
-    { icon: "terminal", label: "Tech" },
-    { icon: "palette", label: "Arts" },
-    { icon: "restaurant", label: "Dining" },
-    { icon: "fitness_center", label: "Wellness" },
+    { icon: "groups", label: "Conference" },
+    { icon: "build", label: "Workshop" },
+    { icon: "school", label: "Seminar" },
+    { icon: "sports", label: "Sports" },
+    { icon: "celebration", label: "Entertainment" },
   ];
 
-  const allEvents = [
-    {
-      category: "Music",
-      title: "Sonic Architecture: 001",
-      date: "OCT 24",
-      location: "Jakarta, Indonesia",
-      price: "IDR 850.000",
-      attendees: "12k",
-      image:
-        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800",
-    },
-    {
-      category: "Arts",
-      title: "The Void: Abstract Expo",
-      date: "OCT 28",
-      location: "Bali, Indonesia",
-      price: "IDR 450.000",
-      attendees: "3k",
-      image:
-        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800",
-    },
-    {
-      category: "Tech",
-      title: "Future Stack Summit",
-      date: "NOV 02",
-      location: "Bandung, Indonesia",
-      price: "IDR 1.200.000",
-      attendees: "1k",
-      image:
-        "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800",
-    },
-    {
-      category: "Dining",
-      title: "Molecular Noir Dining",
-      date: "NOV 15",
-      location: "Jakarta, Indonesia",
-      price: "IDR 2.500.000",
-      attendees: "200",
-      image:
-        "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=800",
-    },
-  ];
+  // Map frontend category to backend category enum
+  const categoryMap: Record<string, string | undefined> = {
+    "All Events": undefined,
+    "Music": "Music",
+    "Conference": "Conference",
+    "Workshop": "Workshop",
+    "Seminar": "Seminar",
+    "Sports": "Sports",
+    "Entertainment": "Entertainment",
+  };
 
+  // Fetch events when category, search, or location query changes
+  useEffect(() => {
+    const params: {
+      search?: string;
+      category?: string;
+      location?: string;
+      page: number;
+      limit: number;
+    } = {
+      page: pagination.page,
+      limit: 20,
+    };
+
+    // Add search query if provided
+    if (searchQuery.trim()) {
+      params.search = searchQuery.trim();
+    }
+
+    // Add category filter (not "All Events")
+    if (activeCategory !== "All Events") {
+      params.category = categoryMap[activeCategory];
+    }
+
+    // Add location filter if provided
+    if (debouncedLocation.trim()) {
+      params.location = debouncedLocation.trim();
+    }
+
+    fetchEvents(params);
+  }, [activeCategory, searchQuery, debouncedLocation, fetchEvents, pagination.page]);
+
+  // Filter events client-side for search (if API search didn't work)
   const filteredEvents = useMemo(() => {
-    return allEvents.filter((event) => {
-      const matchesCategory =
-        activeCategory === "All Events" || event.category === activeCategory;
-      const matchesSearch = event.title
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [activeCategory, searchQuery]);
+    if (!events) return [];
+    
+    // If we have search query, do client-side filtering as backup
+    if (searchQuery.trim()) {
+      return events.filter((event) =>
+        event.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return events;
+  }, [events, searchQuery]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    useEventStore.getState().setPage(newPage);
+  };
 
   return (
     <div className="bg-[#131313] text-[#E5E2E1] font-sans selection:bg-[#c0c1ff] selection:text-[#1000a9] min-h-screen overflow-x-hidden">
       <main className="pt-16">
         {/* Hero Section with Animation */}
-        <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
+        <section className="relative h-[450px] flex items-center justify-center overflow-hidden">
           <motion.div
             initial={{ scale: 1.2, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.4 }}
@@ -174,23 +122,31 @@ export default function KinetixEvents() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="flex items-center bg-[#2a2a2a]/80 backdrop-blur-md p-1 rounded-xl shadow-2xl border border-white/10 max-w-md mx-auto"
+              className="flex flex-col gap-3 items-center bg-[#2a2a2a]/80 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-white/10 max-w-lg mx-auto"
             >
               <input
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 px-6 py-3 w-full text-white outline-none"
+                onChange={handleSearchChange}
+                className="bg-[#1c1b1b] border border-white/10 rounded-lg px-4 py-3 w-full text-white outline-none focus:border-[#c0c1ff] transition-colors"
                 placeholder="Search event title..."
                 type="text"
+                value={searchQuery}
               />
-              <button className="bg-[#c0c1ff] text-[#1000a9] font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all">
-                <span className="material-symbols-outlined">search</span>
+              <input
+                onChange={(e) => setLocationQuery(e.target.value)}
+                className="bg-[#1c1b1b] border border-white/10 rounded-lg px-4 py-3 w-full text-white outline-none focus:border-[#c0c1ff] transition-colors"
+                placeholder="Filter by location..."
+                type="text"
+                value={locationQuery}
+              />
+              <button className="bg-[#c0c1ff] text-[#1000a9] font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all w-full">
+                <span className="material-symbols-outlined">search</span> Search Events
               </button>
             </motion.div>
           </div>
         </section>
 
         {/* Interactive Category Filters */}
-        <section className="px-8 mb-12 -mt-12 relative z-20">
+        <section className="px-8 mb-12 mt-8 relative z-20 flex justify-center">
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide no-scrollbar">
             {categories.map((cat) => (
               <motion.button
@@ -225,31 +181,97 @@ export default function KinetixEvents() {
             </div>
           </div>
 
-          <motion.div
-            layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[400px]"
-          >
-            <AnimatePresence mode="popLayout">
-              {filteredEvents.length > 0 ? (
-                filteredEvents.map((event) => (
-                  <EventCard key={event.title} event={event} />
-                ))
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="col-span-full flex flex-col items-center justify-center text-[#c7c4d8] py-20"
+          {/* Error State */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="col-span-full flex flex-col items-center justify-center text-[#c7c4d8] py-20"
+            >
+              <span className="material-symbols-outlined text-6xl mb-4 text-red-500">
+                error
+              </span>
+              <p className="text-red-400">{error}</p>
+              <button 
+                onClick={() => fetchEvents({ limit: 20 })}
+                className="mt-4 text-[#c0c1ff] hover:underline"
+              >
+                Try again
+              </button>
+            </motion.div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="col-span-full flex flex-col items-center justify-center text-[#c7c4d8] py-20"
+            >
+              <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p>Loading events...</p>
+            </motion.div>
+          )}
+
+          {/* Events Grid */}
+          {!loading && !error && (
+            <motion.div
+              layout
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredEvents.length > 0 ? (
+                  filteredEvents.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="col-span-full flex flex-col items-center justify-center text-[#c7c4d8] py-20"
+                  >
+                    <span className="material-symbols-outlined text-6xl mb-4">
+                      event_busy
+                    </span>
+                    <p>
+                      No events found for "{searchQuery}" in {activeCategory}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex flex-col items-center gap-4 mt-12 pb-12">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2a2a2a] text-[#c7c4d8] hover:bg-[#393939] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  <span className="material-symbols-outlined text-6xl mb-4">
-                    event_busy
-                  </span>
-                  <p>
-                    No events found for "{searchQuery}" in {activeCategory}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                  <span className="material-symbols-outlined">arrow_back</span>
+                  Previous
+                </button>
+                <span className="px-4 py-2 text-[#c7c4d8]">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.totalPages}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2a2a2a] text-[#c7c4d8] hover:bg-[#393939] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                  <span className="material-symbols-outlined">arrow_forward</span>
+                </button>
+              </div>
+              <p className="text-sm text-[#c7c4d8]">
+                Showing {events.length > 0 ? (pagination.page - 1) * 20 + 1 : 0} -{" "}
+                {Math.min(pagination.page * 20, pagination.total)} of {pagination.total} events
+              </p>
+            </div>
+          )}
         </section>
       </main>
     </div>

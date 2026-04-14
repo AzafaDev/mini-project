@@ -106,55 +106,6 @@ export default function OrganizerDashboard() {
 
       {/* Main Area */}
       <main className="md:ml-64 min-h-screen">
-        {/* TopAppBar */}
-        <header className="fixed top-0 md:left-64 right-0 z-50 bg-[#131313]/80 backdrop-blur-xl h-16 flex items-center justify-between px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold tracking-tighter">
-              Kinetix Events
-            </h1>
-            <nav className="hidden lg:flex items-center gap-6">
-              {["Discover", "Calendar", "Tickets", "Resources"].map(
-                (item, idx) => (
-                  <a
-                    key={item}
-                    href="#"
-                    className={`${idx === 0 ? "text-[#C0C1FF] border-b-2 border-[#C0C1FF] pb-1" : "text-[#C7C4D8] hover:text-[#E5E2E1]"} transition-colors text-sm tracking-tight`}
-                  >
-                    {item}
-                  </a>
-                ),
-              )}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <input
-                className="bg-[#0E0E0E] border-none rounded-lg text-sm px-10 py-2 w-64 focus:ring-1 focus:ring-[#C0C1FF] text-[#E5E2E1]"
-                placeholder="Search events..."
-                type="text"
-              />
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#C7C4D8] text-lg">
-                search
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="p-2 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-sm transition-all">
-                <span className="material-symbols-outlined">notifications</span>
-              </button>
-              <button className="p-2 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-sm transition-all">
-                <span className="material-symbols-outlined">settings</span>
-              </button>
-              <div className="h-8 w-8 rounded-full bg-[#2A2A2A] overflow-hidden ml-2 border border-[#464555]/15">
-                <img
-                  alt="User"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE3fbqFhWGBF5eHJrtfk-scMRUR3HgTSZp6KQBo7rc8Zqgmhl3IZSGPmeJsQYSsBf4DJSipo3CoDiJpCZcrYw6JImsHAWwJbr-XvXcZtMD5E4AjHMFiv4ermg4ddIDDQLD2DS0y1yP54yo9irLXmDJVSCpledOwSpM7YbPv7qfzAFpWWxUZPQogWjy7bpHmd0Xbp58aIGItpemXTu4xs1zjKLkmCC4i8oyxTD32k6YmBabhgUh823vtIqp8YnepITZq-GD4Qd_YCRQ"
-                />
-              </div>
-            </div>
-          </div>
-        </header>
-
         {/* Content */}
         <div className="pt-24 pb-12 px-8">
           {/* Stats Bento */}

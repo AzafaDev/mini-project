@@ -1,17 +1,83 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import { useAuthStore } from "../stores/useAuthStore";
+import { verifyEmailSchema } from "../validation/authSchemas";
 
 const EmailVerification: React.FC = () => {
-  const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
-  const [timer, setTimer] = useState<number>(59);
+  const navigate = useNavigate();
+  const [isVerified, setIsVerified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const [timer, setTimer] = useState<number>(() => {
+    const savedTimer = localStorage.getItem("emailVerificationTimer");
+    const savedTimestamp = localStorage.getItem("emailVerificationTimerSetAt");
+
+    if (savedTimer && savedTimestamp) {
+      const elapsed = Math.floor(
+        (Date.now() - parseInt(savedTimestamp, 10)) / 1000,
+      );
+      const remaining = parseInt(savedTimer, 10) - elapsed;
+      return remaining > 0 ? remaining : 0;
+    }
+
+    return 59;
+  });
+
+  const {
+    verifyEmail,
+    isLoading,
+    error,
+    isAuthenticated,
+    clearError,
+    user,
+    resendVerification,
+    resendVerificationSuccess,
+    clearResendVerificationStatus,
+  } = useAuthStore();
+
+  const formik = useFormik({
+    initialValues: {
+      token: "",
+    },
+    validationSchema: verifyEmailSchema,
+    onSubmit: async (values) => {
+      clearError();
+      const success = await verifyEmail({ token: values.token });
+      if (success) {
+        setIsVerified(true);
+        localStorage.removeItem("emailVerificationTimer");
+        localStorage.removeItem("emailVerificationTimerSetAt");
+      }
+    },
+  });
+
+  // Redirect if already authenticated (verification complete)
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate("/");
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Timer logic
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimer((prev) => (prev > 0 ? prev - 1 : 0));
+      setTimer((prev) => {
+        const newTimer = prev > 0 ? prev - 1 : 0;
+        localStorage.setItem("emailVerificationTimer", newTimer.toString());
+        localStorage.setItem(
+          "emailVerificationTimerSetAt",
+          Date.now().toString(),
+        );
+        return newTimer;
+      });
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Sync OTP inputs with Formik values
+  const otp = formik.values.token.split("");
 
   // Handle OTP input changes
   const handleChange = (element: HTMLInputElement, index: number) => {
@@ -19,8 +85,9 @@ const EmailVerification: React.FC = () => {
     if (!value) return;
 
     const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1);
-    setOtp(newOtp);
+    newOtp[index] = value;
+    const newToken = newOtp.join("").slice(0, 6);
+    formik.setFieldValue("token", newToken);
 
     // Focus next input
     if (value && index < 5) {
@@ -38,41 +105,83 @@ const EmailVerification: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Handle paste
+  const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    console.log("Verifying OTP:", otp.join(""));
+    const pasteData = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+    const pasteArray = pasteData.split("").slice(0, 6);
+    
+    formik.setFieldValue("token", pasteArray.join(""));
+
+    const lastFilledIndex = Math.min(pasteArray.length - 1, 5);
+    inputRefs.current[lastFilledIndex]?.focus();
   };
 
+  const handleResend = async () => {
+    clearResendVerificationStatus();
+    setResendLoading(true);
+    const success = await resendVerification();
+    setResendLoading(false);
+    if (success) {
+      setTimer(59);
+      localStorage.setItem("emailVerificationTimer", "59");
+      localStorage.setItem(
+        "emailVerificationTimerSetAt",
+        Date.now().toString(),
+      );
+    }
+  };
+
+  const canSubmit = formik.values.token.length === 6 && !isLoading;
+
   return (
-    <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex flex-col font-sans selection:bg-[#4b4dd8] selection:text-[#d9d8ff]">
-      {/* Main Content Canvas */}
-      <main className="flex-grow flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
-        {/* Abstract Background Elements */}
-        <div className="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-[#c0c1ff]/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] h-[30rem] bg-[#413f82]/10 rounded-full blur-[100px]" />
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#131313] text-[#e5e2e1] font-['Inter',sans-serif]">
+      {/* Subtle Ambient Background Accents */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-[#4b4dd8]/10 blur-[120px] rounded-full"></div>
+        <div className="absolute top-[60%] -right-[5%] w-[30%] h-[30%] bg-[#413f82]/10 blur-[100px] rounded-full"></div>
+      </div>
 
-        <div className="max-w-md w-full z-10">
-          <div className="bg-[#1c1b1b]/80 backdrop-blur-xl p-8 sm:p-12 rounded-xl shadow-2xl border border-[#464555]/10">
-            {/* Header & Icon Section */}
-            <div className="flex flex-col items-center text-center mb-10">
-              <div className="w-16 h-16 rounded-full bg-[#2a2a2a] flex items-center justify-center mb-6 ring-8 ring-[#1c1b1b]/50">
-                <span className="material-symbols-outlined text-[#c0c1ff] text-3xl">
-                  mark_email_read
-                </span>
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight text-[#e5e2e1] mb-3">
-                Verify Your Email
-              </h1>
-              <p className="text-[#c7c4d8] text-sm leading-relaxed max-w-[280px]">
-                We've sent a 6-digit verification code to your registered email
-                address.
-              </p>
+      {/* Verify Email Shell Container */}
+      <main className="relative z-10 w-full max-w-[440px] px-6">
+        {/* Brand Identity */}
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div className="mb-4 p-3 rounded-lg bg-[#2a2a2a]">
+            <span className="material-symbols-outlined text-[#c0c1ff] text-4xl">
+              mark_email_read
+            </span>
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2">
+            Verify Your Email
+          </h1>
+          <p className="text-[#c7c4d8] font-medium tracking-tight text-sm">
+            Enter the 6-digit code sent to your email.
+          </p>
+        </div>
+
+        {/* Verification Card */}
+        <div className="bg-[#1c1b1b] rounded-lg p-8 shadow-2xl ring-1 ring-white/5">
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+              {error}
             </div>
+          )}
+          {resendVerificationSuccess && (
+            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 text-sm">
+              Verification code resent successfully!
+            </div>
+          )}
+          {isVerified && (
+            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 text-sm">
+              Email verified successfully! Redirecting to dashboard...
+            </div>
+          )}
 
-            {/* Verification Form */}
-            <form className="space-y-8" onSubmit={handleSubmit}>
+          <form className="flex flex-col gap-6" onSubmit={formik.handleSubmit}>
+            {/* OTP Input */}
+            <div className="flex flex-col gap-3">
               <div className="flex justify-between gap-2 sm:gap-3">
-                {otp.map((data, index) => (
+                {[0, 1, 2, 3, 4, 5].map((index) => (
                   <input
                     key={index}
                     type="text"
@@ -81,109 +190,95 @@ const EmailVerification: React.FC = () => {
                     ref={(el) => {
                       inputRefs.current[index] = el;
                     }}
-                    value={data}
+                    value={otp[index] || ""}
                     onChange={(e) => handleChange(e.target, index)}
                     onKeyDown={(e) => handleKeyDown(e, index)}
+                    onPaste={handlePaste}
                     placeholder="0"
-                    className="w-12 h-14 sm:w-14 sm:h-16 text-center text-xl font-bold bg-[#0e0e0e] border-none rounded-lg focus:ring-2 focus:ring-[#c0c1ff] text-[#e5e2e1] transition-all placeholder:text-[#464555]/20 outline-none"
+                    className={`w-full h-12 text-center text-xl font-bold bg-[#0e0e0e] border-none ring-1 rounded-lg text-[#e5e2e1] transition-all placeholder:text-[#c7c4d8]/40 outline-none ${
+                      formik.touched.token && formik.errors.token && formik.values.token.length > 0
+                        ? "ring-red-500/50 focus:ring-red-500/50"
+                        : "ring-[#464555]/30 focus:ring-[#c0c1ff]/50"
+                    }`}
+                    disabled={isLoading || isVerified}
                   />
                 ))}
               </div>
+              {formik.touched.token && formik.errors.token && (
+                <p className="text-red-400 text-xs ml-1">{formik.errors.token}</p>
+              )}
+            </div>
 
-              <div className="space-y-4">
-                <button
-                  type="submit"
-                  className="w-full py-4 px-6 bg-gradient-to-r from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] font-bold rounded-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#c0c1ff]/20"
-                >
+            {/* Primary Action */}
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="h-12 rounded-lg font-bold text-[#07006c] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#4b4dd8]/20 mt-2 bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin">sync</span>
+                  Verifying...
+                </>
+              ) : (
+                <>
                   Verify Email
-                  <span className="material-symbols-outlined text-[20px]">
+                  <span className="material-symbols-outlined text-lg">
                     arrow_forward
                   </span>
-                </button>
+                </>
+              )}
+            </button>
 
-                <div className="text-center">
-                  <div className="inline-flex flex-col items-center gap-1">
-                    <span className="text-[#c7c4d8] text-xs uppercase tracking-widest font-semibold">
-                      Didn't receive code?
+            {/* Resend Section */}
+            <div className="text-center pt-2">
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-[#c7c4d8] text-sm">
+                  Didn't receive the code?
+                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={timer > 0 || resendLoading}
+                    onClick={handleResend}
+                    className={`font-bold text-sm transition-colors ${
+                      timer > 0 || resendLoading
+                        ? "text-[#c7c4d8] opacity-50 cursor-not-allowed"
+                        : "text-[#c0c1ff] hover:underline decoration-2 underline-offset-4"
+                    }`}
+                  >
+                    {resendLoading ? "Sending..." : "Resend Code"}
+                  </button>
+                  {timer > 0 && (
+                    <span className="text-[#464555] h-4 w-[1px] bg-[#464555]/30"></span>
+                  )}
+                  {timer > 0 && (
+                    <span className="text-[#c0c1ff] font-mono text-sm font-medium">
+                      0:{timer.toString().padStart(2, "0")}
                     </span>
-                    <div className="flex items-center gap-2 text-sm">
-                      <button
-                        type="button"
-                        disabled={timer > 0}
-                        className={`font-medium transition-colors ${
-                          timer > 0
-                            ? "text-[#c7c4d8] opacity-50 cursor-not-allowed"
-                            : "text-[#c0c1ff] hover:text-[#e5e2e1]"
-                        }`}
-                      >
-                        Resend Code
-                      </button>
-                      <span className="text-[#464555] h-3 w-[1px] bg-[#464555]/30"></span>
-                      <span className="text-[#c0c1ff] font-mono font-medium">
-                        Resend in 0:{timer.toString().padStart(2, "0")}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
-            </form>
-
-            {/* Footer Note */}
-            <div className="mt-12 pt-8 border-t border-[#464555]/5 text-center">
-              <p className="text-[#c7c4d8]/60 text-xs">
-                By verifying, you agree to CuratorEvents{" "}
-                <a
-                  className="underline hover:text-[#e5e2e1] transition-colors"
-                  href="#"
-                >
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a
-                  className="underline hover:text-[#e5e2e1] transition-colors"
-                  href="#"
-                >
-                  Privacy Policy
-                </a>
-                .
-              </p>
             </div>
-          </div>
+          </form>
+        </div>
 
-          {/* Back Link */}
-          <div className="mt-8 text-center">
+        {/* Footer / Back Link */}
+        <div className="mt-8 text-center">
+          <p className="text-[#c7c4d8] text-sm font-medium">
+            Having trouble?{" "}
             <a
-              href="#"
-              className="inline-flex items-center gap-2 text-[#c7c4d8] hover:text-[#e5e2e1] transition-colors text-sm font-medium"
+              className="text-[#c0c1ff] font-bold hover:underline decoration-2 underline-offset-4"
+              href="/login"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                keyboard_backspace
-              </span>
               Back to Login
             </a>
-          </div>
+          </p>
         </div>
       </main>
 
-      {/* Side Backdrop (Hidden on Mobile) */}
-      <aside className="hidden lg:block fixed right-0 top-0 bottom-0 w-1/3 overflow-hidden">
-        <div className="h-full w-full relative">
-          <img
-            alt="Event crowd"
-            className="h-full w-full object-cover grayscale brightness-[0.2]"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB84LAzR_Qv52yJfLqVQgcfSs5wvAF7sOmx1IQYB8xYV5JKZEyW8wwnR6G_1nC9xuPLpB9dE2n9PEvSUtMvaCFRLioWwLtXRCPH8SczsIbZBRfRqNqTi1zHdvjUTly1na272JZaClUeg3FVLSCZdqjRTBxiO_fFqEHeKDmCaiNQojmlUA6exzJP1ChsUo6t7XuSDy6hfZ46qrIlkfD3tqvusyjcoNreFnVNnpTM-iyUaX1AhvrNDthrP6qB9nDzaHnkrRSqHlZ4ctzJ"
-          />
-          <div className="absolute inset-0 bg-gradient-to-l from-[#131313] via-transparent to-transparent"></div>
-          <div className="absolute bottom-12 left-12 right-12">
-            <p className="text-[#c7c4d8] text-sm font-medium tracking-[0.2em] uppercase mb-2">
-              CuratorEvents
-            </p>
-            <h2 className="text-2xl font-bold tracking-tight text-white/90">
-              Designing the future of event management.
-            </h2>
-          </div>
-        </div>
-      </aside>
+      {/* Decorative Bottom Gradient */}
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#c0c1ff] to-[#4b4dd8] opacity-30"></div>
     </div>
   );
 };
