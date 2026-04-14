@@ -29,6 +29,11 @@ enum DiscountType {
   FIXED
 }
 
+enum TicketType {
+  GENERAL
+  VIP
+}
+
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
@@ -96,10 +101,11 @@ model Event {
 }
 
 model Ticket {
-  id        String @id @default(uuid())
+  id        String    @id @default(uuid())
   eventId   String
-  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  name      String // e.g., "VIP", "Regular"
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  type      TicketType @default(GENERAL)
   price     Int
   quantity  Int
   available Int

@@ -1,6 +1,16 @@
 import { prisma } from "../src/config/prisma";
 import bcrypt from "bcrypt";
 
+type TicketType = "GENERAL" | "VIP";
+
+const getTicketType = (name: string): TicketType => {
+  const lower = name.toLowerCase();
+  if (lower.includes("vip") || lower.includes("architect") || lower.includes("vvip")) {
+    return "VIP";
+  }
+  return "GENERAL";
+};
+
 const SALT_ROUNDS = 10;
 
 async function hashPassword(password: string): Promise<string> {
@@ -561,15 +571,17 @@ async function main() {
     );
 
     for (const ticketData of eventData.tickets) {
-      await prisma.ticket.create({
+      const ticketType = getTicketType(ticketData.name);
+      const ticket = await prisma.ticket.create({
         data: {
           eventId: event.id,
-          name: ticketData.name,
+          type: ticketType,
           price: ticketData.price,
           quantity: ticketData.quantity,
           available: ticketData.quantity,
         },
       });
+      console.log(`✅ Created ticket: ${ticket.type} - IDR ${ticket.price.toLocaleString("id-ID")}`);
     }
   }
 
@@ -602,15 +614,17 @@ async function main() {
     );
 
     for (const ticketData of eventData.tickets) {
-      await prisma.ticket.create({
+      const ticketType = getTicketType(ticketData.name);
+      const ticket = await prisma.ticket.create({
         data: {
           eventId: event.id,
-          name: ticketData.name,
+          type: ticketType,
           price: ticketData.price,
           quantity: ticketData.quantity,
           available: ticketData.quantity,
         },
       });
+      console.log(`✅ Created ticket: ${ticket.type} - IDR ${ticket.price.toLocaleString("id-ID")}`);
     }
   }
 
@@ -693,6 +707,56 @@ async function main() {
     console.log(
       `✅ Created DONE transaction for ${customer2.fullName} on ${firstPastEvent.name} with review`,
     );
+  }
+
+  // Customer 3 transactions for some past events (ratings 2-4)
+  const customer3 = customers[2];
+  const customer3EventIndices = [1, 2, 3, 4]; // Tech Conference, React Workshop, Jazz Night, Startup Seminar
+  const customer3Ratings = [4, 3, 2, 4];
+  const customer3Comments = [
+    "Good event but could be better organized.",
+    "Learned a lot from this workshop!",
+    "Nice music but the venue was too crowded.",
+    "Very inspiring seminar, highly recommended!",
+  ];
+
+  for (let i = 0; i < customer3EventIndices.length; i++) {
+    const eventIdx = customer3EventIndices[i];
+    const pastEvent = createdPastEvents[eventIdx];
+    const ticket3 = await prisma.ticket.findFirst({
+      where: { eventId: pastEvent.id },
+    });
+    if (ticket3) {
+      await prisma.transaction.create({
+        data: {
+          userId: customer3.id,
+          eventId: pastEvent.id,
+          ticketId: ticket3.id,
+          quantity: 1,
+          totalPrice: ticket3.price,
+          discount: 0,
+          pointsUsed: 0,
+          finalPrice: ticket3.price,
+          status: "DONE",
+          paidAt: new Date(),
+          expiresAt: new Date(),
+          autoCancelAt: new Date(),
+        },
+      });
+
+      await prisma.review.create({
+        data: {
+          userId: customer3.id,
+          eventId: pastEvent.id,
+          rating: customer3Ratings[i],
+          comment: customer3Comments[i],
+        },
+      });
+
+      console.log(
+        `✅ Created DONE transaction for ${customer3.fullName} on ${pastEvent.name} with review (rating: ${customer3Ratings[i]})`,
+      );
+    }
   }
 
   console.log("\n🎉 Seeding completed!");

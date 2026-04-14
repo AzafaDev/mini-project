@@ -202,11 +202,20 @@ voucherRouter.get("/coupons/validate", async (req, res) => {
       });
     }
 
-    let actualDiscount = coupon.discountValue;
-    if (coupon.discountType === "PERCENTAGE" && price > 0 && quantity > 0) {
-      actualDiscount = (price * quantity * coupon.discountValue) / 100;
-      console.log("[DEBUG Voucher Route] PERCENTAGE discount calculation:", { price, quantity, percentage: coupon.discountValue, actualDiscount });
+    let actualDiscount = 0;
+    if (coupon.discountType === "PERCENTAGE") {
+      if (price > 0 && quantity > 0) {
+        actualDiscount = (price * quantity * coupon.discountValue) / 100;
+        console.log("[DEBUG Voucher Route] PERCENTAGE discount calculated:", { price, quantity, percentage: coupon.discountValue, actualDiscount });
+      } else {
+        console.log("[DEBUG Voucher Route] PERCENTAGE discount SKIPPED (price or quantity is 0):", { price, quantity });
+        // actualDiscount stays 0
+      }
+    } else {
+      actualDiscount = coupon.discountValue;  // FIXED type uses raw value
+      console.log("[DEBUG Voucher Route] FIXED discount:", actualDiscount);
     }
+    console.log("[DEBUG Voucher Route] final actualDiscount:", actualDiscount);
 
     res.json({
       success: true,

@@ -21,14 +21,14 @@ reviewRouter.post(
 );
 
 reviewRouter.put(
-  "/reviews/:id",
+  "/:id",
   authMiddleware.verifyAuthToken,
   validate(updateReviewSchema),
   reviewController.updateReview,
 );
 
 reviewRouter.delete(
-  "/reviews/:id",
+  "/:id",
   authMiddleware.verifyAuthToken,
   reviewController.deleteReview,
 );
