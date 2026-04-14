@@ -168,43 +168,6 @@ const TicketCard = ({
 export const MyTickets = () => {
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl shadow-2xl shadow-black/40 h-16 flex justify-between items-center px-8">
-        <div className="flex items-center gap-8">
-          <span className="text-xl font-bold tracking-tighter">EventPulse</span>
-          <nav className="hidden md:flex items-center gap-6 text-[#c7c4d8] text-sm">
-            <a href="#" className="hover:text-white transition-colors">
-              Discover
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Schedule
-            </a>
-            <a
-              href="#"
-              className="text-[#c0c1ff] border-b-2 border-[#c0c1ff] pb-1"
-            >
-              Tickets
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Venues
-            </a>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="hidden md:block bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] font-bold py-2 px-4 rounded text-sm">
-            Create Event
-          </button>
-          <div className="flex gap-3 text-[#c7c4d8]">
-            <span className="material-symbols-outlined cursor-pointer hover:text-white">
-              notifications
-            </span>
-            <span className="material-symbols-outlined cursor-pointer hover:text-white">
-              account_circle
-            </span>
-          </div>
-        </div>
-      </header>
-
       <main className="pt-24 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
         <section className="mb-12">
           <motion.h1

@@ -60,41 +60,8 @@ const ManageTransactions: React.FC = () => {
 
   return (
     <div className="bg-[#131313] text-[#e5e2e1] font-sans min-h-screen selection:bg-[#c0c1ff]/30">
-      {/* TopNavBar */}
-      <nav className="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl shadow-2xl shadow-black/40 h-16 flex justify-between items-center px-8 tracking-tight">
-        <div className="flex items-center gap-8">
-          <span className="text-xl font-bold tracking-tighter text-[#E5E2E1]">
-            EventPulse
-          </span>
-          <div className="hidden lg:flex items-center gap-6">
-            {["Discover", "Schedule", "Tickets", "Venues"].map((item) => (
-              <a
-                key={item}
-                className="text-[#C7C4D8] hover:text-[#E5E2E1] transition-colors active:scale-95 duration-200"
-                href="#"
-              >
-                {item}
-              </a>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="hidden md:block bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] px-4 py-2 font-bold rounded-lg transition-all active:scale-95">
-            Create Event
-          </button>
-          <div className="flex gap-2">
-            <button className="p-2 text-[#C7C4D8] hover:text-[#E5E2E1] transition-colors">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
-            <button className="p-2 text-[#C7C4D8] hover:text-[#E5E2E1] transition-colors">
-              <span className="material-symbols-outlined">account_circle</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* SideNavBar */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex flex-col py-6 px-4 gap-2 z-40 hidden md:flex">
+      {/* SideNavBar - Organizer specific */}
+      <aside className="h-screen w-64 fixed left-0 top-16 bg-[#1C1B1B] flex flex-col py-6 px-4 gap-2 z-40 hidden md:flex">
         <div className="mt-16 mb-8 px-2">
           <h2 className="text-lg font-black text-[#E5E2E1]">
             Organizer Studio

@@ -1,54 +1,69 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import { useAuthStore } from "../stores/useAuthStore";
+import { registerSchema } from "../validation/authSchemas";
 
 const RegistrationPage: React.FC = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("attendee");
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const { register, isLoading, error, clearError, isRegistered, clearRegistered } = useAuthStore();
 
-  const togglePassword = () => setShowPassword(!showPassword);
+  const formik = useFormik({
+    initialValues: {
+      fullName: "",
+      email: "",
+      phoneNumber: "",
+      password: "",
+      role: "CUSTOMER" as "CUSTOMER" | "ORGANIZER",
+      referrerCode: "",
+      profilePicture: null as File | null,
+    },
+    validationSchema: registerSchema,
+    onSubmit: async (values) => {
+      clearError();
+
+      const form = new FormData();
+      form.append("fullName", values.fullName);
+      form.append("email", values.email);
+      form.append("password", values.password);
+      form.append("phoneNumber", values.phoneNumber || "");
+      form.append("role", values.role);
+      form.append("referrerCode", values.referrerCode || "");
+      if (values.profilePicture) {
+        form.append("profilePicture", values.profilePicture);
+      }
+
+      await register(form);
+    },
+  });
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // Redirect to verification page after successful registration
+  useEffect(() => {
+    if (isRegistered) {
+      clearRegistered();
+      navigate("/verify-email");
+    }
+  }, [isRegistered, clearRegistered, navigate]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    formik.setFieldValue("profilePicture", file);
+  };
+
+  const togglePassword = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex flex-col font-['Inter',sans-serif]">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-[#131313] z-50">
-        <div className="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
-          <div className="text-xl font-bold tracking-tighter text-white">
-            EventPulse
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex gap-6 items-center text-sm tracking-tight">
-              <a
-                className="text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors px-3 py-2 rounded"
-                href="#"
-              >
-                Home
-              </a>
-              <a
-                className="text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors px-3 py-2 rounded"
-                href="#"
-              >
-                Events
-              </a>
-              <a
-                className="text-[#C0C1FF] font-semibold px-3 py-2 rounded"
-                href="#"
-              >
-                Register
-              </a>
-            </div>
-            <div className="flex items-center gap-4 text-[#C0C1FF]">
-              <span className="material-symbols-outlined cursor-pointer hover:bg-[#2A2A2A] p-2 rounded transition-colors">
-                language
-              </span>
-              <span className="material-symbols-outlined cursor-pointer hover:bg-[#2A2A2A] p-2 rounded transition-colors">
-                help_outline
-              </span>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Main Canvas */}
-      <main className="flex-grow flex items-center justify-center pt-24 pb-12 px-4 bg-[#131313]">
+      <main className="flex-grow flex items-center justify-center pt-16 pb-12 px-4 bg-[#131313]">
         <div className="relative w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left Decoration: Editorial Context */}
           <div className="hidden lg:flex lg:col-span-5 flex-col gap-6 pr-8">
@@ -98,17 +113,36 @@ const RegistrationPage: React.FC = () => {
                 </p>
               </div>
 
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form className="space-y-5" onSubmit={formik.handleSubmit}>
                 {/* Full Name */}
                 <div className="space-y-1.5">
                   <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
                     Full Name
                   </label>
                   <input
-                    className="w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 focus:ring-[#c0c1ff] placeholder:text-[#353534] text-sm transition-all outline-none"
-                    placeholder="Enter your full name"
+                    id="fullName"
+                    name="fullName"
                     type="text"
+                    value={formik.values.fullName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 placeholder:text-[#353534] text-sm transition-all outline-none ${
+                      formik.touched.fullName && formik.errors.fullName
+                        ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
+                        : "ring-[#464555]/30 focus:ring-[#c0c1ff]"
+                    }`}
+                    placeholder="Enter your full name"
+                    disabled={isLoading}
                   />
+                  {formik.touched.fullName && formik.errors.fullName && (
+                    <p className="text-red-400 text-xs ml-1">{formik.errors.fullName}</p>
+                  )}
                 </div>
 
                 {/* Email Address */}
@@ -117,9 +151,40 @@ const RegistrationPage: React.FC = () => {
                     Email Address
                   </label>
                   <input
-                    className="w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 focus:ring-[#c0c1ff] placeholder:text-[#353534] text-sm transition-all outline-none"
-                    placeholder="name@company.com"
+                    id="email"
+                    name="email"
                     type="email"
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 placeholder:text-[#353534] text-sm transition-all outline-none ${
+                      formik.touched.email && formik.errors.email
+                        ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
+                        : "ring-[#464555]/30 focus:ring-[#c0c1ff]"
+                    }`}
+                    placeholder="name@company.com"
+                    disabled={isLoading}
+                  />
+                  {formik.touched.email && formik.errors.email && (
+                    <p className="text-red-400 text-xs ml-1">{formik.errors.email}</p>
+                  )}
+                </div>
+
+                {/* Phone Number */}
+                <div className="space-y-1.5">
+                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                    Phone Number
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    value={formik.values.phoneNumber}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full bg-[#0e0e0e] border-none ring-1 ring-[#464555]/30 focus:ring-[#c0c1ff] text-[#e5e2e1] px-4 py-3 rounded-lg placeholder:text-[#353534] text-sm transition-all outline-none"
+                    placeholder="+62xxxxxxxxxx"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -131,27 +196,32 @@ const RegistrationPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => setSelectedRole("attendee")}
+                      onClick={() => formik.setFieldValue("role", "CUSTOMER")}
                       className={`flex items-center justify-center p-3 rounded-lg text-xs font-semibold transition-all border ${
-                        selectedRole === "attendee"
+                        formik.values.role === "CUSTOMER"
                           ? "border-[#c0c1ff] bg-[#c0c1ff]/10 text-[#c0c1ff]"
                           : "border-transparent bg-[#0e0e0e] text-[#c7c4d8]"
                       }`}
+                      disabled={isLoading}
                     >
                       Attendee
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSelectedRole("organizer")}
+                      onClick={() => formik.setFieldValue("role", "ORGANIZER")}
                       className={`flex items-center justify-center p-3 rounded-lg text-xs font-semibold transition-all border ${
-                        selectedRole === "organizer"
+                        formik.values.role === "ORGANIZER"
                           ? "border-[#c0c1ff] bg-[#c0c1ff]/10 text-[#c0c1ff]"
                           : "border-transparent bg-[#0e0e0e] text-[#c7c4d8]"
                       }`}
+                      disabled={isLoading}
                     >
                       Organizer
                     </button>
                   </div>
+                  {formik.touched.role && formik.errors.role && (
+                    <p className="text-red-400 text-xs ml-1">{formik.errors.role}</p>
+                  )}
                 </div>
 
                 {/* Password */}
@@ -161,17 +231,48 @@ const RegistrationPage: React.FC = () => {
                   </label>
                   <div className="relative">
                     <input
-                      className="w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 focus:ring-[#c0c1ff] placeholder:text-[#353534] text-sm transition-all outline-none"
+                      id="password"
+                      name="password"
+                      value={formik.values.password}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 placeholder:text-[#353534] text-sm transition-all outline-none pr-12 ${
+                        formik.touched.password && formik.errors.password
+                          ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
+                          : "ring-[#464555]/30 focus:ring-[#c0c1ff]"
+                      }`}
                       placeholder="••••••••"
                       type={showPassword ? "text" : "password"}
+                      disabled={isLoading}
                     />
-                    <span
-                      className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#c7c4d8] cursor-pointer text-xl"
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#c7c4d8] cursor-pointer text-xl"
                       onClick={togglePassword}
                     >
-                      {showPassword ? "visibility_off" : "visibility"}
-                    </span>
+                      <span className="material-symbols-outlined">
+                        {showPassword ? "visibility_off" : "visibility"}
+                      </span>
+                    </button>
                   </div>
+                  {formik.touched.password && formik.errors.password && (
+                    <p className="text-red-400 text-xs ml-1">{formik.errors.password}</p>
+                  )}
+                </div>
+
+                {/* Profile Picture */}
+                <div className="space-y-1.5">
+                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                    Profile Picture
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 focus:ring-[#c0c1ff] text-sm transition-all outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#c0c1ff]/10 file:text-[#c0c1ff] hover:file:bg-[#c0c1ff]/20"
+                    disabled={isLoading}
+                  />
                 </div>
 
                 {/* Referral Code */}
@@ -180,57 +281,45 @@ const RegistrationPage: React.FC = () => {
                     <label className="block text-[0.75rem] font-medium text-[#c7c4d8]">
                       Referral Code
                     </label>
-                    <span className="text-[0.65rem] text-[#c0c1ff] bg-[#c0c1ff]/10 px-2 py-0.5 rounded uppercase font-bold tracking-wider">
-                      Mandatory
+                    <span className="text-[0.65rem] text-[#c7c4d8] bg-[#464555]/10 px-2 py-0.5 rounded uppercase font-bold tracking-wider">
+                      Optional
                     </span>
                   </div>
                   <input
-                    className="w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 focus:ring-[#c0c1ff] placeholder:text-[#353534] text-sm transition-all border-l-2 border-[#c0c1ff] outline-none"
-                    placeholder="XYZ-12345"
+                    id="referrerCode"
+                    name="referrerCode"
                     type="text"
+                    value={formik.values.referrerCode}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className="w-full bg-[#0e0e0e] border-none ring-1 ring-[#464555]/30 focus:ring-[#c0c1ff] text-[#e5e2e1] px-4 py-3 rounded-lg placeholder:text-[#353534] text-sm transition-all border-l-2 border-[#c0c1ff] outline-none"
+                    placeholder="XYZ-12345"
+                    disabled={isLoading}
                   />
                 </div>
 
                 {/* CTA Button */}
-                <button className="w-full mt-4 py-4 rounded-lg bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#c0c1ff]/20">
-                  Create Account
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full mt-4 py-4 rounded-lg bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#c0c1ff]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin">sync</span>
+                      Creating Account...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
                 </button>
               </form>
-
-              <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#464555]/15"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[#1C1B1B] px-4 text-[#c7c4d8] font-medium">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              {/* Social Signup */}
-              <div className="grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center gap-2 py-3 rounded-lg bg-[#353534] border border-[#464555]/10 text-[#e5e2e1] text-xs font-semibold hover:bg-[#393939] transition-colors">
-                  <img
-                    className="w-4 h-4"
-                    alt="Google"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBARFNj6vbCnAX242h8cpfNZc7gr7iArFPHfekqKLLWu1s2rLA68iyqIOoMHRJUXUkbDvoIW4NEgneOLrJae1oBKnLPNgnAeVkUXDDykCfq5c8s2b92VUctAPo9520XcoN04FtwMIpcY5iKJ-FdEhUESSi53a823h-SpMHnEczlGuWC-HjkQP-p-F6m8PPuePl7mI8Ef8TPSVeBDibKvNYg0AlrgMEssBuZE0q6qvWLYuyN1-Y4P15RRli9Sy9jH4EVJhs7tO6lw-wr"
-                  />
-                  Google
-                </button>
-                <button className="flex items-center justify-center gap-2 py-3 rounded-lg bg-[#353534] border border-[#464555]/10 text-[#e5e2e1] text-xs font-semibold hover:bg-[#393939] transition-colors">
-                  <span className="material-symbols-outlined text-lg">
-                    apple
-                  </span>
-                  Apple
-                </button>
-              </div>
 
               <p className="mt-8 text-center text-xs text-[#c7c4d8]">
                 Already have an account?{" "}
                 <a
                   className="text-[#c0c1ff] font-semibold hover:underline"
-                  href="#"
+                  href="/login"
                 >
                   Sign In
                 </a>
@@ -239,36 +328,6 @@ const RegistrationPage: React.FC = () => {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-[#0E0E0E] w-full py-8 mt-auto border-t border-[#464555]/15">
-        <div className="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-4 text-xs font-medium">
-          <div className="text-lg font-black text-white">EventPulse</div>
-          <div className="text-[#C7C4D8]">
-            © 2024 EventPulse Architecture. All rights reserved.
-          </div>
-          <div className="flex gap-6">
-            <a
-              className="text-[#C7C4D8] hover:text-white transition-opacity opacity-80 hover:opacity-100"
-              href="#"
-            >
-              Privacy Policy
-            </a>
-            <a
-              className="text-[#C7C4D8] hover:text-white transition-opacity opacity-80 hover:opacity-100"
-              href="#"
-            >
-              Terms of Service
-            </a>
-            <a
-              className="text-[#C7C4D8] hover:text-white transition-opacity opacity-80 hover:opacity-100"
-              href="#"
-            >
-              Contact Support
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

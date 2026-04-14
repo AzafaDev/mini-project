@@ -323,6 +323,9 @@ export const authService = {
       user.password,
     );
     if (!isCorrectPassword) throw new AppError("Invalid current password", 400);
+    // Cek apakah newPassword sama dengan currentPassword
+    const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsOld) throw new AppError("New password cannot be the same as current password", 400);
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const updatedUser = await prisma.user.update({
       where: { id: user.id },

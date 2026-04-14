@@ -1,16 +1,63 @@
-import React, { useState } from "react";
+import React, { useMemo, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useFormik } from "formik";
+import { useAuthStore } from "../stores/useAuthStore";
+import { resetPasswordSchema } from "../validation/authSchemas";
 
 const ResetPassword: React.FC = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    newPassword: "",
-    confirmPassword: "",
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+  
+  const { resetPassword, isLoading, error: storeError, clearError, resetPasswordSuccess, clearResetPasswordStatus } = useAuthStore();
+  
+  const formik = useFormik({
+    initialValues: {
+      newPassword: "",
+      confirmPassword: "",
+    },
+    validationSchema: resetPasswordSchema,
+    onSubmit: async (values) => {
+      clearError();
+
+      // Validate: token exists
+      if (!token) {
+        formik.setFieldError("newPassword", "Invalid reset link. Please request a new password reset.");
+        return;
+      }
+
+      await resetPassword(token, values.newPassword);
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Password update requested", formData);
-  };
+  // Cleanup store state on unmount
+  useEffect(() => {
+    return () => {
+      clearResetPasswordStatus();
+    };
+  }, [clearResetPasswordStatus]);
+
+  // Redirect to login on success
+  useEffect(() => {
+    if (resetPasswordSuccess) {
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }
+  }, [resetPasswordSuccess, navigate]);
+
+  // Dynamic password strength checks
+  const passwordChecks = useMemo(() => {
+    const pwd = formik.values.newPassword;
+    return {
+      lowercase: /[a-z]/.test(pwd),
+      uppercase: /[A-Z]/.test(pwd),
+      number: /[0-9]/.test(pwd),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+    };
+  }, [formik.values.newPassword]);
+
+  const isAllChecksPassed = Object.values(passwordChecks).every(Boolean);
 
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex flex-col font-['Inter',sans-serif] selection:bg-[#4b4dd8] selection:text-[#d9d8ff]">
@@ -43,127 +90,164 @@ const ResetPassword: React.FC = () => {
                 Reset Password
               </h2>
               <p className="text-[#c7c4d8] text-sm leading-relaxed">
-                Choose a strong, unique password to secure your account and
-                curation data.
+                Choose a strong, unique password to secure your account.
               </p>
             </header>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={formik.handleSubmit}>
               {/* Field: New Password */}
               <div className="space-y-1.5">
                 <label
                   className="block text-xs uppercase tracking-widest text-[#c7c4d8] ml-1"
-                  htmlFor="new_password"
+                  htmlFor="newPassword"
                 >
                   New Password
                 </label>
                 <div className="relative">
                   <input
-                    className="w-full bg-[#0e0e0e] border-none focus:ring-1 focus:ring-[#c0c1ff] text-[#e5e2e1] p-3.5 lg:rounded text-sm placeholder-[#918fa1] outline-none"
-                    id="new_password"
-                    name="new_password"
+                    className={`w-full bg-[#0e0e0e] text-[#e5e2e1] p-3.5 lg:rounded text-sm placeholder-[#918fa1] outline-none transition-all ${
+                      formik.touched.newPassword && formik.errors.newPassword
+                        ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
+                        : "focus:ring-1 focus:ring-[#c0c1ff]"
+                    }`}
+                    id="newPassword"
+                    name="newPassword"
                     placeholder="••••••••••••"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.newPassword}
-                    onChange={(e) =>
-                      setFormData({ ...formData, newPassword: e.target.value })
-                    }
+                    type="password"
+                    value={formik.values.newPassword}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    disabled={isLoading || resetPasswordSuccess}
                   />
-                  <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#c7c4d8] hover:text-[#c0c1ff] transition-colors"
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <span className="material-symbols-outlined text-xl">
-                      {showPassword ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
                 </div>
+                {formik.touched.newPassword && formik.errors.newPassword && (
+                  <p className="text-red-400 text-xs ml-1">{formik.errors.newPassword}</p>
+                )}
               </div>
 
-              {/* Password Strength Indicators */}
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {[
-                  { label: "Lowercase", icon: "error", active: true },
-                  { label: "Uppercase", icon: "circle", active: false },
-                  { label: "Number", icon: "circle", active: false },
-                  { label: "Special Char", icon: "circle", active: false },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 px-2 py-1.5 bg-[#353534] rounded-lg border border-transparent"
-                  >
-                    <span
-                      className={`material-symbols-outlined text-sm ${item.active ? "text-[#ffb4ab]" : "text-[#c7c4d8]"}`}
-                      style={{
-                        fontVariationSettings: item.active
-                          ? "'FILL' 1"
-                          : "'FILL' 0",
-                      }}
+              {/* Password Strength Indicators - Dynamic */}
+              {formik.values.newPassword && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {[
+                    { label: "Lowercase", key: "lowercase" },
+                    { label: "Uppercase", key: "uppercase" },
+                    { label: "Number", key: "number" },
+                    { label: "Special Char", key: "special" },
+                  ].map((item) => (
+                    <div
+                      key={item.key}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-all ${
+                        passwordChecks[item.key as keyof typeof passwordChecks]
+                          ? "bg-[#4ade80]/10 border-[#4ade80]/30"
+                          : "bg-[#353534] border-transparent"
+                      }`}
                     >
-                      {item.icon}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-tighter text-[#c7c4d8]">
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                      <span
+                        className={`material-symbols-outlined text-sm ${
+                          passwordChecks[item.key as keyof typeof passwordChecks]
+                            ? "text-[#4ade80]"
+                            : "text-[#c7c4d8]"
+                        }`}
+                        style={{
+                          fontVariationSettings: passwordChecks[item.key as keyof typeof passwordChecks]
+                            ? "'FILL' 1"
+                            : "'FILL' 0",
+                        }}
+                      >
+                        {passwordChecks[item.key as keyof typeof passwordChecks] ? "check_circle" : "cancel"}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-tighter text-[#c7c4d8]">
+                        {item.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Field: Confirm Password */}
               <div className="space-y-1.5 pt-2">
                 <label
                   className="block text-xs uppercase tracking-widest text-[#c7c4d8] ml-1"
-                  htmlFor="confirm_password"
+                  htmlFor="confirmPassword"
                 >
                   Confirm New Password
                 </label>
-                <input
-                  className="w-full bg-[#0e0e0e] border-none focus:ring-1 focus:ring-[#c0c1ff] text-[#e5e2e1] p-3.5 lg:rounded text-sm placeholder-[#918fa1] outline-none"
-                  id="confirm_password"
-                  name="confirm_password"
-                  placeholder="••••••••••••"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                />
+                <div className="relative">
+                  <input
+                    className={`w-full bg-[#0e0e0e] text-[#e5e2e1] p-3.5 lg:rounded text-sm placeholder-[#918fa1] outline-none transition-all ${
+                      formik.touched.confirmPassword && formik.errors.confirmPassword
+                        ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
+                        : "focus:ring-1 focus:ring-[#c0c1ff]"
+                    }`}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="••••••••••••"
+                    type="password"
+                    value={formik.values.confirmPassword}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    disabled={isLoading || resetPasswordSuccess}
+                  />
+                </div>
+                {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+                  <p className="text-red-400 text-xs ml-1">{formik.errors.confirmPassword}</p>
+                )}
               </div>
+
+              {/* Error Message */}
+              {(storeError) && (
+                <div className="p-3 bg-[#ffb4ab]/10 border border-[#ffb4ab]/30 rounded-lg">
+                  <p className="text-[#ffb4ab] text-xs">{storeError}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {resetPasswordSuccess && (
+                <div className="p-3 bg-[#a8e6cf]/10 border border-[#a8e6cf]/30 rounded-lg">
+                  <p className="text-[#a8e6cf] text-xs">
+                    Password reset successfully! Redirecting to login...
+                  </p>
+                </div>
+              )}
 
               {/* Primary Action */}
               <div className="pt-4">
                 <button
-                  className="w-full bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] py-4 lg:rounded font-bold tracking-tight text-sm active:scale-[0.98] transition-transform duration-150 shadow-lg shadow-[#c0c1ff]/10"
+                  className="w-full bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] py-4 lg:rounded font-bold tracking-tight text-sm active:scale-[0.98] transition-transform duration-150 shadow-lg shadow-[#c0c1ff]/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   type="submit"
+                  disabled={isLoading || resetPasswordSuccess || !isAllChecksPassed}
                 >
-                  Update Password
+                  {isLoading ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin">sync</span>
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Password"
+                  )}
                 </button>
               </div>
             </form>
 
             <div className="mt-8 pt-6 border-t border-[#464555]/10 flex justify-center">
-              <a
+              <Link
                 className="flex items-center gap-2 text-[#c0c1ff] hover:text-white transition-colors text-xs uppercase tracking-widest group"
-                href="#"
+                to="/login"
               >
                 <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">
                   arrow_back
                 </span>
                 Back to Login
-              </a>
+              </Link>
             </div>
           </div>
 
-          {/* Technical Detail */}
+          {/* Simplified Technical Detail */}
           <div className="mt-8 flex justify-center gap-8 opacity-40">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">lock</span>
               <span className="text-[10px] uppercase tracking-widest">
-                End-to-End Encrypted
+                Encrypted
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -171,7 +255,7 @@ const ResetPassword: React.FC = () => {
                 verified_user
               </span>
               <span className="text-[10px] uppercase tracking-widest">
-                Identity Verified
+                Verified
               </span>
             </div>
           </div>
@@ -179,33 +263,8 @@ const ResetPassword: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-8 flex flex-col md:flex-row justify-center items-center gap-6 mt-auto pb-10 text-xs uppercase tracking-widest">
-        <div className="text-sm font-black text-[#E5E2E1]">
-          Linear Event Dark System
-        </div>
-        <div className="flex gap-6">
-          <a
-            className="text-[#C7C4D8] hover:text-white transition-opacity opacity-80 hover:opacity-100"
-            href="#"
-          >
-            Privacy Policy
-          </a>
-          <a
-            className="text-[#C7C4D8] hover:text-white transition-opacity opacity-80 hover:opacity-100"
-            href="#"
-          >
-            Terms of Service
-          </a>
-          <a
-            className="text-[#C7C4D8] hover:text-white transition-opacity opacity-80 hover:opacity-100"
-            href="#"
-          >
-            Security
-          </a>
-        </div>
-        <div className="text-[#C7C4D8] opacity-60">
-          © 2024 Linear Event Dark System
-        </div>
+      <footer className="w-full py-6 flex justify-center items-center text-xs text-[#c7c4d8] opacity-60">
+        <span>© 2026 CuratorEvents</span>
       </footer>
     </div>
   );

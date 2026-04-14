@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 
 interface OtpInputProps {
   length?: number;
@@ -18,7 +18,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
     if (!value) return;
 
     const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1);
+    newOtp[index] = value;
     setOtp(newOtp);
 
     // Focus next input
@@ -43,6 +43,28 @@ export const OtpInput: React.FC<OtpInputProps> = ({
     }
   };
 
+  // Handle paste
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+    const pasteArray = pasteData.split("").slice(0, length);
+
+    const newOtp = [...otp];
+    pasteArray.forEach((char, i) => {
+      newOtp[i] = char;
+    });
+    setOtp(newOtp);
+
+    const lastFilledIndex = Math.min(pasteArray.length - 1, length - 1);
+    inputRefs.current[lastFilledIndex]?.focus();
+
+    // Check if complete after paste
+    const fullOtp = newOtp.join("");
+    if (fullOtp.length === length && onComplete) {
+      onComplete(fullOtp);
+    }
+  }, [length, onComplete, otp]);
+
   return (
     <div className="flex justify-between gap-2 sm:gap-3">
       {otp.map((data, index) => (
@@ -57,6 +79,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
           value={data}
           onChange={(e) => handleChange(e.target, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
+          onPaste={handlePaste}
           placeholder="0"
           className="w-12 h-14 sm:w-14 sm:h-16 text-center text-xl font-bold bg-[#0e0e0e] border-none rounded-lg focus:ring-2 focus:ring-[#c0c1ff] text-[#e5e2e1] transition-all placeholder:text-[#464555]/20 outline-none"
         />

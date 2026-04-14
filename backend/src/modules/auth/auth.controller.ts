@@ -67,6 +67,7 @@ const sendVerificationAndSetCookie = async (
   return res.status(200).json({
     success: true,
     message: "Verification code has been sent to your email",
+    requiresVerification: true,
   });
 };
 

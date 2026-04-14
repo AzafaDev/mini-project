@@ -28,58 +28,6 @@ const CheckoutPage: React.FC = () => {
 
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
-      {/* TopAppBar */}
-      <header className="bg-zinc-950/80 backdrop-blur-xl fixed top-0 w-full z-50 shadow-2xl shadow-black/40">
-        <div className="flex justify-between items-center px-6 py-3 w-full max-w-screen-2xl mx-auto">
-          <div className="flex items-center gap-8">
-            <span className="text-xl font-bold tracking-tighter text-indigo-200">
-              Aethel Event Suite
-            </span>
-            <nav className="hidden md:flex gap-6 items-center">
-              <a
-                className="text-indigo-200 border-b border-indigo-200 pb-1 tracking-tight text-sm font-medium"
-                href="#"
-              >
-                Events
-              </a>
-              <a
-                className="text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight text-sm font-medium"
-                href="#"
-              >
-                My Tickets
-              </a>
-              <a
-                className="text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight text-sm font-medium"
-                href="#"
-              >
-                Schedule
-              </a>
-              <a
-                className="text-zinc-400 hover:text-zinc-200 transition-colors tracking-tight text-sm font-medium"
-                href="#"
-              >
-                Venues
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="material-symbols-outlined text-indigo-200 hover:bg-zinc-800/50 transition-colors p-2 rounded-full active:scale-95 duration-200">
-              notifications
-            </button>
-            <button className="material-symbols-outlined text-indigo-200 hover:bg-zinc-800/50 transition-colors p-2 rounded-full active:scale-95 duration-200">
-              shopping_bag
-            </button>
-            <div className="w-8 h-8 rounded-full bg-[#353534] flex items-center justify-center overflow-hidden">
-              <img
-                alt="User profile"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVQ50q2zCNv3NyiJ1qCD81ZVDGnB_yUdrcgu6HWeDWqSAd_nzkeITslE8CtFdILS0PcsZ5uPYwbzSWe4uTwjwOxLtiiXwPnyndi2kaVTG_EgXNpvuTzGct1N5nctXt-8P5P-h7DREZdQvmWmcLZEms2rAfd0__oeJIaDg3G9nccS5YkASmDidepj9fbHr_Kulu7FrCMj-zGFoN_gC5wJimzk-I2inkB7ODsAM5SDluF1dUI39_bcvLuXa9rYgatu5Dr7ql-hoqekCI"
-              />
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="pt-24 pb-32 px-6 max-w-screen-2xl mx-auto">
         {/* Breadcrumb / Header */}
         <div className="mb-12">
