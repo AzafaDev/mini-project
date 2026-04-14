@@ -113,6 +113,7 @@ export const eventService = {
     });
 
     console.log("[DEBUG Event Service] getAllEvents fetched events:", events.length);
+    console.log("[DEBUG] Event tickets:", events.map(e => ({ id: e.id, name: e.name, tickets: e.tickets.map(t => ({ type: t.type, price: t.price })) })));
 
     return {
       data: events,
@@ -164,6 +165,7 @@ export const eventService = {
     });
 
     console.log("[DEBUG Event Service] getEventById result:", !!event);
+    console.log("[DEBUG] Event tickets:", event?.tickets.map(t => ({ id: t.id, type: t.type, price: t.price })));
 
     if (!event) throw new AppError("Event not found", 404);
     const averageRating =

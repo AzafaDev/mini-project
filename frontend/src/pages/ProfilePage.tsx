@@ -539,10 +539,16 @@ export default function ProfilePage() {
                   {points.toLocaleString()}
                 </div>
               </div>
-              <div className="mt-8">
+              <div className="mt-8 flex items-center justify-between">
                 <span className="text-sm font-semibold">
-                  Use points for discounts on event tickets
+                  Use points for discounts
                 </span>
+                <button
+                  onClick={() => window.location.href = "/profile/points"}
+                  className="text-xs font-bold text-white/80 hover:text-white underline underline-offset-2"
+                >
+                  View History
+                </button>
               </div>
             </section>
 
