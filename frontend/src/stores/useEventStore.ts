@@ -9,6 +9,7 @@ import {
   type OrganizerProfile,
   type OrganizerStats,
   type EventStats,
+  type EventAttendee,
   type CreateEventRequest,
   type CreateVoucherRequest,
   type UpdateVoucherRequest,
@@ -40,10 +41,12 @@ interface EventStore {
   myEvents: Event[];
   organizerStats: OrganizerStats | null;
   eventStats: EventStats | null;
+  eventAttendees: EventAttendee[];
   myVouchers: VoucherWithEvent[];
   loadingMyEvents: boolean;
   loadingOrganizerStats: boolean;
   loadingEventStats: boolean;
+  loadingEventAttendees: boolean;
   loadingMyVouchers: boolean;
   loadingEventAction: boolean;
   
@@ -76,6 +79,7 @@ interface EventStore {
   fetchMyEvents: () => Promise<void>;
   fetchOrganizerStats: (year?: number, month?: number, day?: number) => Promise<void>;
   fetchEventStats: (eventId: string) => Promise<void>;
+  fetchEventAttendees: (eventId: string) => Promise<void>;
   createEvent: (data: CreateEventRequest & { imageFile?: File }) => Promise<Event | null>;
   updateEvent: (id: string, data: Partial<CreateEventRequest> & { imageFile?: File }) => Promise<Event | null>;
   deleteEvent: (id: string) => Promise<boolean>;
@@ -109,10 +113,12 @@ export const useEventStore = create<EventStore>((set, get) => ({
   myEvents: [],
   organizerStats: null,
   eventStats: null,
+  eventAttendees: [],
   myVouchers: [],
   loadingMyEvents: false,
   loadingOrganizerStats: false,
   loadingEventStats: false,
+  loadingEventAttendees: false,
   loadingMyVouchers: false,
   loadingEventAction: false,
 
@@ -283,8 +289,8 @@ export const useEventStore = create<EventStore>((set, get) => ({
         price,
         quantity,
       );
-      if (response.success && response.valid && response.discount) {
-        return response.discount;
+      if (response.success && response.valid) {
+        return response.discount || 0;
       }
       return 0;
     } catch (error: any) {
@@ -298,6 +304,10 @@ export const useEventStore = create<EventStore>((set, get) => ({
 
   // Organizer actions
   fetchMyEvents: async () => {
+    // Guard to prevent race conditions when fetch is called multiple times
+    if (get().loadingMyEvents) {
+      return;
+    }
     set({ loadingMyEvents: true, error: null });
     try {
       const response = await eventService.getMyEvents();
@@ -311,6 +321,9 @@ export const useEventStore = create<EventStore>((set, get) => ({
   },
 
   fetchOrganizerStats: async (year?: number, month?: number, day?: number) => {
+    if (get().loadingOrganizerStats) {
+      return;
+    }
     set({ loadingOrganizerStats: true, error: null });
     try {
       const response = await eventService.getOrganizerStats(year, month, day);
@@ -332,6 +345,19 @@ export const useEventStore = create<EventStore>((set, get) => ({
       set({
         error: error.response?.data?.message || "Failed to fetch event stats",
         loadingEventStats: false,
+      });
+    }
+  },
+
+  fetchEventAttendees: async (eventId: string) => {
+    set({ loadingEventAttendees: true, error: null });
+    try {
+      const response = await eventService.getEventAttendees(eventId);
+      set({ eventAttendees: response.data, loadingEventAttendees: false });
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || "Failed to fetch event attendees",
+        loadingEventAttendees: false,
       });
     }
   },

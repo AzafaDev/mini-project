@@ -3,8 +3,12 @@ import { sendEmail } from "../../utils/sendEmail";
 import { handleFileUpload } from "../../utils/handleFileUpload";
 import { UploadedFile } from "express-fileupload";
 import { TransactionStatus } from "../../../generated/prisma/enums";
-import { TransactionStatus as LocalTransactionStatus } from "./transaction.type";
-import { restoreTicketAvailability, restoreUserPoints, restoreVoucher, restoreCoupon } from "../../utils/transactionHelpers";
+import {
+  restoreTicketAvailability,
+  restoreUserPoints,
+  restoreVoucher,
+  restoreCoupon,
+} from "../../utils/transactionHelpers";
 import { AppError } from "../../utils/AppError";
 import {
   TRANSACTION_EXPIRATION_HOURS,
@@ -39,7 +43,15 @@ export const transactionService = {
     console.log("[DEBUG] couponCode:", couponCode);
     console.log("[DEBUG] pointsUsed:", pointsUsed);
     console.log("[DEBUG] ================================================");
-    console.log("[DEBUG Transaction Service] createTransaction input:", { userId, eventId, ticketId, quantity, voucherCode, couponCode, pointsUsed });
+    console.log("[DEBUG Transaction Service] createTransaction input:", {
+      userId,
+      eventId,
+      ticketId,
+      quantity,
+      voucherCode,
+      couponCode,
+      pointsUsed,
+    });
 
     // Check for existing PENDING transaction within last 5 minutes (idempotency)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -53,7 +65,10 @@ export const transactionService = {
     });
 
     if (existingPending) {
-      console.log("[DEBUG Transaction Service] Found existing WAITING_PAYMENT transaction, returning existing:", existingPending.id);
+      console.log(
+        "[DEBUG Transaction Service] Found existing WAITING_PAYMENT transaction, returning existing:",
+        existingPending.id,
+      );
       return existingPending;
     }
 
@@ -68,17 +83,42 @@ export const transactionService = {
       throw new AppError("Event not found", 404);
     }
 
-    const ticket = ticketId === "default-ticket"
-      ? { id: "default-ticket", price: event.price, available: event.availableSeats, name: "General Admission" }
-      : event.tickets.find((t) => t.id === ticketId);
+    // Prevent organizer from buying their own event
+    if (event.organizerId === userId) {
+      console.log("[DEBUG Transaction Service] Organizer attempted to buy their own event:", {
+        userId,
+        eventId,
+        organizerId: event.organizerId,
+      });
+      throw new AppError("Organizers cannot purchase tickets for their own events", 403);
+    }
 
-    console.log("[DEBUG Transaction Service] ticket found:", !!ticket, ticket?.id);
+    const ticket =
+      ticketId === "default-ticket"
+        ? {
+            id: "default-ticket",
+            price: event.price,
+            available: event.availableSeats,
+            name: "General Admission",
+          }
+        : event.tickets.find((t) => t.id === ticketId);
+
+    console.log(
+      "[DEBUG Transaction Service] ticket found:",
+      !!ticket,
+      ticket?.id,
+    );
 
     if (!ticket) {
       throw new AppError("Ticket not found", 404);
     }
 
-    console.log("[DEBUG Transaction Service] ticket available:", ticket.available, "requested:", quantity);
+    console.log(
+      "[DEBUG Transaction Service] ticket available:",
+      ticket.available,
+      "requested:",
+      quantity,
+    );
 
     if (ticket.available < quantity) {
       throw new AppError("Not enough tickets available", 400);
@@ -100,18 +140,28 @@ export const transactionService = {
         },
       });
 
-      console.log("[DEBUG Transaction Service] voucher found:", !!voucher, voucher?.id);
+      console.log(
+        "[DEBUG Transaction Service] voucher found:",
+        !!voucher,
+        voucher?.id,
+      );
 
       if (voucher) {
         voucherId = voucher.id;
         const maxDiscount = ticket.price * quantity;
         if (voucher.discountType === "PERCENTAGE") {
-          const calculatedDiscount = (ticket.price * quantity * voucher.discountValue) / 100;
+          const calculatedDiscount =
+            (ticket.price * quantity * voucher.discountValue) / 100;
           discount += Math.min(calculatedDiscount, maxDiscount);
         } else {
           discount += Math.min(voucher.discountValue, maxDiscount);
         }
-        console.log("[DEBUG Transaction Service] voucher discountValue:", voucher.discountValue, "discountType:", voucher.discountType);
+        console.log(
+          "[DEBUG Transaction Service] voucher discountValue:",
+          voucher.discountValue,
+          "discountType:",
+          voucher.discountType,
+        );
         console.log("[DEBUG Transaction Service] voucher discount:", discount);
       }
     }
@@ -127,14 +177,23 @@ export const transactionService = {
         },
       });
 
-      console.log("[DEBUG Transaction Service] coupon found:", !!coupon, coupon?.id);
+      console.log(
+        "[DEBUG Transaction Service] coupon found:",
+        !!coupon,
+        coupon?.id,
+      );
 
       if (coupon) {
         const existingUsage = await prisma.transaction.findFirst({
           where: {
             userId,
             couponId: coupon.id,
-            status: { in: [TransactionStatus.DONE, TransactionStatus.WAITING_CONFIRMATION] },
+            status: {
+              in: [
+                TransactionStatus.DONE,
+                TransactionStatus.WAITING_CONFIRMATION,
+              ],
+            },
           },
         });
 
@@ -145,12 +204,18 @@ export const transactionService = {
         couponId = coupon.id;
         const maxDiscount = ticket.price * quantity;
         if (coupon.discountType === "PERCENTAGE") {
-          const calculatedDiscount = (ticket.price * quantity * coupon.discountValue) / 100;
+          const calculatedDiscount =
+            (ticket.price * quantity * coupon.discountValue) / 100;
           discount += Math.min(calculatedDiscount, maxDiscount);
         } else {
           discount += Math.min(coupon.discountValue, maxDiscount);
         }
-        console.log("[DEBUG Transaction Service] coupon discountValue:", coupon.discountValue, "discountType:", coupon.discountType);
+        console.log(
+          "[DEBUG Transaction Service] coupon discountValue:",
+          coupon.discountValue,
+          "discountType:",
+          coupon.discountType,
+        );
         console.log("[DEBUG Transaction Service] total discount:", discount);
       }
     }
@@ -158,7 +223,12 @@ export const transactionService = {
     const totalPrice = ticket.price * quantity;
     const finalPrice = Math.max(0, totalPrice - discount - pointsUsed);
 
-    console.log("[DEBUG Transaction Service] pricing:", { totalPrice, discount, pointsUsed, finalPrice });
+    console.log("[DEBUG Transaction Service] pricing:", {
+      totalPrice,
+      discount,
+      pointsUsed,
+      finalPrice,
+    });
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + TRANSACTION_EXPIRATION_HOURS);
@@ -166,7 +236,12 @@ export const transactionService = {
     const autoCancelAt = new Date();
     autoCancelAt.setDate(autoCancelAt.getDate() + TRANSACTION_AUTO_CANCEL_DAYS);
 
-    console.log("[DEBUG Transaction Service] expiresAt:", expiresAt, "autoCancelAt:", autoCancelAt);
+    console.log(
+      "[DEBUG Transaction Service] expiresAt:",
+      expiresAt,
+      "autoCancelAt:",
+      autoCancelAt,
+    );
 
     return prisma.$transaction(async (tx) => {
       console.log("[DEBUG Transaction Service] creating transaction in DB");
@@ -183,7 +258,10 @@ export const transactionService = {
           voucherId,
           finalPrice,
           // Auto-complete free events (no payment needed)
-          status: finalPrice === 0 ? TransactionStatus.DONE : TransactionStatus.WAITING_PAYMENT,
+          status:
+            finalPrice === 0
+              ? TransactionStatus.DONE
+              : TransactionStatus.WAITING_PAYMENT,
           expiresAt: finalPrice === 0 ? new Date() : expiresAt,
           autoCancelAt,
         },
@@ -200,7 +278,10 @@ export const transactionService = {
         });
       }
 
-      console.log("[DEBUG Transaction Service] transaction created:", transaction.id);
+      console.log(
+        "[DEBUG Transaction Service] transaction created:",
+        transaction.id,
+      );
 
       if (ticketId === "default-ticket") {
         await tx.event.update({
@@ -221,7 +302,9 @@ export const transactionService = {
   },
 
   getTransactionById: async ({ id }: { id: string }) => {
-    console.log("[DEBUG Transaction Service] getTransactionById input:", { id });
+    console.log("[DEBUG Transaction Service] getTransactionById input:", {
+      id,
+    });
 
     const transaction = await prisma.transaction.findUnique({
       where: { id },
@@ -232,7 +315,11 @@ export const transactionService = {
       },
     });
 
-    console.log("[DEBUG Transaction Service] transaction found:", !!transaction, transaction?.id);
+    console.log(
+      "[DEBUG Transaction Service] transaction found:",
+      !!transaction,
+      transaction?.id,
+    );
 
     if (!transaction) {
       return null;
@@ -240,16 +327,27 @@ export const transactionService = {
 
     const txStatus = transaction.status as TransactionStatus;
     const txId = transaction.id as string;
-    
+
     const shouldExpire =
       txStatus === TransactionStatus.WAITING_PAYMENT &&
       new Date() > transaction.expiresAt;
 
-    console.log("[DEBUG Transaction Service] shouldExpire check:", shouldExpire, "status:", txStatus, "expiresAt:", transaction.expiresAt);
+    console.log(
+      "[DEBUG Transaction Service] shouldExpire check:",
+      shouldExpire,
+      "status:",
+      txStatus,
+      "expiresAt:",
+      transaction.expiresAt,
+    );
 
     if (shouldExpire) {
-      console.log("[DEBUG Transaction Service] transaction expired, expiring...");
-      const expiredTx = await transactionService.expireTransaction({ id: txId });
+      console.log(
+        "[DEBUG Transaction Service] transaction expired, expiring...",
+      );
+      const expiredTx = await transactionService.expireTransaction({
+        id: txId,
+      });
       return expiredTx;
     }
 
@@ -258,11 +356,18 @@ export const transactionService = {
       transaction.autoCancelAt != null &&
       new Date() > transaction.autoCancelAt;
 
-    console.log("[DEBUG Transaction Service] shouldCancel check:", shouldCancel, "autoCancelAt:", transaction.autoCancelAt);
+    console.log(
+      "[DEBUG Transaction Service] shouldCancel check:",
+      shouldCancel,
+      "autoCancelAt:",
+      transaction.autoCancelAt,
+    );
 
     if (shouldCancel) {
       console.log("[DEBUG Transaction Service] transaction auto-canceling...");
-      const canceledTx = await transactionService.cancelTransaction({ id: txId });
+      const canceledTx = await transactionService.cancelTransaction({
+        id: txId,
+      });
       return canceledTx;
     }
 
@@ -278,7 +383,11 @@ export const transactionService = {
     page?: number;
     limit?: number;
   }) => {
-    console.log("[DEBUG Transaction Service] getUserTransactions input:", { userId, page, limit });
+    console.log("[DEBUG Transaction Service] getUserTransactions input:", {
+      userId,
+      page,
+      limit,
+    });
 
     const skip = (page - 1) * limit;
 
@@ -314,7 +423,10 @@ export const transactionService = {
       prisma.transaction.count({ where: { userId } }),
     ]);
 
-    console.log("[DEBUG Transaction Service] getUserTransactions result:", { count: transactions.length, total });
+    console.log("[DEBUG Transaction Service] getUserTransactions result:", {
+      count: transactions.length,
+      total,
+    });
 
     return { data: transactions, pagination: { total, page, limit } };
   },
@@ -328,7 +440,11 @@ export const transactionService = {
     page?: number;
     limit?: number;
   }) => {
-    console.log("[DEBUG Transaction Service] getEventTransactions input:", { eventId, page, limit });
+    console.log("[DEBUG Transaction Service] getEventTransactions input:", {
+      eventId,
+      page,
+      limit,
+    });
 
     const skip = (page - 1) * limit;
 
@@ -364,7 +480,10 @@ export const transactionService = {
       prisma.transaction.count({ where: { eventId } }),
     ]);
 
-    console.log("[DEBUG Transaction Service] getEventTransactions result:", { count: transactions.length, total });
+    console.log("[DEBUG Transaction Service] getEventTransactions result:", {
+      count: transactions.length,
+      total,
+    });
 
     return { data: transactions, pagination: { total, page, limit } };
   },
@@ -378,7 +497,11 @@ export const transactionService = {
     page?: number;
     limit?: number;
   }) => {
-    console.log("[DEBUG Transaction Service] getOrganizerTransactions input:", { organizerId, page, limit });
+    console.log("[DEBUG Transaction Service] getOrganizerTransactions input:", {
+      organizerId,
+      page,
+      limit,
+    });
 
     const skip = (page - 1) * limit;
 
@@ -389,7 +512,10 @@ export const transactionService = {
     });
 
     const eventIds = organizerEvents.map((e) => e.id);
-    console.log("[DEBUG Transaction Service] organizer events:", eventIds.length);
+    console.log(
+      "[DEBUG Transaction Service] organizer events:",
+      eventIds.length,
+    );
 
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
@@ -424,7 +550,10 @@ export const transactionService = {
       prisma.transaction.count({ where: { eventId: { in: eventIds } } }),
     ]);
 
-    console.log("[DEBUG Transaction Service] getOrganizerTransactions result:", { count: transactions.length, total });
+    console.log(
+      "[DEBUG Transaction Service] getOrganizerTransactions result:",
+      { count: transactions.length, total },
+    );
 
     return { data: transactions, pagination: { total, page, limit } };
   },
@@ -436,13 +565,21 @@ export const transactionService = {
     id: string;
     paymentProof: UploadedFile;
   }) => {
-    console.log("[DEBUG Transaction Service] uploadPaymentProof input:", { id, fileName: paymentProof.name });
+    console.log("[DEBUG Transaction Service] uploadPaymentProof input:", {
+      id,
+      fileName: paymentProof.name,
+    });
 
     const transaction = await prisma.transaction.findUnique({
       where: { id },
     });
 
-    console.log("[DEBUG Transaction Service] transaction found:", !!transaction, "status:", transaction?.status);
+    console.log(
+      "[DEBUG Transaction Service] transaction found:",
+      !!transaction,
+      "status:",
+      transaction?.status,
+    );
 
     if (!transaction) {
       throw new AppError("Transaction not found", 404);
@@ -462,7 +599,10 @@ export const transactionService = {
       folder: "payment-proofs",
     });
 
-    console.log("[DEBUG Transaction Service] payment proof uploaded:", imageUrl);
+    console.log(
+      "[DEBUG Transaction Service] payment proof uploaded:",
+      imageUrl,
+    );
 
     const updated = await prisma.transaction.update({
       where: { id },
@@ -473,7 +613,10 @@ export const transactionService = {
       },
     });
 
-    console.log("[DEBUG Transaction Service] transaction updated, new status:", updated.status);
+    console.log(
+      "[DEBUG Transaction Service] transaction updated, new status:",
+      updated.status,
+    );
 
     return updated;
   },
@@ -483,14 +626,19 @@ export const transactionService = {
 
     const transaction = await prisma.transaction.findUnique({
       where: { id },
-      include: { 
+      include: {
         ticket: true,
         user: { select: { email: true, fullName: true } },
         event: { select: { name: true } },
       },
     });
 
-    console.log("[DEBUG Transaction Service] transaction found:", !!transaction, "status:", transaction?.status);
+    console.log(
+      "[DEBUG Transaction Service] transaction found:",
+      !!transaction,
+      "status:",
+      transaction?.status,
+    );
 
     if (!transaction) {
       throw new AppError("Transaction not found", 404);
@@ -500,9 +648,14 @@ export const transactionService = {
       throw new AppError("Invalid transaction status", 400);
     }
 
-    const earnedPoints = Math.floor(transaction.finalPrice * POINTS_EARNED_MULTIPLIER);
+    const earnedPoints = Math.floor(
+      transaction.finalPrice * POINTS_EARNED_MULTIPLIER,
+    );
 
-    console.log("[DEBUG Transaction Service] earned points calculation:", { finalPrice: transaction.finalPrice, earnedPoints });
+    console.log("[DEBUG Transaction Service] earned points calculation:", {
+      finalPrice: transaction.finalPrice,
+      earnedPoints,
+    });
 
     const updated = await prisma.$transaction(async (tx) => {
       console.log("[DEBUG Transaction Service] accepting transaction in DB");
@@ -515,7 +668,10 @@ export const transactionService = {
       });
 
       if (earnedPoints > 0) {
-        console.log("[DEBUG Transaction Service] adding earned points:", earnedPoints);
+        console.log(
+          "[DEBUG Transaction Service] adding earned points:",
+          earnedPoints,
+        );
         const user = await tx.user.findUnique({
           where: { id: transaction.userId },
         });
@@ -545,17 +701,27 @@ export const transactionService = {
       return result;
     });
 
-    console.log("[DEBUG Transaction Service] transaction accepted, new status:", updated.status);
+    console.log(
+      "[DEBUG Transaction Service] transaction accepted, new status:",
+      updated.status,
+    );
 
     // Send email notification (non-blocking)
     if (transaction.user && transaction.event) {
-      sendEmail.transactionAccepted({
-        email: transaction.user.email,
-        username: transaction.user.fullName,
-        eventName: transaction.event.name,
-        finalPrice: transaction.finalPrice,
-        quantity: transaction.quantity,
-      }).catch(err => console.log("[DEBUG Transaction Service] Email send failed:", err.message));
+      sendEmail
+        .transactionAccepted({
+          email: transaction.user.email,
+          username: transaction.user.fullName,
+          eventName: transaction.event.name,
+          finalPrice: transaction.finalPrice,
+          quantity: transaction.quantity,
+        })
+        .catch((err) =>
+          console.log(
+            "[DEBUG Transaction Service] Email send failed:",
+            err.message,
+          ),
+        );
     }
 
     return updated;
@@ -566,16 +732,21 @@ export const transactionService = {
 
     const transaction = await prisma.transaction.findUnique({
       where: { id },
-      include: { 
-        ticket: true, 
-        voucher: true, 
+      include: {
+        ticket: true,
+        voucher: true,
         coupon: true,
         user: { select: { email: true, fullName: true } },
         event: { select: { name: true } },
       },
     });
 
-    console.log("[DEBUG Transaction Service] transaction found:", !!transaction, "status:", transaction?.status);
+    console.log(
+      "[DEBUG Transaction Service] transaction found:",
+      !!transaction,
+      "status:",
+      transaction?.status,
+    );
 
     if (!transaction) {
       throw new AppError("Transaction not found", 404);
@@ -614,20 +785,30 @@ export const transactionService = {
         await restoreCoupon(tx, { couponId: transaction.couponId });
       }
 
-      console.log("[DEBUG Transaction Service] transaction rejected, new status:", result.status);
+      console.log(
+        "[DEBUG Transaction Service] transaction rejected, new status:",
+        result.status,
+      );
 
       return result;
     });
 
     // Send email notification (non-blocking)
     if (transaction.user && transaction.event) {
-      sendEmail.transactionRejected({
-        email: transaction.user.email,
-        username: transaction.user.fullName,
-        eventName: transaction.event.name,
-        finalPrice: transaction.finalPrice,
-        quantity: transaction.quantity,
-      }).catch(err => console.log("[DEBUG Transaction Service] Email send failed:", err.message));
+      sendEmail
+        .transactionRejected({
+          email: transaction.user.email,
+          username: transaction.user.fullName,
+          eventName: transaction.event.name,
+          finalPrice: transaction.finalPrice,
+          quantity: transaction.quantity,
+        })
+        .catch((err) =>
+          console.log(
+            "[DEBUG Transaction Service] Email send failed:",
+            err.message,
+          ),
+        );
     }
 
     return result;
@@ -641,7 +822,12 @@ export const transactionService = {
       include: { ticket: true, voucher: true, coupon: true },
     });
 
-    console.log("[DEBUG Transaction Service] transaction found:", !!transaction, "status:", transaction?.status);
+    console.log(
+      "[DEBUG Transaction Service] transaction found:",
+      !!transaction,
+      "status:",
+      transaction?.status,
+    );
 
     if (!transaction) {
       throw new AppError("Transaction not found", 404);
@@ -676,7 +862,10 @@ export const transactionService = {
         await restoreCoupon(tx, { couponId: transaction.couponId });
       }
 
-      console.log("[DEBUG Transaction Service] transaction expired, new status:", result.status);
+      console.log(
+        "[DEBUG Transaction Service] transaction expired, new status:",
+        result.status,
+      );
 
       return result;
     });
@@ -690,7 +879,12 @@ export const transactionService = {
       include: { ticket: true, voucher: true, coupon: true },
     });
 
-    console.log("[DEBUG Transaction Service] transaction found:", !!transaction, "status:", transaction?.status);
+    console.log(
+      "[DEBUG Transaction Service] transaction found:",
+      !!transaction,
+      "status:",
+      transaction?.status,
+    );
 
     if (!transaction) {
       throw new AppError("Transaction not found", 404);
@@ -702,7 +896,10 @@ export const transactionService = {
       TransactionStatus.WAITING_CONFIRMATION,
     ];
 
-    console.log("[DEBUG Transaction Service] allowed to cancel:", allowedStatuses.includes(status));
+    console.log(
+      "[DEBUG Transaction Service] allowed to cancel:",
+      allowedStatuses.includes(status),
+    );
 
     if (!allowedStatuses.includes(status)) {
       throw new AppError("Cannot cancel this transaction", 400);
@@ -737,7 +934,10 @@ export const transactionService = {
         await restoreCoupon(tx, { couponId: transaction.couponId });
       }
 
-      console.log("[DEBUG Transaction Service] transaction canceled, new status:", result.status);
+      console.log(
+        "[DEBUG Transaction Service] transaction canceled, new status:",
+        result.status,
+      );
 
       return result;
     });

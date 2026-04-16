@@ -6,18 +6,41 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: "dashboard", path: "/dashboard" },
-  { id: "events", label: "My Events", icon: "event", path: "/dashboard?tab=events" },
-  { id: "vouchers", label: "Vouchers", icon: "local_offer", path: "/dashboard?vouchers" },
-  { id: "transactions", label: "Transactions", icon: "receipt_long", path: "/transactions/organizer" },
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: "dashboard",
+    path: "/dashboard",
+  },
+  {
+    id: "events",
+    label: "My Events",
+    icon: "event",
+    path: "/dashboard?tab=events",
+  },
+  {
+    id: "vouchers",
+    label: "Vouchers",
+    icon: "local_offer",
+    path: "/dashboard?vouchers",
+  },
+  {
+    id: "transactions",
+    label: "Transactions",
+    icon: "receipt_long",
+    path: "/transactions/organizer",
+  },
 ];
 
-export const Sidebar = ({ activeTab = "dashboard", onTabChange }: SidebarProps) => {
+export const Sidebar = ({
+  activeTab = "dashboard",
+  onTabChange,
+}: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  const handleNavClick = (item: typeof navItems[0]) => {
+  const handleNavClick = (item: (typeof navItems)[0]) => {
     navigate(item.path);
     onTabChange?.(item.id);
   };
@@ -29,7 +52,7 @@ export const Sidebar = ({ activeTab = "dashboard", onTabChange }: SidebarProps) 
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] z-[60] hidden md:flex flex-col border-r border-white/5">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-6">
+      <a className="flex items-center gap-3 px-6 py-6" href="/">
         <div className="w-10 h-10 rounded bg-[#4B4DD8] flex items-center justify-center">
           <span
             className="material-symbols-outlined text-[#C0C1FF]"
@@ -44,7 +67,7 @@ export const Sidebar = ({ activeTab = "dashboard", onTabChange }: SidebarProps) 
             Enterprise Tier
           </p>
         </div>
-      </div>
+      </a>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4">
@@ -52,15 +75,22 @@ export const Sidebar = ({ activeTab = "dashboard", onTabChange }: SidebarProps) 
           {navItems.map((item) => {
             const itemPathParts = item.path.split("?");
             const basePath = itemPathParts[0];
-            const itemParams = Object.fromEntries(new URLSearchParams(itemPathParts[1] || ""));
+            const itemParams = Object.fromEntries(
+              new URLSearchParams(itemPathParts[1] || ""),
+            );
             const currentParams = Object.fromEntries(searchParams);
-            
+
             const pathMatches = location.pathname === basePath;
             const paramsMatch = Object.keys(itemParams).every(
-              key => itemParams[key] === currentParams[key]
+              (key) => itemParams[key] === currentParams[key],
             );
-            
-            const isActive = activeTab === item.id || (pathMatches && paramsMatch && Object.keys(itemParams).length > 0);
+
+            const isActive =
+              activeTab === item.id ||
+              (pathMatches &&
+                paramsMatch &&
+                Object.keys(itemParams).length > 0 &&
+                activeTab !== item.id);
             return (
               <li key={item.id}>
                 <button

@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
-import { useAuthStore } from "../stores/useAuthStore";
-import { useToastStore } from "../stores/useToastStore";
 import { type Transaction, type TransactionStatus } from "../services/api";
 
 type FilterStatus = "ALL" | TransactionStatus;
@@ -18,9 +16,6 @@ const MyTransactionsPage: React.FC = () => {
     error,
     clearTransactions 
   } = useTransactionStore();
-  
-  const { isAuthenticated } = useAuthStore();
-  const { addToast } = useToastStore();
 
   // Filter state
   const [filter, setFilter] = useState<FilterStatus>("ALL");
@@ -40,15 +35,6 @@ const MyTransactionsPage: React.FC = () => {
     if (filter === "ALL") return true;
     return txn.status === filter;
   });
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      addToast("error", "Please login to view your transactions");
-      navigate("/login");
-      return;
-    }
-    fetchMyTransactions(pagination.page, 20);
-  }, []);
 
   useEffect(() => {
     fetchMyTransactions(pagination.page, 20);

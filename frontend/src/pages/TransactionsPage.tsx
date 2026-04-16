@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
 import { type TransactionStatus } from "../services/api";
+import { Sidebar } from "../components/sidebar";
 
 type FilterStatus = "ALL" | TransactionStatus;
 
@@ -30,6 +31,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
 
   // Filter state
   const [filter, setFilter] = useState<FilterStatus>("ALL");
+  const [activeTab, setActiveTab] = useState("transactions");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
@@ -37,15 +39,8 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isOrganizer = user?.role === "ORGANIZER";
-
   // Fetch transactions on mount
   useEffect(() => {
-    if (!isOrganizer) {
-      navigate("/");
-      return;
-    }
-    
     if (eventId) {
       fetchEventTransactions(eventId, pagination.page, 20);
     } else {
@@ -203,51 +198,9 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
     }
   };
 
-  if (!isOrganizer) {
-    return null;
-  }
-
   return (
     <div className="bg-[#131313] text-[#e5e2e1] font-sans min-h-screen selection:bg-[#c0c1ff]/30">
-      {/* SideNavBar - Organizer specific */}
-      <aside className="h-screen w-64 fixed left-0 top-16 bg-[#1C1B1B] flex flex-col py-6 px-4 gap-2 z-40 hidden md:flex">
-        <div className="mt-16 mb-8 px-2">
-          <h2 className="text-lg font-black text-[#E5E2E1]">
-            Organizer Studio
-          </h2>
-          <p className="text-xs text-[#c7c4d8] uppercase tracking-widest mt-1">
-            Premium Tier
-          </p>
-        </div>
-        <div className="flex flex-col gap-1 flex-grow">
-          <Link to="/dashboard" className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all text-[#C7C4D8] hover:bg-[#2A2A2A] hover:text-[#E5E2E1]">
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="text-sm">Dashboard</span>
-          </Link>
-          <Link to="/events" className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all text-[#C7C4D8] hover:bg-[#2A2A2A] hover:text-[#E5E2E1]">
-            <span className="material-symbols-outlined">event</span>
-            <span className="text-sm">Events</span>
-          </Link>
-          <Link to="/transactions" className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all active:translate-x-1 duration-150 bg-[#2A2A2A] text-[#C0C1FF] font-semibold border-r-4 border-[#C0C1FF]">
-            <span className="material-symbols-outlined">group</span>
-            <span className="text-sm">Registrations</span>
-          </Link>
-          <Link to="/analytics" className="flex items-center gap-3 py-3 px-4 rounded-lg transition-all text-[#C7C4D8] hover:bg-[#2A2A2A] hover:text-[#E5E2E1]">
-            <span className="material-symbols-outlined">insights</span>
-            <span className="text-sm">Analytics</span>
-          </Link>
-        </div>
-        <div className="pt-4 border-t border-white/5 flex flex-col gap-1">
-          <button className="flex items-center gap-3 py-2 px-4 text-[#C7C4D8] hover:text-[#E5E2E1] transition-all rounded-lg">
-            <span className="material-symbols-outlined">help</span>
-            <span className="text-sm">Help Center</span>
-          </button>
-          <button className="flex items-center gap-3 py-2 px-4 text-[#ffb4ab]/80 hover:text-[#ffb4ab] transition-all rounded-lg">
-            <span className="material-symbols-outlined">logout</span>
-            <span className="text-sm">Logout</span>
-          </button>
-        </div>
-      </aside>
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content */}
       <main className="md:ml-64 pt-24 pb-12 px-6 md:px-12">

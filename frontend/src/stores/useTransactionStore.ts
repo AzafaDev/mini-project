@@ -166,7 +166,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await transactionService.acceptTransaction(id);
-      if (response.success) {
+      if (response.success && response.data) {
         // Update both currentTransaction and transactions array for immediate UI refresh
         const updatedTransaction = response.data;
         set((state) => ({
@@ -197,7 +197,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await transactionService.rejectTransaction(id, reason);
-      if (response.success) {
+      if (response.success && response.data) {
         // Update both currentTransaction and transactions array for immediate UI refresh
         const updatedTransaction = response.data;
         set((state) => ({
