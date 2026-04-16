@@ -97,19 +97,23 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   fetchCurrentUser: async () => {
+    console.log("[AuthStore] fetchCurrentUser called");
     set({ isLoading: true });
     try {
       const response = await axiosInstance.get("/auth/me");
+      console.log("[AuthStore] /auth/me response:", response.data.success);
       if (response.data.success) {
         set({
           user: response.data.user || null,
           isAuthenticated: true,
           isLoading: false,
         });
+        console.log("[AuthStore] user set:", response.data.user?.email);
       } else {
         set({ user: null, isAuthenticated: false, isLoading: false });
       }
     } catch (error) {
+      console.log("[AuthStore] fetchCurrentUser error:", error);
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

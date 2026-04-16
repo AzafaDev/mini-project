@@ -21,6 +21,7 @@ export interface Event {
   organizerId: string;
   organizer: EventOrganizer;
   tickets?: EventTicket[];
+  sold?: number;
 }
 
 export interface EventOrganizer {

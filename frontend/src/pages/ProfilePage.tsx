@@ -2,8 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { useFormik } from "formik";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
-import { profileService, type UpdateProfileRequest, type ChangePasswordRequest, type Coupon } from "../services/api";
-import { updateProfileSchema, changePasswordSchema } from "../validation/authSchemas";
+import {
+  profileService,
+  type UpdateProfileRequest,
+  type ChangePasswordRequest,
+  type Coupon,
+} from "../services/api";
+import {
+  updateProfileSchema,
+  changePasswordSchema,
+} from "../validation/authSchemas";
 
 // --- Sidebar Component ---
 
@@ -42,7 +50,10 @@ const Sidebar = ({ role, onNavigate }: SidebarProps) => {
         <div className="flex items-center gap-3 mb-2">
           <img
             className="w-10 h-10 rounded-full object-cover"
-            src={user?.profilePicture || "https://lh3.googleusercontent.com/aida-public/AB6AXuAMIi3oA8ClFG0LdduEuZLhW5_oQlpjBRWMC9oqlfZHCnElcZE7_gKp5lqdhlcIJYowP5RQtDbTuVGFkFKYgEQq1oKBeXg-bKGZAFBzpirrflGoYwg9Mg6swHLfmxDlIMytqDAHHDjM62A-buWdr3r6_yObU-cKRWndEIssJtj8ZRonC4o2wjsfx53y9DwLPNd8lXg55q5Va3aiQX50h7cBtXk8aS8nnaOTxWgJfkBvqxocgAt6-ac8onMDDGBt7VOh-MnU94LwxTdO"}
+            src={
+              user?.profilePicture ||
+              "https://lh3.googleusercontent.com/aida-public/AB6AXuAMIi3oA8ClFG0LdduEuZLhW5_oQlpjBRWMC9oqlfZHCnElcZE7_gKp5lqdhlcIJYowP5RQtDbTuVGFkFKYgEQq1oKBeXg-bKGZAFBzpirrflGoYwg9Mg6swHLfmxDlIMytqDAHHDjM62A-buWdr3r6_yObU-cKRWndEIssJtj8ZRonC4o2wjsfx53y9DwLPNd8lXg55q5Va3aiQX50h7cBtXk8aS8nnaOTxWgJfkBvqxocgAt6-ac8onMDDGBt7VOh-MnU94LwxTdO"
+            }
             alt="Profile"
           />
           <div>
@@ -72,9 +83,7 @@ const Sidebar = ({ role, onNavigate }: SidebarProps) => {
         ))}
       </nav>
       <div className="mt-auto flex flex-col gap-1">
-        <button
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#C7C4D8] hover:bg-[#2A2A2A] transition-all"
-        >
+        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#C7C4D8] hover:bg-[#2A2A2A] transition-all">
           <span className="material-symbols-outlined">help</span>
           <span className="text-sm">Help Center</span>
         </button>
@@ -195,7 +204,7 @@ export default function ProfilePage() {
   const { user, fetchCurrentUser } = useAuthStore();
   const addToast = useToastStore((state) => state.addToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [points, setPoints] = useState<number>(0);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,7 +225,7 @@ export default function ProfilePage() {
         };
 
         const response = await profileService.updateProfile(updateData);
-        
+
         if (response.success) {
           await fetchCurrentUser();
           addToast("success", "Profile updated successfully");
@@ -224,7 +233,10 @@ export default function ProfilePage() {
           addToast("error", response.message || "Failed to update profile");
         }
       } catch (error: any) {
-        addToast("error", error.response?.data?.message || "Failed to update profile");
+        addToast(
+          "error",
+          error.response?.data?.message || "Failed to update profile",
+        );
       } finally {
         setSubmitting(false);
       }
@@ -255,7 +267,10 @@ export default function ProfilePage() {
           addToast("error", response.message || "Failed to change password");
         }
       } catch (error: any) {
-        addToast("error", error.response?.data?.message || "Failed to change password");
+        addToast(
+          "error",
+          error.response?.data?.message || "Failed to change password",
+        );
       } finally {
         setSubmitting(false);
       }
@@ -266,11 +281,24 @@ export default function ProfilePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Use refs to get stable references to store functions
+  // This prevents infinite loops caused by unstable function references in useEffect deps
+  const fetchCurrentUserRef = useRef(fetchCurrentUser);
+  const addToastRef = useRef(addToast);
+
+  // Track if data has been loaded to prevent duplicate fetching
+  const dataLoadedRef = useRef(false);
+
   useEffect(() => {
+    console.log("[ProfilePage] useEffect1 running, dataLoaded:", dataLoadedRef.current);
+    if (dataLoadedRef.current) return;
+    
     const loadData = async () => {
+      dataLoadedRef.current = true;
+      console.log("[ProfilePage] loadData starting...");
       setLoading(true);
       try {
-        await fetchCurrentUser();
+        await fetchCurrentUserRef.current();
         const pointsRes = await profileService.getPoints();
         if (pointsRes.success && pointsRes.points !== undefined) {
           setPoints(pointsRes.points);
@@ -281,16 +309,20 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error("Failed to load profile data:", error);
-        addToast("error", "Failed to load profile data");
+        addToastRef.current("error", "Failed to load profile data");
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, [fetchCurrentUser, addToast]);
+  }, []); // Empty deps - run only once on mount
+
+  // Use ref to track if form values have been initialized to prevent infinite loop
+  const formValuesInitialized = useRef(false);
 
   useEffect(() => {
-    if (user) {
+    console.log("[ProfilePage] useEffect2 running, user:", user?.email, "initialized:", formValuesInitialized.current);
+    if (user && !formValuesInitialized.current) {
       profileFormik.setValues({
         fullName: user.fullName || "",
         phoneNumber: user.phoneNumber || "",
@@ -298,6 +330,8 @@ export default function ProfilePage() {
       if (user.points !== undefined) {
         setPoints(user.points);
       }
+      formValuesInitialized.current = true;
+      console.log("[ProfilePage] form values set");
     }
   }, [user]);
 
@@ -333,17 +367,23 @@ export default function ProfilePage() {
     setUploading(true);
     try {
       const response = await profileService.uploadProfilePicture(selectedFile);
-      
+
       if (response.success) {
         await fetchCurrentUser();
         setSelectedFile(null);
         setPreviewUrl(null);
         addToast("success", "Profile picture updated successfully");
       } else {
-        addToast("error", response.message || "Failed to upload profile picture");
+        addToast(
+          "error",
+          response.message || "Failed to upload profile picture",
+        );
       }
     } catch (error: any) {
-      addToast("error", error.response?.data?.message || "Failed to upload profile picture");
+      addToast(
+        "error",
+        error.response?.data?.message || "Failed to upload profile picture",
+      );
     } finally {
       setUploading(false);
     }
@@ -360,9 +400,9 @@ export default function ProfilePage() {
   const handleNavigate = (page: string) => {
     const routeMap: Record<string, string> = {
       "My Tickets": "/my-tickets",
-      "Transactions": "/transactions",
-      "Dashboard": "/dashboard",
-      "Events": "/dashboard",
+      Transactions: "/transactions",
+      Dashboard: "/dashboard",
+      Events: "/dashboard",
     };
     const route = routeMap[page];
     if (route) {
@@ -395,16 +435,20 @@ export default function ProfilePage() {
             {/* Profile Identity Card */}
             <section className="md:col-span-8 bg-[#1c1b1b] rounded-xl p-8 flex flex-col md:flex-row gap-8 items-center md:items-start relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#c0c1ff]/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-              
+
               {/* Profile Picture Section */}
               <div className="relative group">
-                <div 
+                <div
                   className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-[#2a2a2a] relative cursor-pointer transition-transform duration-300 hover:scale-105"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <img
                     className="w-full h-full object-cover"
-                    src={previewUrl || user?.profilePicture || "https://lh3.googleusercontent.com/aida-public/AB6AXuCgqLhXXJNbmvvCdEbZ7AKonin1xZJEPSH5PlQU7Y3xT-5MXpJuyVWH3IrJWepOI0LM2vzo00b31D5nypgmoYaTculyAv1-okKaF_x0qyZ2sazvBnVc0DVFTnlyf7fC96kIPlbDi15Vps65AGriAuE_mdL1fstX46X8rFm_WQcRgwuLN-lZLNUuRRei6ibWSxai0eo6SwuQFoUn-c3Ko6aME_LOvQckieY6XJ21uij78J4FGUXEVoO2xyrgbjuQVsc8pJfeWW7SHXHS"}
+                    src={
+                      previewUrl ||
+                      user?.profilePicture ||
+                      "https://lh3.googleusercontent.com/aida-public/AB6AXuCgqLhXXJNbmvvCdEbZ7AKonin1xZJEPSH5PlQU7Y3xT-5MXpJuyVWH3IrJWepOI0LM2vzo00b31D5nypgmoYaTculyAv1-okKaF_x0qyZ2sazvBnVc0DVFTnlyf7fC96kIPlbDi15Vps65AGriAuE_mdL1fstX46X8rFm_WQcRgwuLN-lZLNUuRRei6ibWSxai0eo6SwuQFoUn-c3Ko6aME_LOvQckieY6XJ21uij78J4FGUXEVoO2xyrgbjuQVsc8pJfeWW7SHXHS"
+                    }
                     alt="Profile"
                   />
                   {/* Hover overlay */}
@@ -414,7 +458,7 @@ export default function ProfilePage() {
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Hidden file input */}
                 <input
                   ref={fileInputRef}
@@ -457,7 +501,10 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              <form className="flex-1 space-y-6 w-full relative z-10" onSubmit={profileFormik.handleSubmit}>
+              <form
+                className="flex-1 space-y-6 w-full relative z-10"
+                onSubmit={profileFormik.handleSubmit}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
@@ -470,14 +517,18 @@ export default function ProfilePage() {
                       onChange={profileFormik.handleChange}
                       onBlur={profileFormik.handleBlur}
                       className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
-                        profileFormik.touched.fullName && profileFormik.errors.fullName
+                        profileFormik.touched.fullName &&
+                        profileFormik.errors.fullName
                           ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
                           : "focus:ring-2 focus:ring-[#c0c1ff]"
                       }`}
                     />
-                    {profileFormik.touched.fullName && profileFormik.errors.fullName && (
-                      <p className="text-red-400 text-xs">{profileFormik.errors.fullName}</p>
-                    )}
+                    {profileFormik.touched.fullName &&
+                      profileFormik.errors.fullName && (
+                        <p className="text-red-400 text-xs">
+                          {profileFormik.errors.fullName}
+                        </p>
+                      )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
@@ -502,15 +553,19 @@ export default function ProfilePage() {
                       onChange={profileFormik.handleChange}
                       onBlur={profileFormik.handleBlur}
                       className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
-                        profileFormik.touched.phoneNumber && profileFormik.errors.phoneNumber
+                        profileFormik.touched.phoneNumber &&
+                        profileFormik.errors.phoneNumber
                           ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
                           : "focus:ring-2 focus:ring-[#c0c1ff]"
                       }`}
                       placeholder="+62 xxx xxxx xxxx"
                     />
-                    {profileFormik.touched.phoneNumber && profileFormik.errors.phoneNumber && (
-                      <p className="text-red-400 text-xs">{profileFormik.errors.phoneNumber}</p>
-                    )}
+                    {profileFormik.touched.phoneNumber &&
+                      profileFormik.errors.phoneNumber && (
+                        <p className="text-red-400 text-xs">
+                          {profileFormik.errors.phoneNumber}
+                        </p>
+                      )}
                   </div>
                 </div>
                 <button
@@ -519,7 +574,9 @@ export default function ProfilePage() {
                   className="bg-[#c0c1ff] text-[#07006c] px-6 py-2.5 rounded-lg font-bold text-sm hover:brightness-110 hover:shadow-lg hover:shadow-[#c0c1ff]/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {profileFormik.isSubmitting && (
-                    <span className="material-symbols-outlined animate-spin text-sm">sync</span>
+                    <span className="material-symbols-outlined animate-spin text-sm">
+                      sync
+                    </span>
                   )}
                   {profileFormik.isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
@@ -544,7 +601,7 @@ export default function ProfilePage() {
                   Use points for discounts
                 </span>
                 <button
-                  onClick={() => window.location.href = "/profile/points"}
+                  onClick={() => (window.location.href = "/profile/points")}
                   className="text-xs font-bold text-white/80 hover:text-white underline underline-offset-2"
                 >
                   View History
@@ -560,7 +617,10 @@ export default function ProfilePage() {
                 </span>
                 <h2 className="text-xl font-bold">Change Password</h2>
               </div>
-              <form className="space-y-6 max-w-lg" onSubmit={passwordFormik.handleSubmit}>
+              <form
+                className="space-y-6 max-w-lg"
+                onSubmit={passwordFormik.handleSubmit}
+              >
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
                     Current Password
@@ -572,15 +632,19 @@ export default function ProfilePage() {
                     onChange={passwordFormik.handleChange}
                     onBlur={passwordFormik.handleBlur}
                     className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
-                      passwordFormik.touched.currentPassword && passwordFormik.errors.currentPassword
+                      passwordFormik.touched.currentPassword &&
+                      passwordFormik.errors.currentPassword
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
                         : "focus:ring-2 focus:ring-[#c0c1ff]"
                     }`}
                     placeholder="Enter current password"
                   />
-                  {passwordFormik.touched.currentPassword && passwordFormik.errors.currentPassword && (
-                    <p className="text-red-400 text-xs">{passwordFormik.errors.currentPassword}</p>
-                  )}
+                  {passwordFormik.touched.currentPassword &&
+                    passwordFormik.errors.currentPassword && (
+                      <p className="text-red-400 text-xs">
+                        {passwordFormik.errors.currentPassword}
+                      </p>
+                    )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
@@ -593,15 +657,19 @@ export default function ProfilePage() {
                     onChange={passwordFormik.handleChange}
                     onBlur={passwordFormik.handleBlur}
                     className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
-                      passwordFormik.touched.newPassword && passwordFormik.errors.newPassword
+                      passwordFormik.touched.newPassword &&
+                      passwordFormik.errors.newPassword
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
                         : "focus:ring-2 focus:ring-[#c0c1ff]"
                     }`}
                     placeholder="Min. 8 characters"
                   />
-                  {passwordFormik.touched.newPassword && passwordFormik.errors.newPassword && (
-                    <p className="text-red-400 text-xs">{passwordFormik.errors.newPassword}</p>
-                  )}
+                  {passwordFormik.touched.newPassword &&
+                    passwordFormik.errors.newPassword && (
+                      <p className="text-red-400 text-xs">
+                        {passwordFormik.errors.newPassword}
+                      </p>
+                    )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
@@ -614,15 +682,19 @@ export default function ProfilePage() {
                     onChange={passwordFormik.handleChange}
                     onBlur={passwordFormik.handleBlur}
                     className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
-                      passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword
+                      passwordFormik.touched.confirmPassword &&
+                      passwordFormik.errors.confirmPassword
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
                         : "focus:ring-2 focus:ring-[#c0c1ff]"
                     }`}
                     placeholder="Confirm new password"
                   />
-                  {passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword && (
-                    <p className="text-red-400 text-xs">{passwordFormik.errors.confirmPassword}</p>
-                  )}
+                  {passwordFormik.touched.confirmPassword &&
+                    passwordFormik.errors.confirmPassword && (
+                      <p className="text-red-400 text-xs">
+                        {passwordFormik.errors.confirmPassword}
+                      </p>
+                    )}
                 </div>
                 <div className="pt-4">
                   <button
@@ -631,9 +703,13 @@ export default function ProfilePage() {
                     className="bg-[#c0c1ff] text-[#07006c] px-6 py-2.5 rounded-lg font-bold text-sm hover:brightness-110 hover:shadow-lg hover:shadow-[#c0c1ff]/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {passwordFormik.isSubmitting && (
-                      <span className="material-symbols-outlined animate-spin text-sm">sync</span>
+                      <span className="material-symbols-outlined animate-spin text-sm">
+                        sync
+                      </span>
                     )}
-                    {passwordFormik.isSubmitting ? "Changing..." : "Update Password"}
+                    {passwordFormik.isSubmitting
+                      ? "Changing..."
+                      : "Update Password"}
                   </button>
                 </div>
               </form>
@@ -647,20 +723,23 @@ export default function ProfilePage() {
                 </span>
                 <h2 className="text-xl font-bold">My Coupons</h2>
               </div>
-              
+
               {coupons.length === 0 ? (
                 <p className="text-[#c7c4d8]">No active coupons</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {coupons.map((coupon) => (
-                    <div key={coupon.id} className="bg-[#0e0e0e] rounded-lg p-4">
+                    <div
+                      key={coupon.id}
+                      className="bg-[#0e0e0e] rounded-lg p-4"
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-[#c0c1ff] font-mono font-bold">
                           {coupon.code}
                         </span>
                         <span className="text-xs text-[#c7c4d8]">
-                          {coupon.discountType === "PERCENTAGE" 
-                            ? `${coupon.discountValue}% OFF` 
+                          {coupon.discountType === "PERCENTAGE"
+                            ? `${coupon.discountValue}% OFF`
                             : `Rp ${coupon.discountValue.toLocaleString()} OFF`}
                         </span>
                       </div>
@@ -678,19 +757,35 @@ export default function ProfilePage() {
 
       {/* Mobile Navigation Bar */}
       <div className="md:hidden fixed bottom-0 left-0 w-full bg-[#1C1B1B] h-16 flex items-center justify-around z-50 border-t border-[#464555]/10">
-        <button onClick={() => handleNavigate(user?.role === "ORGANIZER" ? "Dashboard" : "My Tickets")} className="flex flex-col items-center gap-1">
+        <button
+          onClick={() =>
+            handleNavigate(
+              user?.role === "ORGANIZER" ? "Dashboard" : "My Tickets",
+            )
+          }
+          className="flex flex-col items-center gap-1"
+        >
           <span className="material-symbols-outlined text-[#C7C4D8]">
             {user?.role === "ORGANIZER" ? "dashboard" : "confirmation_number"}
           </span>
         </button>
-        <button onClick={() => handleNavigate("Transactions")} className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-[#C7C4D8]">receipt_long</span>
+        <button
+          onClick={() => handleNavigate("Transactions")}
+          className="flex flex-col items-center gap-1"
+        >
+          <span className="material-symbols-outlined text-[#C7C4D8]">
+            receipt_long
+          </span>
         </button>
         <button className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-[#C0C1FF]">account_circle</span>
+          <span className="material-symbols-outlined text-[#C0C1FF]">
+            account_circle
+          </span>
         </button>
         <button className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-[#C7C4D8]">settings</span>
+          <span className="material-symbols-outlined text-[#C7C4D8]">
+            settings
+          </span>
         </button>
       </div>
     </div>

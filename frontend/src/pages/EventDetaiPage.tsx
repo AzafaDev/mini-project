@@ -147,10 +147,15 @@ const EventDetailPage: React.FC = () => {
     setVoucherError("");
 
     const totalQuantity = Object.values(ticketQuantities).reduce((sum, qty) => sum + qty, 0);
+    
+    // Fallback: if total is 0 but quantity > 0, use eventBasePrice
+    const effectiveTotal = total > 0 ? total : (totalQuantity > 0 ? eventBasePrice * totalQuantity : 0);
+    console.log("[DEBUG handleApplyVoucher] voucherCode:", voucherCode, "total:", total, "effectiveTotal:", effectiveTotal, "totalQuantity:", totalQuantity);
+
     const discount = await validateVoucher(
       id,
       voucherCode,
-      total,
+      effectiveTotal,
       totalQuantity,
     );
 
@@ -178,16 +183,21 @@ const EventDetailPage: React.FC = () => {
     setCouponError("");
 
     const totalQuantity = Object.values(ticketQuantities).reduce((sum, qty) => sum + qty, 0);
+    
+    // Fallback: if total is 0 but quantity > 0, use eventBasePrice
+    const effectiveTotal = total > 0 ? total : (totalQuantity > 0 ? eventBasePrice * totalQuantity : 0);
+    console.log("[DEBUG handleApplyCoupon] couponCode:", couponCode, "total:", total, "effectiveTotal:", effectiveTotal, "totalQuantity:", totalQuantity);
+
     const result = await reviewsVouchersService.validateCoupon(
       couponCode,
-      total,
+      effectiveTotal,
       totalQuantity
     );
 
     setIsApplyingCoupon(false);
 
-    if (result.success && result.discount && result.discount > 0) {
-      setAppliedCouponDiscount(result.discount);
+    if (result.success && result.valid) {
+      setAppliedCouponDiscount(result.discount || 0);
       setCouponError("");
     } else {
       setAppliedCouponDiscount(0);

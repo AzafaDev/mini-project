@@ -80,10 +80,10 @@ export interface OrganizerStats {
   totalRevenue: number;
   ticketsSold: number;
   totalEvents: number;
-  completedEvents: number;
-  upcomingEvents: number;
-  activeEvents: number;
+  totalAttendees: number;
   monthlyStats?: Array<{ month: string; revenue: number; tickets: number }>;
+  dailyStats?: Array<{ day: string; revenue: number; tickets: number }>;
+  yearlyStats?: Array<{ year: number; revenue: number; tickets: number }>;
 }
 
 export interface OrganizerStatsResponse {
@@ -624,6 +624,7 @@ export interface TransactionResponse {
 export interface TransactionActionResponse {
   success: boolean;
   message?: string;
+  data?: Transaction;
 }
 
 // ============================================

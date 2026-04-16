@@ -102,6 +102,7 @@ voucherRouter.get("/check-voucher", async (req, res) => {
 
     res.json({ 
       success: true, 
+      valid: true,
       discount,
       discountType: voucher.discountType,
       discountValue: voucher.discountValue,
@@ -219,6 +220,7 @@ voucherRouter.get("/coupons/validate", async (req, res) => {
 
     res.json({
       success: true,
+      valid: true,
       discount: actualDiscount,
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
@@ -278,7 +280,7 @@ voucherRouter.get("/my-vouchers", authMiddleware.verifyAuthToken, authMiddleware
       where: { eventId: { in: eventIds } },
       include: {
         event: {
-          select: { name: true },
+          select: { id: true, name: true },
         },
       },
       orderBy: { createdAt: "desc" },

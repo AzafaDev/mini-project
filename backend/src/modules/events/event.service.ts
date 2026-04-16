@@ -321,7 +321,18 @@ export const eventService = {
     }
 
     if (totalSeats !== undefined) {
-      data.totalSeats = parseNumber(totalSeats, "totalSeats");
+      const newTotalSeats = parseNumber(totalSeats, "totalSeats");
+
+      const soldResult = await prisma.transaction.aggregate({
+        where: { eventId: id, status: "DONE" },
+        _sum: { quantity: true },
+      });
+      const sold = soldResult._sum.quantity || 0;
+
+      const newAvailableSeats = Math.max(0, newTotalSeats - sold);
+
+      data.totalSeats = newTotalSeats;
+      data.availableSeats = newAvailableSeats;
     }
     if (availableSeats !== undefined) {
       data.availableSeats = parseNumber(availableSeats, "availableSeats");
@@ -382,9 +393,22 @@ export const eventService = {
       },
     });
 
-    console.log("[DEBUG Event Service] getMyEvents result count:", events.length);
+    const eventsWithSold = await Promise.all(
+      events.map(async (event) => {
+        const transactions = await prisma.transaction.aggregate({
+          where: { eventId: event.id, status: "DONE" },
+          _sum: { quantity: true },
+        });
+        return {
+          ...event,
+          sold: transactions._sum.quantity || 0,
+        };
+      })
+    );
 
-    return events;
+    console.log("[DEBUG Event Service] getMyEvents result count:", eventsWithSold.length);
+
+    return eventsWithSold;
   },
 
   getEventStats: async ({ id, organizerId }: { id: string; organizerId: string }) => {
@@ -423,92 +447,105 @@ export const eventService = {
     const currentMonth = month;
     const currentDay = day;
 
-    const where: any = {
-      organizerId,
-      isDeleted: false,
-    };
-
-    if (currentYear && currentMonth) {
-      const startDate = new Date(currentYear, currentMonth - 1, currentDay || 1);
-      const endDate = currentDay 
-        ? new Date(currentYear, currentMonth - 1, currentDay + 1)
-        : new Date(currentYear, currentMonth, 0);
-      where.startDate = { gte: startDate, lte: endDate };
-    } else if (currentYear) {
-      where.startDate = { gte: new Date(currentYear, 0, 1), lte: new Date(currentYear, 11, 31) };
-    }
-
-    const events = await prisma.event.findMany({
-      where,
-      select: { id: true },
-    });
-
-    const eventIds = events.map(e => e.id);
-
-    const transactionWhere: any = {
-      eventId: { in: eventIds },
-      status: "DONE",
-    };
-
-    const transactions = await prisma.transaction.findMany({
-      where: transactionWhere,
-    });
-
-    const totalRevenue = transactions.reduce((sum, tx) => sum + tx.finalPrice, 0);
-    const totalTicketsSold = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
-    const totalEvents = events.length;
-    const totalAttendees = transactions.length;
-
-    const monthlyData: { month: string; revenue: number; tickets: number }[] = [];
-    const dailyData: { day: string; revenue: number; tickets: number }[] = [];
-
+    // Get all events by this organizer (not just the selected year)
     const allOrganizerEvents = await prisma.event.findMany({
       where: {
         organizerId,
         isDeleted: false,
-        startDate: { gte: new Date(currentYear, 0, 1), lte: new Date(currentYear, 11, 31) },
       },
-      select: { id: true, startDate: true },
+      select: { id: true, startDate: true, endDate: true },
     });
 
     const allEventIds = allOrganizerEvents.map(e => e.id);
 
-    const yearTransactionWhere: any = {
-      eventId: { in: allEventIds },
-      status: "DONE",
-    };
+    // Get all transactions for these events
+    const allTransactions = await prisma.transaction.findMany({
+      where: {
+        eventId: { in: allEventIds },
+        status: "DONE",
+      },
+    });
 
-    const yearTransactions = await prisma.transaction.findMany({
-      where: yearTransactionWhere,
+    // Calculate totals based on selected period
+    let filteredTransactions = allTransactions;
+    if (currentYear && currentMonth && currentDay) {
+      // Specific day
+      filteredTransactions = allTransactions.filter(tx => {
+        const txDate = new Date(tx.createdAt);
+        return txDate.getDate() === currentDay &&
+               (txDate.getMonth() + 1) === currentMonth &&
+               txDate.getFullYear() === currentYear;
+      });
+    } else if (currentYear && currentMonth) {
+      // Specific month
+      filteredTransactions = allTransactions.filter(tx => {
+        const txDate = new Date(tx.createdAt);
+        return (txDate.getMonth() + 1) === currentMonth &&
+               txDate.getFullYear() === currentYear;
+      });
+    } else if (currentYear) {
+      // Specific year
+      filteredTransactions = allTransactions.filter(tx => {
+        const txDate = new Date(tx.createdAt);
+        return txDate.getFullYear() === currentYear;
+      });
+    }
+
+    const totalRevenue = filteredTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0);
+    const totalTicketsSold = filteredTransactions.reduce((sum, tx) => sum + tx.quantity, 0);
+    const totalAttendees = filteredTransactions.length;
+
+    // Calculate total events (filtered by period if needed)
+    let filteredEvents = allOrganizerEvents;
+    if (currentYear && currentMonth) {
+      filteredEvents = allOrganizerEvents.filter(e => {
+        const startDate = new Date(e.startDate);
+        return startDate.getFullYear() === currentYear && (startDate.getMonth() + 1) === currentMonth;
+      });
+    } else if (currentYear) {
+      filteredEvents = allOrganizerEvents.filter(e => {
+        const startDate = new Date(e.startDate);
+        return startDate.getFullYear() === currentYear;
+      });
+    }
+    const totalEvents = filteredEvents.length;
+
+    // Monthly stats (for current year)
+    const monthlyStats: { month: string; revenue: number; tickets: number }[] = [];
+    const yearTransactions = allTransactions.filter(tx => {
+      const txDate = new Date(tx.createdAt);
+      return txDate.getFullYear() === currentYear;
     });
 
     for (let m = 1; m <= 12; m++) {
       const monthTransactions = yearTransactions.filter(tx => {
         const txDate = new Date(tx.createdAt);
-        return txDate.getMonth() + 1 === m && txDate.getFullYear() === currentYear;
+        return txDate.getMonth() + 1 === m;
       });
 
-      monthlyData.push({
+      monthlyStats.push({
         month: MONTH_NAMES[m - 1],
         revenue: monthTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0),
         tickets: monthTransactions.reduce((sum, tx) => sum + tx.quantity, 0),
       });
     }
 
+    // Daily stats (for current month if selected)
+    const dailyStats: { day: string; revenue: number; tickets: number }[] = [];
     if (currentMonth) {
       const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-      
+      const monthTransactions = allTransactions.filter(tx => {
+        const txDate = new Date(tx.createdAt);
+        return (txDate.getMonth() + 1) === currentMonth && txDate.getFullYear() === currentYear;
+      });
+
       for (let d = 1; d <= daysInMonth; d++) {
-        const dayTransactions = yearTransactions.filter(tx => {
+        const dayTransactions = monthTransactions.filter(tx => {
           const txDate = new Date(tx.createdAt);
-          return txDate.getDate() === d && 
-                 (txDate.getMonth() + 1) === currentMonth && 
-                 txDate.getFullYear() === currentYear;
+          return txDate.getDate() === d;
         });
 
-        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        
-        dailyData.push({
+        dailyStats.push({
           day: String(d),
           revenue: dayTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0),
           tickets: dayTransactions.reduce((sum, tx) => sum + tx.quantity, 0),
@@ -516,15 +553,40 @@ export const eventService = {
       }
     }
 
-    console.log("[DEBUG Event Service] getOrganizerStats result:", { totalRevenue, totalTicketsSold, totalEvents, totalAttendees, monthlyData: monthlyData.length, dailyData: dailyData.length });
+    // Yearly stats (last 5 years)
+    const yearlyStats: { year: number; revenue: number; tickets: number }[] = [];
+    const currentFullYear = new Date().getFullYear();
+    for (let y = currentFullYear - 4; y <= currentFullYear; y++) {
+      const yearTransactionsData = allTransactions.filter(tx => {
+        const txDate = new Date(tx.createdAt);
+        return txDate.getFullYear() === y;
+      });
+
+      yearlyStats.push({
+        year: y,
+        revenue: yearTransactionsData.reduce((sum, tx) => sum + tx.finalPrice, 0),
+        tickets: yearTransactionsData.reduce((sum, tx) => sum + tx.quantity, 0),
+      });
+    }
+
+    console.log("[DEBUG Event Service] getOrganizerStats result:", { 
+      totalRevenue, 
+      totalTicketsSold, 
+      totalEvents, 
+      totalAttendees, 
+      monthlyStats: monthlyStats.length, 
+      dailyStats: dailyStats.length,
+      yearlyStats: yearlyStats.length 
+    });
 
     return {
       totalRevenue,
       totalTicketsSold,
       totalEvents,
       totalAttendees,
-      monthlyData,
-      dailyData,
+      monthlyStats,
+      dailyStats,
+      yearlyStats,
     };
   },
 

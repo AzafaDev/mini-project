@@ -82,15 +82,18 @@ const EmailVerification: React.FC = () => {
   // Handle OTP input changes
   const handleChange = (element: HTMLInputElement, index: number) => {
     const value = element.value.replace(/[^0-9]/g, "");
-    if (!value) return;
 
     const newOtp = [...otp];
     newOtp[index] = value;
     const newToken = newOtp.join("").slice(0, 6);
     formik.setFieldValue("token", newToken);
 
-    // Focus next input
-    if (value && index < 5) {
+    // Handle empty input (backspace) - move focus to previous input
+    if (value === "" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+    // Handle input with value - focus next input
+    else if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
