@@ -43,7 +43,7 @@ const CheckoutPage: React.FC = () => {
   const priceGeneral = generalTicket?.price ?? eventBasePrice;
   const priceVIP = vipTicket?.price ?? eventBasePrice * 2.5;
   
-  const pointsDiscount = usePoints ? Math.min(userPoints * 10, 50000) : 0;
+  const pointsDiscount = usePoints ? Math.min(userPoints, 50000) : 0;
 
   // Hitung totals
   const subtotal = selectedTickets.general * priceGeneral + selectedTickets.vip * priceVIP;
@@ -125,7 +125,7 @@ const CheckoutPage: React.FC = () => {
         ticketId,
         quantity: totalQuantity,
         voucherCode: appliedDiscount > 0 ? voucherCode : undefined,
-        pointsUsed: usePoints ? Math.floor(pointsDiscount / 10) : undefined,
+        pointsUsed: usePoints ? pointsDiscount : undefined,
       });
 
       if (transaction) {

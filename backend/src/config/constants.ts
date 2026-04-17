@@ -6,7 +6,7 @@
 // Transaction constants
 export const TRANSACTION_EXPIRATION_HOURS = 2;
 export const TRANSACTION_AUTO_CANCEL_DAYS = 3;
-export const POINTS_EARNED_MULTIPLIER = 0.01;
+export const POINTS_EARNED_MULTIPLIER = 1;
 
 // Referral constants
 export const REFERRAL_POINT_REWARD = 10000;

@@ -12,12 +12,14 @@ import reviewRouter from "./modules/events/review.route";
 import pointsRouter from "./modules/points/points.route";
 import transactionRouter from "./modules/transaction/transaction.route";
 import { errorHandler } from "./middleware/errorHandler";
-import { apiLimiter } from "./middleware/rateLimiter";
 import { startCronJobs } from "./utils/cronJobs";
 
 dotenv.config();
 
-console.log("[DEBUG App] Starting application, NODE_ENV:", process.env.NODE_ENV);
+console.log(
+  "[DEBUG App] Starting application, NODE_ENV:",
+  process.env.NODE_ENV,
+);
 
 const app = express();
 const PORT = process.env.PORT || 8000;

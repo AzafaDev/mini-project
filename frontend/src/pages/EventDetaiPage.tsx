@@ -116,7 +116,7 @@ const EventDetailPage: React.FC = () => {
   const total = calculateTotal();
 
   const totalWithDiscount = Math.max(0, total - appliedDiscount - appliedCouponDiscount);
-  const pointsDiscount = usePoints ? Math.min(userPoints * 10, 50000) : 0;
+  const pointsDiscount = usePoints ? Math.min(userPoints, 50000) : 0;
   const finalTotal = totalWithDiscount - pointsDiscount;
 
   // Helper function to determine event status
@@ -347,7 +347,7 @@ const EventDetailPage: React.FC = () => {
       quantity: totalQuantity,
       voucherCode: appliedDiscount > 0 ? voucherCode : undefined,
       couponCode: appliedCouponDiscount > 0 ? couponCode : undefined,
-      pointsUsed: usePoints ? Math.floor(pointsDiscount / 10) : undefined,
+      pointsUsed: usePoints ? pointsDiscount : undefined,
     });
 
     setIsProcessingPayment(false);

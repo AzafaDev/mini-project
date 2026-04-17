@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { eventService } from "./event.service";
-import { handleFileUpload } from "../../utils/handleFileUpload";
+import { getUploadUrl } from "../../utils/uploadHelper";
 import { UploadedFile } from "express-fileupload";
 import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
@@ -77,28 +77,27 @@ export const eventController = {
       totalSeats,
       price,
       availableSeats,
+      tickets,
     }: CreateEvent = req.body;
     const organizerId = req.userId;
-    if (!organizerId)
+    if (!organizerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
-    let imageUrl: string | undefined;
-    if (req.files && "imageFile" in req.files) {
-      const imageFile = req.files.imageFile as UploadedFile;
-      console.log(
-        "[DEBUG Event Controller] createEvent imageFile:",
-        imageFile.name,
-      );
-      try {
-        imageUrl = await handleFileUpload(imageFile, {
-          folder: "events-image",
-        });
-        console.log("[DEBUG Event Controller] createEvent imageUrl:", imageUrl);
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Upload image failed",
-        });
+    const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
+    console.log("[DEBUG Event Controller] createEvent imageUrl:", imageUrl);
+
+    // Parse tickets if it's a string (from FormData)
+    let parsedTickets: any = undefined;
+    if (tickets) {
+      if (typeof tickets === 'string') {
+        try {
+          parsedTickets = JSON.parse(tickets);
+        } catch (e) {
+          console.log("[DEBUG Event Controller] Failed to parse tickets:", e);
+        }
+      } else {
+        parsedTickets = tickets;
       }
     }
 
@@ -114,6 +113,7 @@ export const eventController = {
       availableSeats: availableSeats as any,
       imageUrl,
       organizerId,
+      tickets: parsedTickets,
     });
 
     console.log(
@@ -134,8 +134,9 @@ export const eventController = {
     console.log("[DEBUG Event Controller] updateEvent userId:", req.userId);
 
     const organizerId = req.userId;
-    if (!organizerId)
+    if (!organizerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     const {
       name,
@@ -152,36 +153,12 @@ export const eventController = {
     console.log("[DEBUG Event Controller] updateEvent body:", req.body);
 
     const existingEvent = await eventService.getEventById({ id });
-    console.log(
-      "[DEBUG Event Controller] updateEvent existingEvent organizerId:",
-      existingEvent?.organizerId,
-    );
-
-    if (existingEvent.organizerId !== organizerId) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Forbidden: Not the event owner" });
+    if (!existingEvent) {
+      return res.status(404).json({ success: false, message: "Event not found" });
     }
 
-    let imageUrl: string | undefined;
-    if (req.files && "imageFile" in req.files) {
-      const imageFile = req.files.imageFile as UploadedFile;
-      console.log(
-        "[DEBUG Event Controller] updateEvent imageFile:",
-        imageFile.name,
-      );
-      try {
-        imageUrl = await handleFileUpload(imageFile, {
-          folder: "events-image",
-        });
-        console.log("[DEBUG Event Controller] updateEvent imageUrl:", imageUrl);
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Upload image failed",
-        });
-      }
-    }
+    const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
+    console.log("[DEBUG Event Controller] updateEvent imageUrl:", imageUrl);
 
     const event = await eventService.updateEvent({
       id,

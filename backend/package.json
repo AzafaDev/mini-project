@@ -40,6 +40,7 @@
     "express-fileupload": "^1.5.2",
     "express-rate-limit": "^8.3.2",
     "get-tsconfig": "^4.13.7",
+    "handlebars": "^4.7.9",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
     "resend": "^6.10.0",

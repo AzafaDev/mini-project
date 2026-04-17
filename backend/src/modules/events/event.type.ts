@@ -10,6 +10,13 @@ export type CreateEvent = {
   availableSeats?: number;
   imageUrl?: string;
   organizerId: string;
+  tickets?: { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[];
+};
+
+export type TicketInput = {
+  type: 'GENERAL' | 'VIP';
+  price: number;
+  quantity: number;
 };
 
 export type UpdateEvent = {

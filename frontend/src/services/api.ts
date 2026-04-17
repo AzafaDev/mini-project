@@ -73,6 +73,11 @@ export interface CreateEventRequest {
   totalSeats: number;
   price: number;
   availableSeats?: number;
+  tickets?: {
+    type: 'GENERAL' | 'VIP';
+    price: number;
+    quantity: number;
+  }[];
 }
 
 // Organizer stats response
@@ -186,6 +191,9 @@ export const eventService = {
     }
     if (data.imageFile) {
       formData.append('imageFile', data.imageFile);
+    }
+    if (data.tickets && data.tickets.length > 0) {
+      formData.append('tickets', JSON.stringify(data.tickets));
     }
     
     const response = await axiosInstance.post('/events', formData, {
