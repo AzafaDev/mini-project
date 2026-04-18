@@ -90,9 +90,7 @@ const App = () => {
           <Route
             path="/my-transactions"
             element={
-              <ProtectedRoute>
                 <MyTransactionsPage />
-              </ProtectedRoute>
             }
           />
           <Route

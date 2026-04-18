@@ -41,7 +41,7 @@ const Navbar = () => {
                   My Tickets
                 </Link>
                 <Link
-                  to="/transactions"
+                  to="/my-transactions"
                   className="text-[#C7C4D8] hover:text-[#E5E2E1] transition-all pb-1 font-sans tracking-tight text-sm"
                 >
                   History
@@ -152,7 +152,7 @@ const Navbar = () => {
 
                     {/* History */}
                     <Link
-                      to="/transactions"
+                      to="/my-transactions"
                       className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-sm">

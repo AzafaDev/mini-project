@@ -3,25 +3,25 @@ import { z } from "zod";
 const ticketSchema = z.object({
   type: z.enum(["GENERAL", "VIP"]),
   price: z.coerce.number().min(0, "Price must be non-negative"),
-  quantity: z.coerce.number().int().positive("Quantity must be a positive integer"),
+  quantity: z.coerce
+    .number()
+    .int()
+    .positive("Quantity must be a positive integer"),
 });
 
 const ticketSchemaOptional = ticketSchema.optional();
 
 // Preprocess tickets: handle both string (from FormData) and array (from JSON)
-const preprocessTickets = z.preprocess(
-  (val) => {
-    if (typeof val === "string") {
-      try {
-        return JSON.parse(val);
-      } catch {
-        return undefined;
-      }
+const preprocessTickets = z.preprocess((val) => {
+  if (typeof val === "string") {
+    try {
+      return JSON.parse(val);
+    } catch {
+      return undefined;
     }
-    return val;
-  },
-  z.array(ticketSchema).optional()
-);
+  }
+  return val;
+}, z.array(ticketSchema).optional());
 
 // Create event validation schema
 export const createEventSchema = z.object({
@@ -36,10 +36,13 @@ export const createEventSchema = z.object({
     endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
       message: "Invalid end date format",
     }),
-    totalSeats: z.coerce.number().int().positive("Total seats must be a positive integer"),
+    totalSeats: z.coerce
+      .number()
+      .int()
+      .positive("Total seats must be a positive integer"),
     price: z.coerce.number().min(0, "Price must be a non-negative number"),
-    availableSeats: z
-      .coerce.number()
+    availableSeats: z.coerce
+      .number()
       .int()
       .positive("Available seats must be a positive integer")
       .optional(),
@@ -66,10 +69,17 @@ export const updateEventSchema = z.object({
         message: "Invalid end date format",
       })
       .optional(),
-    totalSeats: z.coerce.number().int().positive("Total seats must be a positive integer").optional(),
-    price: z.coerce.number().min(0, "Price must be a non-negative number").optional(),
-    availableSeats: z
-      .coerce.number()
+    totalSeats: z.coerce
+      .number()
+      .int()
+      .positive("Total seats must be a positive integer")
+      .optional(),
+    price: z.coerce
+      .number()
+      .min(0, "Price must be a non-negative number")
+      .optional(),
+    availableSeats: z.coerce
+      .number()
       .int()
       .positive("Available seats must be a positive integer")
       .optional(),
@@ -82,14 +92,18 @@ export const getAllEventsQuerySchema = z.object({
     search: z.string().optional(),
     category: z.string().optional(),
     location: z.string().optional(),
+    //
     startDate: z.string().optional(),
     endDate: z.string().optional(),
     minPrice: z.coerce.number().optional(),
     maxPrice: z.coerce.number().optional(),
+    //
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(10),
+    //
     sortBy: z.enum(["name", "startDate", "price", "createdAt"]).optional(),
     sortOrder: z.enum(["asc", "desc"]).optional(),
+    //
   }),
 });
 

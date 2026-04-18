@@ -1,11 +1,11 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import { useAuthStore } from "../stores/useAuthStore";
 import { forgotPasswordSchema } from "../validation/authSchemas";
 
 const ForgotPasswordPage: React.FC = () => {
-  const { forgotPassword, isLoading } = useAuthStore();
+  const { forgotPassword, isLoading, isAuthenticated, user } = useAuthStore();
 
   const formik = useFormik({
     initialValues: {
@@ -20,6 +20,7 @@ const ForgotPasswordPage: React.FC = () => {
       }
     },
   });
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,11 @@ const ForgotPasswordPage: React.FC = () => {
   // Check if form was successfully submitted (based on no errors and submitted)
   const showSuccess = !formik.errors.email && formik.values.email && formik.submitCount > 0;
 
+  useEffect(() => {
+        if (isAuthenticated && user) {
+          navigate("/");
+        }
+      }, [isAuthenticated, user, navigate]);
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex flex-col font-['Inter',sans-serif] selection:bg-[#4b4dd8] selection:text-[#d9d8ff]">
       {/* Main Content Canvas */}

@@ -11,9 +11,9 @@ export const uploadToCloudinary = async (filePath: string, folder: string) => {
     // HAPUS FILE SETELAH BERHASIL
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     return result.secure_url;
-  } catch (error) {
+  } catch (error:any) {
     // HAPUS FILE MESKIPUN GAGAL
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    throw new Error("Failed to upload file to Cloudinary");
+    throw new Error("Failed to upload file to Cloudinary", error.message);
   }
 };

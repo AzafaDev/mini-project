@@ -42,7 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
-
+//
 app.use("/api/events", voucherRouter);
 
 app.use("/api/events", eventRouter);

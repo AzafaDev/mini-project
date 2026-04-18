@@ -219,10 +219,10 @@ const OrganizerProfilePage: React.FC = () => {
                     <div className='flex items-start justify-between mb-3'>
                       <div className='flex items-center gap-3'>
                         <div className='w-10 h-10 rounded-full bg-[#353534] flex items-center justify-center overflow-hidden'>
-                          {review.user.profilePicture ? (
+                          {review.userImage ? (
                             <img
-                              src={review.user.profilePicture}
-                              alt={review.user.fullName}
+                              src={review.userImage}
+                              alt={review.userName}
                               className='w-full h-full object-cover'
                             />
                           ) : (
@@ -233,10 +233,10 @@ const OrganizerProfilePage: React.FC = () => {
                         </div>
                         <div>
                           <p className='font-medium text-[#e5e2e1]'>
-                            {review.user.fullName}
+                            {review.userName}
                           </p>
                           <p className='text-xs text-[#c7c4d8]'>
-                            {review.event.name}
+                            {review.eventName}
                           </p>
                         </div>
                       </div>

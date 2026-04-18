@@ -2,19 +2,25 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { type Transaction, type TransactionStatus } from "../services/api";
+import { useAuthStore } from "../stores/useAuthStore";
 
 type FilterStatus = "ALL" | TransactionStatus;
 
 const MyTransactionsPage: React.FC = () => {
   const navigate = useNavigate();
-  
-  const { 
-    transactions, 
-    fetchMyTransactions, 
+  const { user, isAuthenticated } = useAuthStore();
+  useEffect(() => {
+    if (!isAuthenticated && !user) {
+      navigate("/");
+    }
+  }, [isAuthenticated, user, navigate]);
+  const {
+    transactions,
+    fetchMyTransactions,
     pagination,
     loading,
     error,
-    clearTransactions 
+    clearTransactions,
   } = useTransactionStore();
 
   // Filter state
@@ -60,7 +66,10 @@ const MyTransactionsPage: React.FC = () => {
   };
 
   const getStatusConfig = (status: TransactionStatus) => {
-    const configs: Record<TransactionStatus, { label: string; color: string; bgColor: string; icon: string }> = {
+    const configs: Record<
+      TransactionStatus,
+      { label: string; color: string; bgColor: string; icon: string }
+    > = {
       WAITING_PAYMENT: {
         label: "Waiting Payment",
         color: "text-[#a44100]",
@@ -124,8 +133,12 @@ const MyTransactionsPage: React.FC = () => {
         {/* Header */}
         <div className="mb-12">
           <div className="flex items-center gap-2 text-[#c7c4d8] text-xs mb-4">
-            <Link to="/" className="hover:text-[#c0c1ff]">Home</Link>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <Link to="/" className="hover:text-[#c0c1ff]">
+              Home
+            </Link>
+            <span className="material-symbols-outlined text-xs">
+              chevron_right
+            </span>
             <span className="text-[#c0c1ff]">My Transactions</span>
           </div>
           <h1 className="text-4xl font-extrabold tracking-tighter text-[#e5e2e1]">
@@ -166,10 +179,9 @@ const MyTransactionsPage: React.FC = () => {
               No transactions found
             </h2>
             <p className="text-[#c7c4d8] mb-6">
-              {filter === "ALL" 
-                ? "You haven't made any transactions yet." 
-                : `You don't have any transactions with status "${getStatusConfig(filter).label}".`
-              }
+              {filter === "ALL"
+                ? "You haven't made any transactions yet."
+                : `You don't have any transactions with status "${getStatusConfig(filter).label}".`}
             </p>
             <Link
               to="/"
@@ -190,8 +202,8 @@ const MyTransactionsPage: React.FC = () => {
                   {/* Event Image */}
                   <div className="w-20 h-20 rounded-lg overflow-hidden bg-[#2a2a2a] flex-shrink-0">
                     {transaction.event?.imageUrl ? (
-                      <img 
-                        src={transaction.event.imageUrl} 
+                      <img
+                        src={transaction.event.imageUrl}
                         alt={transaction.event.name}
                         className="w-full h-full object-cover"
                       />
@@ -211,9 +223,13 @@ const MyTransactionsPage: React.FC = () => {
                         <h3 className="text-lg font-bold text-[#e5e2e1] truncate">
                           {transaction.event?.name}
                         </h3>
-                        <p className="text-sm text-[#c7c4d8]">{transaction.ticket?.name}</p>
+                        <p className="text-sm text-[#c7c4d8]">
+                          {transaction.ticket?.name}
+                        </p>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusConfig(transaction.status).bgColor} ${getStatusConfig(transaction.status).color}`}>
+                      <div
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusConfig(transaction.status).bgColor} ${getStatusConfig(transaction.status).color} flex justify-center items-center`}
+                      >
                         <span className="material-symbols-outlined text-xs mr-1">
                           {getStatusConfig(transaction.status).icon}
                         </span>
@@ -223,7 +239,8 @@ const MyTransactionsPage: React.FC = () => {
 
                     <div className="flex flex-wrap gap-4 text-sm text-[#c7c4d8]">
                       <span>
-                        {transaction.quantity} ticket{transaction.quantity > 1 ? "s" : ""}
+                        {transaction.quantity} ticket
+                        {transaction.quantity > 1 ? "s" : ""}
                       </span>
                       <span className="text-[#666]">•</span>
                       <span>{formatDate(transaction.createdAt)}</span>
@@ -254,28 +271,31 @@ const MyTransactionsPage: React.FC = () => {
             >
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
-            
-            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium ${
-                    pagination.page === pageNum
-                      ? "bg-[#c0c1ff] text-[#07006c]"
-                      : "bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1]"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-            
+
+            {Array.from(
+              { length: Math.min(5, pagination.totalPages) },
+              (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium ${
+                      pagination.page === pageNum
+                        ? "bg-[#c0c1ff] text-[#07006c]"
+                        : "bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1]"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              },
+            )}
+
             {pagination.totalPages > 5 && (
               <span className="text-[#666] px-2">...</span>
             )}
-            
+
             {pagination.totalPages > 5 && (
               <button
                 onClick={() => handlePageChange(pagination.totalPages)}
@@ -302,7 +322,10 @@ const MyTransactionsPage: React.FC = () => {
 
       {/* Mobile BottomNavBar */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-zinc-950/90 backdrop-blur-md z-50 border-t border-zinc-800/50">
-        <Link to="/" className="flex flex-col items-center justify-center text-zinc-500">
+        <Link
+          to="/"
+          className="flex flex-col items-center justify-center text-zinc-500"
+        >
           <span className="material-symbols-outlined">home</span>
           <span className="text-[10px] font-medium">Home</span>
         </Link>
@@ -315,7 +338,10 @@ const MyTransactionsPage: React.FC = () => {
           </span>
           <span className="text-[10px] font-medium">Tickets</span>
         </div>
-        <Link to="/profile" className="flex flex-col items-center justify-center text-zinc-500">
+        <Link
+          to="/profile"
+          className="flex flex-col items-center justify-center text-zinc-500"
+        >
           <span className="material-symbols-outlined">person</span>
           <span className="text-[10px] font-medium">Profile</span>
         </Link>

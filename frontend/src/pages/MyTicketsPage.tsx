@@ -1,6 +1,20 @@
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTransactionStore } from "../stores/useTransactionStore";
+import { useAuthStore } from "../stores/useAuthStore";
+import type { Transaction } from "../services/api";
 
 // --- Sub-komponen: Stat Card ---
+type StatCardProps = {
+  icon: string;
+  label: string;
+  value: string;
+  subtext: string;
+  colorClass?: string;
+  border?: string;
+};
+
 const StatCard = ({
   icon,
   label,
@@ -8,7 +22,7 @@ const StatCard = ({
   subtext,
   colorClass = "text-primary",
   border = "",
-}: any) => (
+}: StatCardProps) => (
   <div
     className={`bg-[#1c1b1b] p-6 rounded-xl flex flex-col justify-between ${border}`}
   >
@@ -30,19 +44,29 @@ const StatCard = ({
 );
 
 // --- Sub-komponen: Ticket Card ---
-const TicketCard = ({
+type TicketCardProps = {
+  status: string;
+  title: string;
+  date: string;
+  location: string;
+  price: string;
+  image: string;
+  orderId: string;
+  isPast: boolean;
+  isPending: boolean;
+};
 
+const TicketCard = ({
+  status,
   title,
   date,
   location,
   price,
-  status,
   image,
   orderId,
-}: any) => {
-  const isPending = status === "Pending Payment";
-  const isPast = status === "Past Event";
-
+  isPast,
+  isPending,
+}: TicketCardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -166,6 +190,172 @@ const TicketCard = ({
 
 // --- Komponen Utama ---
 export const MyTickets = () => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuthStore();
+  const {
+    transactions,
+    fetchMyTransactions,
+    pagination,
+    loading,
+    error,
+  } = useTransactionStore();
+
+  const [activeTab, setActiveTab] = useState<"upcoming" | "pending" | "past">("upcoming");
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated && !user) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Fetch transactions on mount
+  useEffect(() => {
+    fetchMyTransactions(1, 20);
+  }, [fetchMyTransactions]);
+
+  const now = new Date();
+
+  // Compute stats
+  const upcomingCount = transactions.filter((tx) => {
+    const eventDate = tx.event?.startDate ? new Date(tx.event.startDate) : null;
+    const isFuture = eventDate ? eventDate >= now : false;
+    return (tx.status === "DONE" || tx.status === "WAITING_CONFIRMATION") && isFuture;
+  }).length;
+
+  const pendingCount = transactions.filter((tx) => tx.status === "WAITING_PAYMENT").length;
+
+  const pastCount = transactions.filter((tx) => {
+    const eventDate = tx.event?.startDate ? new Date(tx.event.startDate) : null;
+    const isPast = eventDate ? eventDate < now : false;
+    return isPast;
+  }).length;
+
+  // Next upcoming event for stats subtext
+  const upcomingTransactions = transactions
+    .filter((tx) => {
+      const eventDate = tx.event?.startDate ? new Date(tx.event.startDate) : null;
+      const isFuture = eventDate ? eventDate >= now : false;
+      return (tx.status === "DONE" || tx.status === "WAITING_CONFIRMATION") && isFuture;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.event?.startDate || 0).getTime() -
+        new Date(b.event?.startDate || 0).getTime()
+    );
+  const nextUpcoming = upcomingTransactions[0];
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  };
+
+  const formatIDR = (amount: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    })
+      .format(amount)
+      .replace("Rp", "Rp ");
+  };
+
+  const getTicketCardProps = (tx: Transaction) => {
+    const eventStart = tx.event?.startDate ? new Date(tx.event.startDate) : null;
+    const isPast = eventStart ? eventStart < now : false;
+
+    let statusDisplay = "";
+    let priceDisplay = "";
+    let orderIdDisplay = "";
+
+    switch (tx.status) {
+      case "WAITING_PAYMENT":
+        statusDisplay = "Pending Payment";
+        priceDisplay = formatIDR(tx.finalPrice);
+        orderIdDisplay = `Order #${tx.id.slice(0, 8).toUpperCase()}`;
+        break;
+      case "WAITING_CONFIRMATION":
+        statusDisplay = "Confirmed";
+        priceDisplay = formatIDR(tx.finalPrice);
+        orderIdDisplay = `Ticket #${tx.id.slice(0, 8).toUpperCase()}`;
+        break;
+      case "DONE":
+        if (isPast) {
+          statusDisplay = "Past Event";
+        } else {
+          statusDisplay = "Confirmed";
+        }
+        priceDisplay = formatIDR(tx.finalPrice);
+        orderIdDisplay = `Ticket #${tx.id.slice(0, 8).toUpperCase()}`;
+        break;
+      case "REJECTED":
+        statusDisplay = "Rejected";
+        priceDisplay = formatIDR(tx.finalPrice);
+        orderIdDisplay = `Order #${tx.id.slice(0, 8).toUpperCase()}`;
+        break;
+      case "EXPIRED":
+        statusDisplay = "Expired";
+        priceDisplay = formatIDR(tx.finalPrice);
+        orderIdDisplay = `Order #${tx.id.slice(0, 8).toUpperCase()}`;
+        break;
+      case "CANCELED":
+        statusDisplay = "Canceled";
+        priceDisplay = formatIDR(tx.finalPrice);
+        orderIdDisplay = `Order #${tx.id.slice(0, 8).toUpperCase()}`;
+        break;
+      default:
+        statusDisplay = "Unknown";
+        priceDisplay = formatIDR(tx.finalPrice);
+        orderIdDisplay = `Order #${tx.id.slice(0, 8).toUpperCase()}`;
+    }
+
+    return {
+      status: statusDisplay,
+      title: tx.event?.name || "Unknown Event",
+      date: tx.event?.startDate ? formatDate(tx.event.startDate) : "",
+      location: tx.event?.location || "Location TBD",
+      price: priceDisplay,
+      image: tx.event?.imageUrl || "https://via.placeholder.com/300x200?text=No+Image",
+      orderId: orderIdDisplay,
+      isPast,
+      isPending: tx.status === "WAITING_PAYMENT",
+    };
+  };
+
+  const getNextEventText = () => {
+    if (!nextUpcoming) return "No upcoming events";
+    const dateStr = nextUpcoming.event?.startDate ? formatDate(nextUpcoming.event.startDate) : "";
+    return `Next: ${nextUpcoming.event?.name || "Unknown Event"} (${dateStr})`;
+  };
+
+  // Filter displayed tickets based on activeTab
+  const filteredTransactions = transactions.filter((tx) => {
+    const eventDate = tx.event?.startDate ? new Date(tx.event.startDate) : null;
+    const isPast = eventDate ? eventDate < now : false;
+    const isPending = tx.status === "WAITING_PAYMENT";
+    const isUpcoming = !isPending && !isPast;
+
+    if (activeTab === "upcoming") return isUpcoming;
+    if (activeTab === "pending") return isPending;
+    if (activeTab === "past") return isPast;
+    return true;
+  });
+
+  if (loading && transactions.length === 0) {
+    return (
+      <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[#c7c4d8]">Loading your tickets...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
       <main className="pt-24 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
@@ -188,13 +378,13 @@ export const MyTickets = () => {
           <StatCard
             icon="confirmation_number"
             label="Upcoming"
-            value="4 Events"
-            subtext="Next: Neo-Synth Festival (2d)"
+            value={`${upcomingCount} Events`}
+            subtext={getNextEventText()}
           />
           <StatCard
             icon="pending_actions"
             label="Action Required"
-            value="1 Pending"
+            value={`${pendingCount} Pending`}
             subtext="Upload payment proof for VIP access"
             colorClass="text-tertiary"
             border="border-l-4 border-[#ffb695]"
@@ -202,7 +392,7 @@ export const MyTickets = () => {
           <StatCard
             icon="history"
             label="Archived"
-            value="12 Past"
+            value={`${pastCount} Past`}
             subtext="2023 Season Summary available"
             colorClass="text-[#918fa1]"
           />
@@ -210,53 +400,61 @@ export const MyTickets = () => {
 
         {/* Tabs */}
         <div className="flex gap-8 mb-8 border-b border-[#464555]/20">
-          <button className="pb-4 text-[#c0c1ff] border-b-2 border-[#c0c1ff] font-bold">
+          <button
+            className={`pb-4 ${activeTab === "upcoming" ? "text-[#c0c1ff] border-b-2 border-[#c0c1ff] font-bold" : "text-[#c7c4d8] hover:text-white transition-colors"}`}
+            onClick={() => setActiveTab("upcoming")}
+          >
             Upcoming
           </button>
-          <button className="pb-4 text-[#c7c4d8] hover:text-white transition-colors">
+          <button
+            className={`pb-4 ${activeTab === "pending" ? "text-[#c0c1ff] border-b-2 border-[#c0c1ff] font-bold" : "text-[#c7c4d8] hover:text-white transition-colors"}`}
+            onClick={() => setActiveTab("pending")}
+          >
             Pending Payment
           </button>
-          <button className="pb-4 text-[#c7c4d8] hover:text-white transition-colors">
+          <button
+            className={`pb-4 ${activeTab === "past" ? "text-[#c0c1ff] border-b-2 border-[#c0c1ff] font-bold" : "text-[#c7c4d8] hover:text-white transition-colors"}`}
+            onClick={() => setActiveTab("past")}
+          >
             Past Events
           </button>
         </div>
 
         {/* Ticket List */}
+        {error && (
+          <div className="bg-[#93000a]/10 border border-[#93000a]/30 rounded-xl p-6 mb-6">
+            <p className="text-[#ffb4ab]">{error}</p>
+          </div>
+        )}
+
         <div className="space-y-6">
-          <TicketCard
-            status="Pending Payment"
-            title="Cyber-Punk Underground 2024"
-            date="Dec 15, 2024"
-            location="Neo-Tokyo Sector 7"
-            price="$120.00"
-            orderId="Order #EP-90210"
-            image="https://lh3.googleusercontent.com/aida-public/AB6AXuAiGlMY31zmPxSKhPTRs2KpMB7_5tqYTAEkR9FIyoGWA2MmZ3-TkwWg-tSkDzavHoFzzFChHsn0vju3tWN-Um51s8BtsSKA9XUeePDlFo9OzXU0Vd49vXpCE7kiN1J-yiImA1Z2eC64Thf1VijNgeEYUGw-4K0MTpGDGEJKQQa19cDm6Zwee2NwLuOyQN0T3AP318G4e20dgkO2rqStlllGlVt9wLmbDEdXYt-MRBmWCWEtKjJt6xU6OKNcqpHNOHWXUH2PP-Gfo0pk"
-          />
-          <TicketCard
-            status="Confirmed"
-            title="Minimalist Techno Series: Vol 12"
-            date="Nov 28, 2024"
-            location="The Warehouse, Berlin"
-            price="VIP Pass"
-            orderId="Ticket #882-VX"
-            image="https://lh3.googleusercontent.com/aida-public/AB6AXuCHjQ1xcMshGIz_FgoifakVu3uZ8nWZYsyxfkqKnLuZhbTFIXCvm5OqCJ5D_tEQDiZaSsNtWqgURfxsl3yAn5HX5xBnrWdLSro34HVmDaX48o-57ejXuAhApq9gkaQybs5-B9__EUu4m6tdzkPM_BJ8NyPJPHwsNGcXmOZ95SoDJIrtGlZWFjUSc2VnwtFe9rnDYHLOmL5i4Qx3CSty5b8kXp6aXWAEEvKVzS9Pi-ByZjJ_aCrQ2jvYKSweF_LmFCICnasIAB3iDXxX"
-          />
-          <TicketCard
-            status="Past Event"
-            title="Solstice Garden Party"
-            date="October 12, 2024"
-            location="Central Park, NY"
-            price="General"
-            orderId="ID: SOL-99812-24"
-            image="https://lh3.googleusercontent.com/aida-public/AB6AXuDO8Vwt0cOfDN_TT8mpcgn6Xy-n5wf-Q02nlCCd4FDrkNwl6dSRiZ1Ug6gHTh0abPEVzlFe-YhdBeZmgWJ4lx0rodB4W2l_j10zmT7uxNX-a4LMvA3eIrOzJwSrq1UVqEQ2rRYG7i4UAdan5s45iu6xwlc0KeHGzsZ0wzUvh87dljyFOyaJ7d_olGUzSPn4Jvdo-wsFHDfwrGzAQ5VINO_yhaW0ITjacsqDf2sjukCmh1WInHgsqYBhfXqTnQ8cCqAihpaW8ruI1QFC"
-          />
+          {filteredTransactions.map((tx) => {
+            const props = getTicketCardProps(tx);
+            return <TicketCard key={tx.id} {...props} />;
+          })}
         </div>
+
+        {filteredTransactions.length === 0 && !loading && (
+          <div className="bg-[#1c1b1b] rounded-xl p-12 text-center">
+            <span className="material-symbols-outlined text-6xl text-[#666] mb-4">
+              confirmation_number
+            </span>
+            <h2 className="text-2xl font-bold text-[#e5e2e1] mb-2">
+              No tickets found
+            </h2>
+            <p className="text-[#c7c4d8]">
+              {activeTab === "upcoming"
+                ? "You don't have any upcoming events."
+                : activeTab === "pending"
+                ? "You don't have any pending payments."
+                : "You haven't attended any events yet."}
+            </p>
+          </div>
+        )}
 
         {/* Help Center */}
         <div className="mt-16 p-8 rounded-2xl bg-gradient-to-r from-[#1c1b1b] to-[#0e0e0e] border border-[#464555]/10 text-center">
-          <h3 className="text-xl font-bold mb-2">
-            Need help with your tickets?
-          </h3>
+          <h3 className="text-xl font-bold mb-2">Need help with your tickets?</h3>
           <p className="text-[#c7c4d8] mb-6 text-sm">
             Our support team is available 24/7 for order inquiries.
           </p>
@@ -273,3 +471,5 @@ export const MyTickets = () => {
     </div>
   );
 };
+
+export default MyTickets;

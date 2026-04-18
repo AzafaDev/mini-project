@@ -258,16 +258,9 @@ export interface OrganizerProfile {
     rating: number;
     comment: string;
     createdAt: string;
-    user: {
-      id: string;
-      fullName: string;
-      email: string;
-      profilePicture?: string;
-    };
-    event: {
-      id: string;
-      name: string;
-    };
+    userName: string;
+    userImage?: string;
+    eventName: string;
   }>;
 }
 

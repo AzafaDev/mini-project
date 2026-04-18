@@ -9,7 +9,7 @@ const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   
-  const { resetPassword, isLoading, error: storeError, clearError, resetPasswordSuccess, clearResetPasswordStatus } = useAuthStore();
+  const { isAuthenticated, user,resetPassword, isLoading, error: storeError, clearError, resetPasswordSuccess, clearResetPasswordStatus } = useAuthStore();
   
   const formik = useFormik({
     initialValues: {
@@ -29,6 +29,12 @@ const ResetPassword: React.FC = () => {
       await resetPassword(token, values.newPassword);
     },
   });
+
+     useEffect(() => {
+        if (isAuthenticated && user) {
+          navigate("/");
+        }
+      }, [isAuthenticated, user, navigate]);
 
   // Cleanup store state on unmount
   useEffect(() => {
