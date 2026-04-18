@@ -67,55 +67,89 @@ export default function CreateEventPage() {
     }
   };
 
+  // ============================================================
+  // CREATE EVENT - FRONTEND HANDLER
+  // Alur: Form Submit -> Validasi -> Zustand Store -> API -> Backend
+  // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
+    // Mencegah browser reload halaman saat form disubmit
     e.preventDefault();
+    
+    // Reset error state sebelumnya agar tidak ada pesan error yang tertinggal
     setLocalError(null);
 
-    // Validation
+    // ============================================================
+    // VALIDASI CLIENT-SIDE - Cek semua field wajib diisi
+    // Tujuan: Memberikan feedback cepat ke user sebelum ke server
+    // ============================================================
+
+    // 1. Validasi: Nama event wajib diisi (tidak boleh kosong/spasi saja)
     if (!formData.name.trim()) {
       setLocalError("Event name is required");
       return;
     }
+    
+    // 2. Validasi: Description wajib diisi
     if (!formData.description.trim()) {
       setLocalError("Description is required");
       return;
     }
+    
+    // 3. Validasi: Location wajib diisi
     if (!formData.location.trim()) {
       setLocalError("Location is required");
       return;
     }
+    
+    // 4. Validasi: Category wajib dipilih dari dropdown
     if (!formData.category) {
       setLocalError("Category is required");
       return;
     }
+    
+    // 5. Validasi: Tanggal mulai dan selesai wajib diisi keduanya
     if (!formData.startDate || !formData.endDate) {
       setLocalError("Start and end dates are required");
       return;
     }
+    
+    // 6. Validasi: Tanggal selesai harus AFTER tanggal mulai (tidak boleh sama/lebih awal)
     if (new Date(formData.startDate) >= new Date(formData.endDate)) {
       setLocalError("End date must be after start date");
       return;
     }
+    
+    // 7. Validasi: Total seats minimal 1 (event harus punya minimal 1 kursi)
     if (formData.totalSeats < 1) {
       setLocalError("Total seats must be at least 1");
       return;
     }
+    
+    // 8. Validasi: Price tidak boleh negatif (0 = gratis, >0 = berbayar)
     if (formData.price < 0) {
       setLocalError("Price cannot be negative");
       return;
     }
 
-    // Validate custom tickets if enabled
+    // ============================================================
+    // VALIDASI CUSTOM TICKETS - Hanya jika user mengaktifkan custom tickets
+    // Tujuan: Validasi ticket type (GENERAL/VIP) yang dibuat user
+    // ============================================================
     if (useCustomTickets) {
+      // 9. Validasi: Minimal harus ada 1 ticket type (tidak boleh 0)
       if (tickets.length === 0) {
         setLocalError("Please add at least one ticket type");
         return;
       }
+      
+      // 10. Validasi: Cek setiap ticket type yang ditambahkan
       for (const ticket of tickets) {
+        // Validasi: Harga ticket tidak boleh negatif
         if (ticket.price < 0) {
           setLocalError("Ticket price cannot be negative");
           return;
         }
+        // Validasi: Quantity ticket minimal 1
         if (ticket.quantity < 1) {
           setLocalError("Ticket quantity must be at least 1");
           return;
@@ -123,20 +157,42 @@ export default function CreateEventPage() {
       }
     }
 
+    // ============================================================
+    // KIRIM DATA KE ZUSTAND STORE
+    // Alur: Store -> API Service -> HTTP Request
+    // ============================================================
     try {
+      // Panggil createEvent dari useEventStore
+      // Kirim: formData (name, description, location, category, dates, seats, price)
+      //        + imageFile (jika ada gambar)
+      //        + tickets (jika custom tickets diaktifkan)
       const result = await createEvent({
         ...formData,
-        imageFile: imageFile || undefined,
-        tickets: useCustomTickets && tickets.length > 0 ? tickets : undefined,
+        imageFile: imageFile || undefined,           // File gambar event (optional)
+        tickets: useCustomTickets && tickets.length > 0 
+          ? tickets      // Custom tickets (VIP/GENERAL) jika diaktifkan
+          : undefined,   // Tidak ada tickets jika tidak diaktifkan
       });
 
+      // ============================================================
+      // HANDLING RESPONSE DARI BACKEND
+      // ============================================================
+      
+      // Jika berhasil (result tidak null/undefined)
       if (result) {
+        // Tampilkan toast notification sukses
         addToast("success", "Event created successfully!");
+        
+        // Redirect ke halaman dashboard events
         navigate("/dashboard?tab=events");
       } else {
+        // Jika gagal tapi tidak throw error (response.success = false)
+        // Tampilkan error dari store atau pesan default
         setLocalError(error || "Failed to create event");
       }
     } catch (err: any) {
+      // Tangkap error jika ada exception (network error, server error, dll)
+      // Tampilkan pesan error dari server (jika ada) atau pesan default
       setLocalError(err.response?.data?.message || "Failed to create event");
     }
   };
@@ -230,7 +286,8 @@ export default function CreateEventPage() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="Enter event name"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="availableSeats?: number;
+  imageUrl?: string;w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
                 />
               </div>
 

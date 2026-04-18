@@ -40,6 +40,18 @@ export async function restoreUserPoints(tx: any, { userId, pointsUsed }: Pick<Re
       where: { id: userId },
       data: { points: { increment: pointsUsed } },
     });
+
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 3);
+
+    await tx.pointTransaction.create({
+      data: {
+        userId,
+        amount: pointsUsed,
+        reason: "Refund: Transaction cancelled/expired/rejected",
+        expiresAt,
+      },
+    });
   }
 }
 

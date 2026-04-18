@@ -205,9 +205,9 @@ voucherRouter.get("/coupons/validate", async (req, res) => {
 
     let actualDiscount = 0;
     if (coupon.discountType === "PERCENTAGE") {
-      if (price > 0 && quantity > 0) {
-        actualDiscount = (price * quantity * coupon.discountValue) / 100;
-        console.log("[DEBUG Voucher Route] PERCENTAGE discount calculated:", { price, quantity, percentage: coupon.discountValue, actualDiscount });
+      if (price > 0) {
+        actualDiscount = (price * coupon.discountValue) / 100;
+        console.log("[DEBUG Voucher Route] PERCENTAGE discount calculated:", { price, percentage: coupon.discountValue, actualDiscount });
       } else {
         console.log("[DEBUG Voucher Route] PERCENTAGE discount SKIPPED (price or quantity is 0):", { price, quantity });
         // actualDiscount stays 0

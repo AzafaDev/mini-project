@@ -174,31 +174,65 @@ export const eventService = {
     return response.data;
   },
 
+  // ============================================================
+  // CREATE EVENT - API SERVICE
+  // Alur: Receive data -> Build FormData -> HTTP POST to Backend
+  // ============================================================
   createEvent: async (data: CreateEventRequest & { imageFile?: File }): Promise<EventResponse> => {
+    // ============================================================
+    // BUILD FORMDATA - Wajib menggunakan FormData untuk upload file
+    // Mengapa FormData? Karena:
+    // 1. Mendukung upload file (imageFile)
+    // 2. Mengirim data sebagai multipart/form-data
+    // 3. Backend menggunakan express-fileupload untuk parsing
+    // ============================================================
     const formData = new FormData();
     
-    // Handle each field explicitly
+    // Append semua field teks ke formData
+    // Semua nilai otomatis dikonversi ke string oleh FormData
     if (data.name) formData.append('name', data.name);
     if (data.description) formData.append('description', data.description);
     if (data.location) formData.append('location', data.location);
     if (data.category) formData.append('category', data.category);
-    if (data.startDate) formData.append('startDate', data.startDate);
-    if (data.endDate) formData.append('endDate', data.endDate);
+    if (data.startDate) formData.append('startDate', data.startDate);      // Format: ISO string "2024-12-31T23:59:00"
+    if (data.endDate) formData.append('endDate', data.endDate);            // Format: ISO string
+    
+    // Append number (wajib dikonversi ke string)
     formData.append('totalSeats', String(data.totalSeats));
-    formData.append('price', String(data.price));
+    formData.append('price', String(data.price));                          // Dalam Rupiah (integer)
+    
+    // Append availableSeats jika ada (opsional)
     if (data.availableSeats !== undefined) {
       formData.append('availableSeats', String(data.availableSeats));
     }
+    
+    // ============================================================
+    // UPLOAD IMAGE - Jika user mengupload gambar event
+    // File akan diupload ke Cloudinary di backend
+    // ============================================================
     if (data.imageFile) {
       formData.append('imageFile', data.imageFile);
     }
+    
+    // ============================================================
+    // APPEND CUSTOM TICKETS - Jika user membuat custom ticket types
+    // Tickets harus di-stringify ke JSON karena FormData hanya terima string/file
+    // Format: [{"type":"GENERAL","price":50000,"quantity":100},{"type":"VIP","price":150000,"quantity":50}]
+    // ============================================================
     if (data.tickets && data.tickets.length > 0) {
       formData.append('tickets', JSON.stringify(data.tickets));
     }
     
+    // ============================================================
+    // HTTP POST - Kirim ke Backend
+    // Headers: multipart/form-data WAJIB untuk upload file
+    // Cookie (JWT token) otomatis terkirim karena withCredentials: true di axiosInstance
+    // ============================================================
     const response = await axiosInstance.post('/events', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    
+    // Return response dari server { success: true, data: event, message: "..." }
     return response.data;
   },
 

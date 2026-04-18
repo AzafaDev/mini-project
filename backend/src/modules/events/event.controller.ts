@@ -73,6 +73,10 @@ export const eventController = {
    * @returns JSON with created event data
    */
   createEvent: async (req: AuthRequest, res: Response) => {
+    // ============================================================
+    // STEP 1: EKSTRAKSI DATA DARI REQUEST BODY
+    // Data dikirim sebagai FormData, jadi sudah di-parse oleh express-fileupload
+    // ============================================================
     const {
       name,
       description,
@@ -86,26 +90,49 @@ export const eventController = {
       tickets,
     } = req.body as CreateEvent;
     
+    // ============================================================
+    // STEP 2: AMBIL ORGANIZER ID DARI JWT TOKEN
+    // req.userId diset oleh middleware verifyAuthToken sebelumnya
+    // ============================================================
     const organizerId = req.userId;
     if (!organizerId) {
+      // Jika tidak ada userId (seharusnya tidak terjadi karena sudah divalidasi middleware)
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    // ============================================================
+    // STEP 3: UPLOAD IMAGE KE CLOUDINARY
+    // Jika ada file gambar, upload ke Cloudinary dan dapat URL-nya
+    // Jika tidak ada file, imageUrl akan undefined
+    // ============================================================
     const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
 
+    // ============================================================
+    // STEP 4: PARSE TICKETS DARI JSON STRING
+    // tickets dikirim sebagai JSON string karena FormData hanya terima string/file
+    // Contoh: '[{"type":"GENERAL","price":50000,"quantity":100}]'
+    // ============================================================
     let parsedTickets: { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[] | undefined;
+    
     if (tickets) {
+      // Jika tickets adalah string, berarti harus di-parse dari JSON
       if (typeof tickets === 'string') {
         try {
           parsedTickets = JSON.parse(tickets);
         } catch (e) {
+          // Jika parse gagal, tickets tidak digunakan (fallback ke default GENERAL)
           // Ignore parse error, tickets will be undefined
         }
       } else {
+        // Jika sudah object/array (biasanya tidak terjadi karena dari FormData berupa string)
         parsedTickets = tickets as unknown as { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[];
       }
     }
 
+    // ============================================================
+    // STEP 5: PANGGIL EVENT SERVICE UNTUK BUAT EVENT
+    // Service akan membuat event + ticket(s) di database
+    // ============================================================
     const event = await eventService.createEvent({
       name,
       description,
@@ -116,11 +143,15 @@ export const eventController = {
       totalSeats,
       price,
       availableSeats,
-      imageUrl,
-      organizerId,
-      tickets: parsedTickets,
+      imageUrl,              // URL dari Cloudinary (undefined jika tidak ada gambar)
+      organizerId,           // ID dari user yang login
+      tickets: parsedTickets, // Array ticket atau undefined
     });
 
+    // ============================================================
+    // STEP 6: RESPONSE KE FRONTEND
+    // Status 201 = Created
+    // ============================================================
     res.status(201).json({
       success: true,
       message: "Created event successfully",

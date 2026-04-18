@@ -129,6 +129,22 @@ export const transactionService = {
     let couponId: string | null = null;
     let discount = 0;
 
+    if (pointsUsed > 0) {
+      const activePointsResult = await prisma.pointTransaction.aggregate({
+        where: {
+          userId,
+          expiresAt: { gt: new Date() },
+        },
+        _sum: { amount: true },
+      });
+
+      const availablePoints = activePointsResult._sum.amount || 0;
+
+      if (pointsUsed > availablePoints) {
+        throw new AppError("Insufficient active points", 400);
+      }
+    }
+
     if (voucherCode) {
       console.log("[DEBUG Transaction Service] checking voucher:", voucherCode);
       const voucher = await prisma.voucher.findFirst({
@@ -202,9 +218,10 @@ export const transactionService = {
         }
 
         couponId = coupon.id;
+        const subtotal = ticket.price * quantity;
         const calculatedDiscount = calculateDiscount(
-          ticket.price,
-          quantity,
+          subtotal,
+          1,
           coupon.discountType as DiscountType,
           coupon.discountValue
         );

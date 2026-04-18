@@ -208,6 +208,10 @@ export const eventService = {
     return { ...event, reviews: transformedReviews, averageRating, organizer: transformedOrganizer };
   },
 
+  // ============================================================
+  // CREATE EVENT - BUSINESS LOGIC
+  // Alur: Validasi Input -> Parse Data -> Transaction DB (Event + Tickets)
+  // ============================================================
   createEvent: async ({
     name,
     description,
@@ -222,88 +226,139 @@ export const eventService = {
     organizerId,
     tickets,
   }: CreateEvent) => {
+    // Debug: Log input yang masuk
     console.log("[DEBUG Event Service] createEvent input:", { name, description, location, category, totalSeats, price, availableSeats, organizerId, hasImage: !!imageUrl, hasTickets: !!tickets });
 
+    // ============================================================
+    // STEP 1: VALIDASI INPUT WAJIB
+    // Cek apakah field yang wajib diisi sudah ada dan tidak kosong
+    // ============================================================
     if (!name?.trim() || !description?.trim() || !location?.trim() || !category?.trim()) {
       throw new AppError("All fields are required", 400);
     }
 
+    // ============================================================
+    // STEP 2: PARSE TANGGAL
+    // startDate dan endDate dikirim sebagai string ISO dari frontend
+    // perlu dikonversi ke Date object untuk disimpan di database
+    // ============================================================
     const parsedStartDate = typeof startDate === 'string' ? parseDate(startDate, "startDate") : startDate;
     const parsedEndDate = typeof endDate === 'string' ? parseDate(endDate, "endDate") : endDate;
 
+    // Debug: Log tanggal yang sudah di-parse
     console.log("[DEBUG Event Service] createEvent parsed dates:", { parsedStartDate, parsedEndDate });
 
+    // ============================================================
+    // STEP 3: VALIDASI TANGGAL
+    // Tanggal selesai harus AFTER tanggal mulai
+    // ============================================================
     if (parsedStartDate > parsedEndDate) {
       throw new AppError("startDate must be before endDate", 400);
     }
 
+    // ============================================================
+    // STEP 4: PARSE NUMBER
+    // Konversi string ke number (totalSeats dan price dikirim sebagai string dari FormData)
+    // ============================================================
     const parsedTotalSeats = parseNumber(totalSeats, "totalSeats");
     const parsedPrice = parseNumber(price, "price");
 
+    // ============================================================
+    // STEP 5: HITUNG TOTAL SEATS DAN AVAILABLE SEATS
+    // Jika ada custom tickets, hitung total dari quantity semua tickets
+    // Jika tidak ada, gunakan totalSeats dari input
+    // ============================================================
     let eventTotalSeats = parsedTotalSeats;
     let eventAvailableSeats = availableSeats
       ? parseNumber(availableSeats, "availableSeats")
-      : parsedTotalSeats;
+      : parsedTotalSeats;  // Default: availableSeats = totalSeats
 
+    // Jika ada custom tickets, override total seats dengan jumlah semua ticket
     if (tickets && tickets.length > 0) {
+      // Jumlahkan semua quantity ticket (misal: VIP 50 + GENERAL 100 = 150)
       eventTotalSeats = tickets.reduce((sum, t) => sum + t.quantity, 0);
-      eventAvailableSeats = eventTotalSeats;
+      eventAvailableSeats = eventTotalSeats;  // Semua ticket tersedia initially
     }
 
+    // Debug: Log numbers yang sudah di-parse
     console.log("[DEBUG Event Service] createEvent parsed numbers:", { eventTotalSeats, parsedPrice, eventAvailableSeats });
 
+    // ============================================================
+    // STEP 6: TRANSACTION DATABASE (ATOMIC)
+    // Menggunakan Prisma $transaction untuk memastikan:
+    // - Event dan Ticket(s) dibuat bersama
+    // - Jika salah satu gagal, semua dibatalkan (rollback)
+    // ============================================================
     console.log("[DEBUG Event Service] creating event in DB with $transaction");
     
     const newEvent = await prisma.$transaction(async (tx) => {
+      // -----------------------------------------------
+      // 6a. CREATE EVENT - Simpan data event ke tabel Event
+      // -----------------------------------------------
       const event = await tx.event.create({
         data: {
           name,
           description,
           location,
           category,
-          startDate: parsedStartDate,
-          endDate: parsedEndDate,
-          totalSeats: eventTotalSeats,
-          price: parsedPrice,
+          startDate: parsedStartDate,     // Tanggal yang sudah di-parse
+          endDate: parsedEndDate,         // Tanggal yang sudah di-parse
+          totalSeats: eventTotalSeats,    // Total seats (dari tickets atau input)
+          price: parsedPrice,             // Harga dalam Rupiah
           availableSeats: eventAvailableSeats,
-          imageUrl,
+          imageUrl,                       // URL dari Cloudinary (undefined jika tidak ada)
           organizer: {
-            connect: { id: organizerId },
+            connect: { id: organizerId }, // Relasi ke tabel User (organizer)
           },
         },
       });
 
+      // Debug: Log event berhasil dibuat
       console.log("[DEBUG Event Service] createEvent success, eventId:", event.id);
 
+      // -----------------------------------------------
+      // 6b. CREATE TICKET(S)
+      // -----------------------------------------------
+      // Jika ada custom tickets, buat setiap ticket type
       if (tickets && tickets.length > 0) {
         console.log("[DEBUG Event Service] creating custom tickets");
+        
+        // Loop: Buat ticket untuk setiap type (GENERAL, VIP)
         for (const ticket of tickets) {
           await tx.ticket.create({
             data: {
-              eventId: event.id,
-              type: ticket.type,
-              price: ticket.price,
-              quantity: ticket.quantity,
-              available: ticket.quantity,
+              eventId: event.id,                    // Foreign key ke event
+              type: ticket.type,                    // "GENERAL" atau "VIP"
+              price: ticket.price,                  // Harga ticket ini (bisa berbeda dari event.price)
+              quantity: ticket.quantity,            // Jumlah ticket type ini
+              available: ticket.quantity,          // Awalnya semua tersedia
             },
           });
         }
       } else {
+        // Jika tidak ada custom tickets, buat 1 ticket GENERAL default
+        // Ini agar customer tetap bisa beli ticket meskipun organizer tidak buat custom tickets
         console.log("[DEBUG Event Service] creating default GENERAL ticket");
+        
         await tx.ticket.create({
           data: {
             eventId: event.id,
-            type: 'GENERAL',
-            price: parsedPrice,
-            quantity: eventTotalSeats,
-            available: eventAvailableSeats,
+            type: 'GENERAL',                       // Default type
+            price: parsedPrice,                     // Harga dari input event
+            quantity: eventTotalSeats,             // Semua seats jadi ticket GENERAL
+            available: eventAvailableSeats,        // Semua available
           },
         });
       }
 
+      // Return event yang sudah dibuat (ticket sudah dibuat di dalam transaction)
       return event;
     });
 
+    // ============================================================
+    // STEP 7: RETURN EVENT
+    // Event sudah dibuat lengkap dengan ticket(s)
+    // ============================================================
     return newEvent;
   },
 

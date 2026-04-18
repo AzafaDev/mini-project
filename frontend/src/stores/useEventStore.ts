@@ -362,19 +362,40 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  // ============================================================
+  // CREATE EVENT - ZUSTAND STORE
+  // Alur: Receive data -> Call API Service -> Handle Response -> Refresh List
+  // ============================================================
   createEvent: async (data) => {
+    // Set loading state agar UI bisa menampilkan spinner/loading
+    // Reset error state sebelumnya
     set({ loadingEventAction: true, error: null });
+    
     try {
+      // Panggil API service untuk create event
+      // Data yang dikirim: name, description, location, category, dates, seats, price, imageFile, tickets
       const response = await eventService.createEvent(data);
+      
+      // Cek apakah response sukses dari server
       if (response.success) {
-        // Refresh my events list
+        // Refresh daftar event organizer agar data terbaru muncul di dashboard
         await get().fetchMyEvents();
+        
+        // Matikan loading state
         set({ loadingEventAction: false });
+        
+        // Return data event yang berhasil dibuat ke caller (CreateEventPage)
         return response.data;
       }
+      
+      // Jika response tidak sukses (success = false)
+      // Simpan pesan error ke state dan return null
       set({ error: response.message || "Failed to create event", loadingEventAction: false });
       return null;
+      
     } catch (error: any) {
+      // Tangkap error jika ada exception (network error, server error 500, dll)
+      // Simpan pesan error ke state
       set({
         error: error.response?.data?.message || "Failed to create event",
         loadingEventAction: false,

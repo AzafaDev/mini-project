@@ -36,7 +36,7 @@ export const couponService = {
 
     const actualDiscount = calculateDiscount(
       price,
-      quantity,
+      1,
       coupon.discountType,
       coupon.discountValue
     );
