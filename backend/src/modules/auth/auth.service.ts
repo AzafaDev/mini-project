@@ -14,6 +14,13 @@ import { AppError } from "../../utils/AppError";
 const DISCOUNT_PERCENTAGE = 10;
 const REFERRAL_POINT = 10000;
 
+/**
+ * Removes sensitive fields from user object before sending to client.
+ * Strips: password, resetPasswordToken, resetPasswordTokenExpiresAt, verifyToken, verifyTokenExpiresAt
+ * 
+ * @param user - Full user object from database
+ * @returns User object with sensitive fields removed
+ */
 const sanitizeUser = (user: any) => {
   const {
     password,
@@ -27,6 +34,18 @@ const sanitizeUser = (user: any) => {
 };
 
 export const authService = {
+  /**
+   * Registers a new user with email verification flow.
+   * 
+   * Process:
+   * 1. Validate referral code if provided
+   * 2. Generate verification token and hash password
+   * 3. Create user in database with Prisma transaction
+   * 4. If referral code exists, award referrer with points and create coupon for new user
+   * 
+   * @param userData - User registration data (email, password, fullName, phoneNumber, role, referrerCode, imageUrl)
+   * @returns Object containing the newly created user
+   */
   register: async ({
     email,
     password,
@@ -36,46 +55,19 @@ export const authService = {
     referrerCode,
     imageUrl,
   }: AuthRegister) => {
-    console.log("[DEBUG register service] received:", {
-      email,
-      fullName,
-      role,
-      referrerCode,
-      hasImageUrl: !!imageUrl,
-    });
-
     let referrer: { id: string } | null;
     if (referrerCode) {
-      console.log(
-        "[DEBUG register service] checking referrer code:",
-        referrerCode,
-      );
       referrer = await prisma.user.findFirst({
         where: { referralCode: { equals: referrerCode, mode: "insensitive" } },
       });
-      console.log(
-        "[DEBUG register service] referrer found:",
-        referrer ? referrer.id : null,
-      );
       if (!referrer) throw new AppError("Invalid referral code", 409);
-    } else {
-      console.log("[DEBUG register service] no referrer code provided");
     }
 
     const verifyToken = generateVerificationCode();
-    console.log("[DEBUG register service] verifyToken generated");
-
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("[DEBUG register service] password hashed");
-
     const referralCode = await generateUniqueReferralCode();
-    console.log(
-      "[DEBUG register service] referralCode generated:",
-      referralCode,
-    );
 
     const result = await prisma.$transaction(async (tx) => {
-      console.log("[DEBUG register service] creating user in transaction");
       const newUser = await tx.user.create({
         data: {
           email,
@@ -90,13 +82,8 @@ export const authService = {
           verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
-      console.log("[DEBUG register service] user created with id:", newUser.id);
 
       if (referrer) {
-        console.log(
-          "[DEBUG register service] creating referral bonus for referrer:",
-          referrer.id,
-        );
         await tx.pointTransaction.create({
           data: {
             userId: referrer.id,
@@ -107,10 +94,6 @@ export const authService = {
         });
 
         const couponCode = crypto.randomBytes(4).toString("hex").toUpperCase();
-        console.log(
-          "[DEBUG register service] creating coupon for new user, code:",
-          couponCode,
-        );
         await tx.coupon.create({
           data: {
             code: couponCode,
@@ -122,10 +105,6 @@ export const authService = {
           },
         });
 
-        console.log(
-          "[DEBUG register service] updating referrer points balance:",
-          referrer.id,
-        );
         await tx.user.update({
           where: { id: referrer.id },
           data: {
@@ -137,13 +116,19 @@ export const authService = {
       return { newUser };
     });
 
-    console.log("[DEBUG register service] registration complete, returning:", {
-      userId: result.newUser.id,
-      email: result.newUser.email,
-    });
     return result;
   },
 
+  /**
+   * Updates an existing unverified user's password when they re-register.
+   * This handles the case where user started registration but didn't verify email.
+   * 
+   * @param email - User's email address
+   * @param password - New plain text password to be hashed
+   * @param updateData - Updated user data (phoneNumber, profilePicture, fullName, role)
+   * @param newVerifyToken - New verification token to be sent
+   * @returns Updated user object
+   */
   rehashAndUpdateUser: async (
     email: string,
     password: string,
@@ -155,19 +140,8 @@ export const authService = {
     },
     newVerifyToken: string,
   ) => {
-    console.log(
-      "[DEBUG rehashAndUpdateUser] email:",
-      email,
-      "fullName:",
-      updateData.fullName,
-      "role:",
-      updateData.role,
-    );
-
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("[DEBUG rehashAndUpdateUser] password rehashed");
 
-    console.log("[DEBUG rehashAndUpdateUser] updating user in database");
     const updatedUser = await prisma.user.update({
       where: { email },
       data: {
@@ -180,13 +154,16 @@ export const authService = {
         verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
-    console.log(
-      "[DEBUG rehashAndUpdateUser] user updated, id:",
-      updatedUser.id,
-    );
     return updatedUser;
   },
 
+  /**
+   * Verifies user's email using the token from the verification email.
+   * Clears verification tokens and marks user as verified.
+   * 
+   * @param token - Verification token from email
+   * @returns Sanitized user object (without sensitive fields)
+   */
   verifyEmail: async ({ token }: VerifyEmail) => {
     const userWithValidToken = await prisma.user.findFirst({
       where: { verifyToken: token, verifyTokenExpiresAt: { gt: new Date() } },
@@ -205,6 +182,12 @@ export const authService = {
     return sanitizeUser(updatedUser);
   },
 
+  /**
+   * Resends verification email to unverified user.
+   * Generates new verification token with 24-hour expiry.
+   * 
+   * @param userId - ID of user to resend verification for
+   */
   resendVerification: async (userId?: string) => {
     if (!userId) throw new AppError("User not found", 404);
     const newToken = generateVerificationCode();
@@ -223,6 +206,18 @@ export const authService = {
     });
   },
 
+  /**
+   * Authenticates user with email and password.
+   * 
+   * Flow:
+   * 1. Find user by email
+   * 2. Compare password with hashed password in database
+   * 3. If not verified, generate new verification token and return requiresVerification=true
+   * 4. If verified, return user data with requiresVerification=false
+   * 
+   * @param credentials - Login credentials (email, password)
+   * @returns Object with user data and requiresVerification flag
+   */
   login: async ({ email, password }: Login) => {
     const user = await prisma.user.findUnique({ 
       where: { email },
@@ -235,13 +230,7 @@ export const authService = {
     if (!isCorrectPassword)
       throw new AppError("Invalid email or password", 401);
 
-    console.log("[DEBUG Service] user.isVerified:", user.isVerified);
-    console.log("[DEBUG Service] user.verifyToken:", user.verifyToken);
-
     if (!user.isVerified) {
-      console.log(
-        "[DEBUG Service] isVerified FALSE - generate new token & send email",
-      );
       const newVerifyToken = generateVerificationCode();
       await prisma.user.update({
         where: { id: user.id },
@@ -250,19 +239,21 @@ export const authService = {
           verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
-      console.log("[DEBUG Service] new verifyToken generated:", newVerifyToken);
       return {
         user: { ...sanitizeUser(user), verifyToken: newVerifyToken },
         requiresVerification: true,
       };
     }
 
-    console.log(
-      "[DEBUG Service] isVerified TRUE - return requiresVerification: false",
-    );
     return { user: sanitizeUser(user), requiresVerification: false };
   },
 
+  /**
+   * Retrieves current user's profile data including their coupons.
+   * 
+   * @param userId - ID of user to fetch
+   * @returns Sanitized user object with ownedCoupons
+   */
   getCurrentUser: async (userId: string) => {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -274,6 +265,13 @@ export const authService = {
     return sanitizeUser(user);
   },
 
+  /**
+   * Updates user's profile fields.
+   * Only updates fields that are provided (not undefined).
+   * 
+   * @param data - Profile update data (userId required, others optional)
+   * @returns Updated user object with ownedCoupons
+   */
   updateProfile: async ({
     userId,
     fullName,
@@ -285,17 +283,10 @@ export const authService = {
     phoneNumber?: string;
     imageUrl?: string;
   }) => {
-    console.log("[DEBUG authService.updateProfile] received:", {
-      userId,
-      fullName,
-      phoneNumber,
-      imageUrl,
-    });
     const data: any = {};
     if (fullName !== undefined) data.fullName = fullName;
     if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
     if (imageUrl !== undefined) data.profilePicture = imageUrl;
-    console.log("[DEBUG authService.updateProfile] data to update:", data);
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -307,6 +298,13 @@ export const authService = {
     return sanitizeUser(updatedUser);
   },
 
+  /**
+   * Changes user's password after verifying current password.
+   * Ensures new password is different from current password.
+   * 
+   * @param passwordData - Object with currentPassword, newPassword, and userId
+   * @returns Updated user object (without password field)
+   */
   changePassword: async ({
     currentPassword,
     newPassword,
@@ -323,7 +321,6 @@ export const authService = {
       user.password,
     );
     if (!isCorrectPassword) throw new AppError("Invalid current password", 400);
-    // Cek apakah newPassword sama dengan currentPassword
     const isSameAsOld = await bcrypt.compare(newPassword, user.password);
     if (isSameAsOld) throw new AppError("New password cannot be the same as current password", 400);
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -346,6 +343,13 @@ export const authService = {
     return sanitizeUser(updatedUser);
   },
 
+  /**
+   * Initiates password reset flow.
+   * Generates reset token and sends reset email.
+   * Note: Returns void if email doesn't exist (doesn't reveal to attackers).
+   * 
+   * @param email - User's email address
+   */
   forgotPassword: async (email: string) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return;
@@ -364,6 +368,13 @@ export const authService = {
     });
   },
 
+  /**
+   * Completes password reset using token from email.
+   * Validates token hasn't expired and updates password.
+   * 
+   * @param resetData - Object with token and newPassword
+   * @returns Updated user object (without password)
+   */
   resetPassword: async ({
     token,
     newPassword,

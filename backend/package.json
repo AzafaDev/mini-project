@@ -5,13 +5,16 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/app.ts",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
     "@types/axios": "^0.9.36",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
@@ -25,7 +28,8 @@
     "nodemon": "^3.1.14",
     "prisma": "^7.6.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^2.1.0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",

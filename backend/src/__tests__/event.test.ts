@@ -21,6 +21,31 @@ vi.mock('../config/prisma', () => ({
     transaction: {
       findMany: vi.fn(),
     },
+    ticket: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+    },
+    voucher: {
+      findFirst: vi.fn(),
+    },
+    $transaction: vi.fn().mockImplementation(async (callback) => {
+      const mockTx = {
+        event: {
+          create: vi.fn().mockImplementation((data) => Promise.resolve({ id: 'event-123', ...data })),
+          findUnique: vi.fn().mockResolvedValue(null),
+          findFirst: vi.fn().mockResolvedValue(null),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        ticket: {
+          create: vi.fn().mockResolvedValue({}),
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        voucher: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      };
+      return callback(mockTx);
+    }),
   },
 }));
 
@@ -110,8 +135,8 @@ describe('Event Service', () => {
     it('should return paginated events', async () => {
       // Arrange
       const mockEvents = [
-        { id: 'event-1', name: 'Event 1' },
-        { id: 'event-2', name: 'Event 2' },
+        { id: 'event-1', name: 'Event 1', tickets: [] },
+        { id: 'event-2', name: 'Event 2', tickets: [] },
       ];
       
       prisma.event.findMany.mockResolvedValue(mockEvents);
@@ -132,7 +157,7 @@ describe('Event Service', () => {
     it('should filter events by category', async () => {
       // Arrange
       const mockEvents = [
-        { id: 'event-1', name: 'Music Event', category: 'Music' },
+        { id: 'event-1', name: 'Music Event', category: 'Music', tickets: [] },
       ];
       
       prisma.event.findMany.mockResolvedValue(mockEvents);
@@ -152,7 +177,7 @@ describe('Event Service', () => {
     it('should filter events by search query', async () => {
       // Arrange
       const mockEvents = [
-        { id: 'event-1', name: 'Concert', description: 'Music concert' },
+        { id: 'event-1', name: 'Concert', description: 'Music concert', tickets: [] },
       ];
       
       prisma.event.findMany.mockResolvedValue(mockEvents);
@@ -179,6 +204,7 @@ describe('Event Service', () => {
         organizer: { id: 'org-1', fullName: 'Organizer', profilePicture: null },
         reviews: [{ id: 'r1', rating: 5, comment: 'Great!', user: { id: 'u1', fullName: 'User' } }],
         vouchers: [],
+        tickets: [],
         organizerId: 'org-1',
       };
       

@@ -1,19 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/AppError";
 
+/**
+ * Global error handler middleware
+ * Catches all unhandled errors and formats them as JSON responses
+ * 
+ * Handles:
+ * - AppError (custom application errors with status codes)
+ * - Generic Error (unknown errors)
+ * 
+ * Response format: { success: false, message: string }
+ */
 export const errorHandler = (
   err: Error | AppError,
   req: Request,
   res: Response,
   _next: NextFunction
 ) => {
-  console.log("[DEBUG Error Handler] Error occurred:", {
-    message: err.message,
-    path: req.path,
-    method: req.method,
-    statusCode: err instanceof AppError ? err.statusCode : 500,
-  });
-
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -21,8 +24,7 @@ export const errorHandler = (
     });
   }
 
-  // Unknown error = 500
-  console.error("[DEBUG Error Handler] Unhandled error:", err);
+  console.error("Unhandled error:", err);
   return res.status(500).json({
     success: false,
     message: "Internal server error",

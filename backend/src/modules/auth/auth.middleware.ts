@@ -3,41 +3,49 @@ import jwt from "jsonwebtoken";
 import { AuthRequest } from "./auth.type";
 import { prisma } from "../../config/prisma";
 
-console.log("[DEBUG Auth Middleware] Module loaded");
-
+/**
+ * Authentication middleware for verifying tokens and authorization.
+ * Handles two types of tokens:
+ * - temp_token: For unverified users during email verification flow
+ * - auth_token: For verified users accessing protected routes
+ */
 export const authMiddleware = {
+  /**
+   * Verifies temporary token used during email verification flow.
+   * This middleware is used for routes that require user to be in the
+   * process of verifying their email (e.g., resend verification code).
+   * 
+   * Checks:
+   * 1. temp_token cookie exists
+   * 2. Token is valid and not expired
+   * 3. User is NOT yet verified (if verified, rejects with 403)
+   * 
+   * @param req - Express request with cookies
+   * @param res - Express response
+   * @param next - Express next function
+   */
   verifyTempToken: async (
     req: AuthRequest,
     res: Response,
     next: NextFunction,
   ) => {
     try {
-      console.log("[DEBUG Auth Middleware] verifyTempToken called, cookies:", req.cookies);
-
       const token = req.cookies.temp_token;
       if (!token) {
-        console.log("[DEBUG Auth Middleware] verifyTempToken - no token found");
         return res
           .status(401)
           .json({ success: false, message: "Unauthorized: No token provided" });
       }
-
-      console.log("[DEBUG Auth Middleware] verifyTempToken - token found, verifying...");
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
         userId: string;
         userEmail: string;
       };
 
-      console.log("[DEBUG Auth Middleware] verifyTempToken - decoded:", decoded);
-
-      // Cek apakah user sudah verified
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
         select: { isVerified: true },
       });
-
-      console.log("[DEBUG Auth Middleware] verifyTempToken - user found, isVerified:", user?.isVerified);
 
       if (user?.isVerified) {
         return res.status(403).json({
@@ -50,50 +58,51 @@ export const authMiddleware = {
 
       next();
     } catch (error: any) {
-      console.log("[DEBUG Auth Middleware] verifyTempToken - error:", error.message);
       res.status(401).json({ success: false, message: error.message });
     }
   },
+
+  /**
+   * Verifies authentication token for protected routes.
+   * This is the main authentication middleware for routes that require
+   * a valid, verified user session.
+   * 
+   * Checks:
+   * 1. auth_token cookie exists
+   * 2. Token is valid and not expired
+   * 3. User exists in database
+   * 
+   * On success, attaches userId and userRole to req object.
+   * 
+   * @param req - Express request with cookies
+   * @param res - Express response
+   * @param next - Express next function
+   */
   verifyAuthToken: async (
     req: AuthRequest,
     res: Response,
     next: NextFunction,
   ) => {
     try {
-      console.log("[DEBUG Auth Middleware] verifyAuthToken called, cookies:", req.cookies);
-
       const token = req.cookies.auth_token;
 
-      console.log("[DEBUG Auth Middleware] verifyAuthToken - Auth Token Found:", !!token);
-
       if (!token) {
-        console.log("[DEBUG Auth Middleware] verifyAuthToken - no token");
         return res
           .status(401)
           .json({ success: false, message: "Unauthorized: No token provided" });
       }
-
-      console.log("[DEBUG Auth Middleware] verifyAuthToken - verifying token...");
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
         userId: string;
         userRole: string;
       };
 
-      console.log("[DEBUG Auth Middleware] verifyAuthToken - decoded:", decoded);
-
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
         select: { id: true, isVerified: true },
       });
 
-      console.log("[DEBUG Auth Middleware] verifyAuthToken - user found:", !!user);
-
       if (!user) {
-        console.log(
-          "[DEBUG Auth Middleware] verifyAuthToken - User not found in DB for ID:",
-          decoded.userId,
-        );
         return res
           .status(401)
           .json({ success: false, message: "Unauthorized: Invalid token" });
@@ -102,35 +111,36 @@ export const authMiddleware = {
       req.userId = decoded.userId;
       req.userRole = decoded.userRole;
 
-      console.log("[DEBUG Auth Middleware] verifyAuthToken - success, userId:", req.userId, "userRole:", req.userRole);
-
       next();
     } catch (error: any) {
-      console.log("[DEBUG Auth Middleware] verifyAuthToken - Catch Error:", error.message);
       res.status(401).json({ success: false, message: error.message });
     }
   },
+
+  /**
+   * Authorization middleware to check if user has ORGANIZER role.
+   * Must be used AFTER verifyAuthToken (relies on req.userRole).
+   * Returns 403 if user is not an organizer.
+   * 
+   * @param req - Express request with userRole from auth middleware
+   * @param res - Express response
+   * @param next - Express next function
+   */
   isOrganizer: async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      console.log("[DEBUG Auth Middleware] isOrganizer called, userRole:", req.userRole);
-
       const userRole = req.userRole;
       if (!userRole) {
-        console.log("[DEBUG Auth Middleware] isOrganizer - no userRole");
         return res
           .status(401)
           .json({ success: false, message: "Unauthorized" });
       }
       if (userRole !== "ORGANIZER") {
-        console.log("[DEBUG Auth Middleware] isOrganizer - not ORGANIZER, role:", userRole);
         return res
           .status(403)
           .json({ success: false, message: "Access denied" });
       }
-      console.log("[DEBUG Auth Middleware] isOrganizer - authorized");
       next();
     } catch (error: any) {
-      console.log("[DEBUG Auth Middleware] isOrganizer - error:", error.message);
       res.status(401).json({ success: false, message: error.message });
     }
   },

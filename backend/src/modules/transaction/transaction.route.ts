@@ -10,8 +10,12 @@ import {
 
 const transactionRouter = Router();
 
-console.log("[DEBUG Route] Registering Transaction routes");
+/**
+ * Transaction Routes
+ * Handles all ticket purchase and payment flows
+ */
 
+// Create new transaction - Customer buys tickets
 transactionRouter.post(
   "/",
   authMiddleware.verifyAuthToken,
@@ -19,12 +23,14 @@ transactionRouter.post(
   transactionController.createTransaction,
 );
 
+// Get my transactions - Customer views their transaction history
 transactionRouter.get(
   "/me",
   authMiddleware.verifyAuthToken,
   transactionController.getMyTransactions,
 );
 
+// Get event transactions - Organizer views transactions for specific event
 transactionRouter.get(
   "/event/:eventId",
   authMiddleware.verifyAuthToken,
@@ -33,6 +39,7 @@ transactionRouter.get(
   transactionController.getEventTransactions,
 );
 
+// Get organizer transactions - Organizer views all their transactions
 transactionRouter.get(
   "/organizer",
   authMiddleware.verifyAuthToken,
@@ -40,18 +47,21 @@ transactionRouter.get(
   transactionController.getOrganizerTransactions,
 );
 
+// Get transaction by ID - View specific transaction details
 transactionRouter.get(
   "/:id",
   authMiddleware.verifyAuthToken,
   transactionController.getTransactionById,
 );
 
+// Upload payment proof - Customer submits payment receipt
 transactionRouter.put(
   "/:id/payment-proof",
   authMiddleware.verifyAuthToken,
   transactionController.uploadPaymentProof,
 );
 
+// Accept transaction - Organizer confirms payment
 transactionRouter.put(
   "/:id/accept",
   authMiddleware.verifyAuthToken,
@@ -59,6 +69,7 @@ transactionRouter.put(
   transactionController.acceptTransaction,
 );
 
+// Reject transaction - Organizer rejects payment
 transactionRouter.put(
   "/:id/reject",
   authMiddleware.verifyAuthToken,
@@ -66,6 +77,7 @@ transactionRouter.put(
   transactionController.rejectTransaction,
 );
 
+// Cancel transaction - Customer cancels before confirmation
 transactionRouter.put(
   "/:id/cancel",
   authMiddleware.verifyAuthToken,

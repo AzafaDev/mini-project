@@ -19,8 +19,21 @@ import {
 } from "../../utils/generateToken";
 import { sendEmail } from "../../utils/sendEmail";
 
+/**
+ * Sanitizes email by trimming whitespace and converting to lowercase.
+ * @param email - Raw email string from user input
+ * @returns Sanitized email string
+ */
 const sanitizeEmail = (email: string): string => email.trim().toLowerCase();
 
+/**
+ * Sends verification email and sets temporary token cookie for email verification flow.
+ * This is used when user registers or tries to login with unverified account.
+ * 
+ * @param user - User object containing id, email, fullName, and verifyToken
+ * @param res - Express response object
+ * @returns Response with success message and requiresVerification flag
+ */
 const sendVerificationAndSetCookie = async (
   user: {
     id: string;
@@ -30,9 +43,6 @@ const sendVerificationAndSetCookie = async (
   },
   res: Response,
 ) => {
-  console.log("[DEBUG Register] Preparing temp_token for UserID:", user.id);
-  console.log("[DEBUG Register] verifyToken:", user.verifyToken);
-
   try {
     await sendEmail.verificationEmail({
       email: user.email,
@@ -40,18 +50,16 @@ const sendVerificationAndSetCookie = async (
       username: user.fullName,
     });
   } catch (error) {
-    console.error("[DEBUG Register] Email Failed:", error);
+    console.error("Failed to send verification email:", error);
   }
 
   if (!process.env.JWT_SECRET) {
-    console.error("[DEBUG Register] CRITICAL: JWT_SECRET is undefined in .env");
+    console.error("CRITICAL: JWT_SECRET is undefined in .env");
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
     expiresIn: "30m",
   });
-
-  console.log("[DEBUG Register] temp_token generated successfully");
 
   res.cookie("temp_token", token, {
     maxAge: 30 * 60 * 1000,
@@ -68,7 +76,25 @@ const sendVerificationAndSetCookie = async (
   });
 };
 
+/**
+ * Authentication controller handling all auth-related endpoints.
+ * Includes: register, login, logout, verify email, forgot password, etc.
+ */
 export const authController = {
+  /**
+   * Handles user registration with email verification flow.
+   * 
+   * Flow:
+   * 1. Sanitizes and validates email format
+   * 2. Checks if user already exists (verified or unverified)
+   * 3. If unverified user exists, rehash password and resend verification
+   * 4. Creates new user with hashed password and generates verification token
+   * 5. Sends verification email and sets temp token cookie
+   * 
+   * @param req - Express request with registration data (email, password, fullName, phoneNumber, role, referrerCode)
+   * @param res - Express response
+   * @returns JSON with success status and message
+   */
   register: async (req: Request, res: Response) => {
     const {
       email,
@@ -79,30 +105,22 @@ export const authController = {
       referrerCode,
     }: AuthRegister = req.body;
 
-    console.log("[DEBUG register] incoming body:", { email, fullName, role, referrerCode, phoneNumber });
-
     const sanitizedEmail = sanitizeEmail(email);
-    console.log("[DEBUG register] sanitizedEmail:", sanitizedEmail);
 
     const imageUrl = await getUploadUrl(req.files?.profilePicture as UploadedFile, "profile-picture");
-    console.log("[DEBUG register] image uploaded, url:", imageUrl);
 
     const existingUser = await prisma.user.findUnique({
       where: { email: sanitizedEmail },
     });
 
-    console.log("[DEBUG register] existingUser check:", existingUser ? "found" : "not found");
-
     if (existingUser) {
       if (existingUser.isVerified) {
-        console.log("[DEBUG register] user exists and is verified - rejecting");
         return res.status(409).json({
           success: false,
           message: "Email already exists. Please login or use forgot password.",
         });
       }
 
-      console.log("[DEBUG register] user exists but not verified - rehash flow");
       const newToken = generateVerificationCode();
       const updatedUser = await authService.rehashAndUpdateUser(
         existingUser.email,
@@ -127,7 +145,6 @@ export const authController = {
       );
     }
 
-    console.log("[DEBUG register] calling authService.register with:", { email: sanitizedEmail, fullName, role, referrerCode, phoneNumber, imageUrl: !!imageUrl });
     const result = await authService.register({
       email: sanitizedEmail,
       password,
@@ -137,8 +154,6 @@ export const authController = {
       referrerCode,
       imageUrl,
     });
-
-    console.log("[DEBUG register] authService.register result:", { userId: result.newUser.id, email: result.newUser.email, role: result.newUser.role });
 
     return sendVerificationAndSetCookie(
       {
@@ -151,6 +166,14 @@ export const authController = {
     );
   },
 
+  /**
+   * Verifies user's email address using the token sent to their email.
+   * On success, generates auth token and clears temporary token cookie.
+   * 
+   * @param req - Express request with verification token
+   * @param res - Express response
+   * @returns JSON with success message and user data
+   */
   verifyEmail: async (req: Request, res: Response) => {
     const { token }: VerifyEmail = req.body;
     if (!token.trim() || token.trim().length < 6) {
@@ -162,6 +185,14 @@ export const authController = {
     res.status(200).json({ success: true, message: "Verify email successfully", user });
   },
 
+  /**
+   * Resends verification email to unverified user.
+   * Requires authentication (user must be logged in but not verified).
+   * 
+   * @param req - Express request with authenticated user (req.userId)
+   * @param res - Express response
+   * @returns JSON with success message
+   */
   resendVerification: async (req: AuthRequest, res: Response) => {
     const userId = req.userId;
     await authService.resendVerification(userId);
@@ -171,23 +202,28 @@ export const authController = {
     });
   },
 
+  /**
+   * Handles user login.
+   * 
+   * Flow:
+   * 1. Validates email and password
+   * 2. Checks if user exists and password matches
+   * 3. If account is not verified, sends new verification email
+   * 4. If verified, generates auth token and returns user data
+   * 
+   * @param req - Express request with login credentials (email, password)
+   * @param res - Express response
+   * @returns JSON with success message and user data, or verification required
+   */
   login: async (req: Request, res: Response) => {
     const { email, password }: Login = req.body;
-
-    console.log("[DEBUG Login] ====== START LOGIN ======");
-    console.log("[DEBUG Login] email:", email);
 
     const { user, requiresVerification } = await authService.login({
       email: sanitizeEmail(email),
       password,
     });
 
-    console.log("[DEBUG Login] requiresVerification:", requiresVerification);
-    console.log("[DEBUG Login] user.isVerified:", user.isVerified);
-    console.log("[DEBUG Login] user.id:", user.id);
-
     if (requiresVerification) {
-      console.log("[DEBUG Login] requiresVerification = TRUE - akan kirim ulang kode verifikasi");
       return sendVerificationAndSetCookie(
         {
           id: user.id,
@@ -199,7 +235,6 @@ export const authController = {
       );
     }
 
-    console.log("[DEBUG Login] requiresVerification = FALSE - login berhasil");
     generateTokenForAuth({ res, userId: user.id, userRole: user.role });
     res.clearCookie("temp_token");
 
@@ -210,6 +245,13 @@ export const authController = {
     });
   },
 
+  /**
+   * Logs out user by clearing auth_token and temp_token cookies.
+   * 
+   * @param req - Express request (authentication not required for logout)
+   * @param res - Express response
+   * @returns JSON with success message
+   */
   logout: async (req: AuthRequest, res: Response) => {
     res.clearCookie("auth_token", {
       path: "/",
@@ -226,35 +268,36 @@ export const authController = {
     res.status(200).json({ success: true, message: "Logout successfully" });
   },
 
+  /**
+   * Gets current authenticated user's profile data.
+   * Requires valid auth_token cookie.
+   * 
+   * @param req - Express request with authenticated user (req.userId, req.userRole)
+   * @param res - Express response
+   * @returns JSON with user data
+   */
   getCurrentUser: async (req: AuthRequest, res: Response) => {
     const userId = req.userId;
     const userRole = req.userRole;
 
-    console.log("------------------- GET CURRENT USER -------------------");
-    console.log("[DEBUG Controller] Request UserID:", userId);
-    console.log("[DEBUG Controller] Request UserRole:", userRole);
-
     if (!userId) {
-      console.log("[DEBUG Controller] FAILED: userId is missing");
       return res.status(400).json({ success: false, message: "User id not found" });
     }
 
     const user = await authService.getCurrentUser(userId);
 
-    if (!user) {
-      console.log("[DEBUG Controller] FAILED: user object is null from service");
-    } else {
-      console.log("[DEBUG Controller] SUCCESS: user fetched for", user.email);
-    }
-
     res.status(200).json({ success: true, user });
   },
 
+  /**
+   * Updates user's profile (fullName, phoneNumber, profilePicture).
+   * Requires authentication.
+   * 
+   * @param req - Express request with updated profile data and authenticated user
+   * @param res - Express response
+   * @returns JSON with success message and updated user data
+   */
   updateProfile: async (req: AuthRequest, res: Response) => {
-    console.log("[DEBUG updateProfile] req.body:", req.body);
-    console.log("[DEBUG updateProfile] req.files:", req.files);
-    console.log("[DEBUG updateProfile] has profilePicture:", "profilePicture" in (req.files || {}));
-
     const { fullName, phoneNumber } = req.body || {};
     const userId = req.userId;
     if (!userId) {
@@ -262,20 +305,25 @@ export const authController = {
     }
 
     const imageUrl = await getUploadUrl(req.files?.profilePicture as UploadedFile, "profile-picture");
-    console.log("[DEBUG updateProfile] imageUrl:", imageUrl);
 
-    console.log("[DEBUG updateProfile] calling authService.updateProfile with:", { fullName, phoneNumber, imageUrl, userId });
     const user = await authService.updateProfile({
       fullName,
       phoneNumber,
       imageUrl,
       userId,
     });
-    console.log("[DEBUG updateProfile] success, user:", user);
 
     res.status(200).json({ success: true, message: "Updated profile successfully", user });
   },
 
+  /**
+   * Changes user's password.
+   * Requires authentication and current password verification.
+   * 
+   * @param req - Express request with currentPassword and newPassword
+   * @param res - Express response
+   * @returns JSON with success message and updated user data
+   */
   changePassword: async (req: AuthRequest, res: Response) => {
     const { currentPassword, newPassword } = req.body;
     const userId = req.userId;
@@ -294,6 +342,15 @@ export const authController = {
     });
   },
 
+  /**
+   * Initiates password reset flow.
+   * Sends reset link to user's email if account exists.
+   * Note: This intentionally doesn't reveal whether email exists or not (security).
+   * 
+   * @param req - Express request with email
+   * @param res - Express response
+   * @returns JSON with generic success message
+   */
   forgotPassword: async (req: Request, res: Response) => {
     const { email }: ForgotPassword = req.body;
     if (!email.trim()) {
@@ -306,6 +363,14 @@ export const authController = {
     });
   },
 
+  /**
+   * Completes password reset using token from email.
+   * Validates token expiry and updates password.
+   * 
+   * @param req - Express request with reset token (params) and newPassword (body)
+   * @param res - Express response
+   * @returns JSON with success message and user data
+   */
   resetPassword: async (req: Request, res: Response) => {
     const { token } = req.params;
     const { newPassword }: ResetPassword = req.body;
