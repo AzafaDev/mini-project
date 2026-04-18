@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
+import { calculateDiscount } from "../../utils/discountEngine";
 import { DiscountType } from "../../../generated/prisma/enums";
 
 export const voucherService = {
@@ -73,13 +74,12 @@ export const voucherService = {
       throw new AppError("Voucher usage limit reached", 400);
     }
 
-    // Calculate discount based on type
-    let discount = 0;
-    if (voucher.discountType === DiscountType.PERCENTAGE && price > 0 && quantity > 0) {
-      discount = (price * quantity * voucher.discountValue) / 100;
-    } else {
-      discount = voucher.discountValue;
-    }
+    const discount = calculateDiscount(
+      price,
+      quantity,
+      voucher.discountType,
+      voucher.discountValue
+    );
 
     console.log("[DEBUG Voucher Service] validateVoucher discount:", discount);
     return {

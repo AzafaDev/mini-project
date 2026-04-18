@@ -1,5 +1,28 @@
 import { z } from "zod";
 
+const ticketSchema = z.object({
+  type: z.enum(["GENERAL", "VIP"]),
+  price: z.coerce.number().min(0, "Price must be non-negative"),
+  quantity: z.coerce.number().int().positive("Quantity must be a positive integer"),
+});
+
+const ticketSchemaOptional = ticketSchema.optional();
+
+// Preprocess tickets: handle both string (from FormData) and array (from JSON)
+const preprocessTickets = z.preprocess(
+  (val) => {
+    if (typeof val === "string") {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return undefined;
+      }
+    }
+    return val;
+  },
+  z.array(ticketSchema).optional()
+);
+
 // Create event validation schema
 export const createEventSchema = z.object({
   body: z.object({
@@ -20,6 +43,7 @@ export const createEventSchema = z.object({
       .int()
       .positive("Available seats must be a positive integer")
       .optional(),
+    tickets: preprocessTickets,
   }),
 });
 

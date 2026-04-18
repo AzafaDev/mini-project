@@ -7,13 +7,13 @@ Core Features
 Feature 1
 
 Event Discovery, Details, Creation, and Promotion (4 point)
-Landing Page: Display a list of upcoming events.
-Event Browsing: Customers can browse events, filter by category/location, and view event details.
-Search Bar: Implement a search bar with debounce functionality.
-Responsiveness is a must.
-Event Creation: Event organizers can create events with details such as name, price, start date, end date, available seats, description, ticket types (if applicable), etc.
-Pricing: Events can be free or paid. If paid, customers are charged accordingly.
-Promotions: Event organizers can create limited-time voucher promotions specific to events, with defined start and end dates.
+- Landing Page: Display a list of upcoming events.✅
+- Event Browsing: Customers can browse events, filter by category/location, and view event details.✅
+- Search Bar: Implement a search bar with debounce functionality.✅
+- Responsiveness is a must.❗️
+- Event Creation: Event organizers can create events with details such as name, price, start date, end date, available seats, description, ticket types (if applicable), etc.✅
+- Pricing: Events can be free or paid. If paid, customers are charged accordingly.✅
+- Promotions: Event organizers can create limited-time voucher promotions specific to events, with defined start and end dates.
 
 Event Transaction (4 point)
 Purchasing: Customers can create transactions to buy event tickets.
@@ -30,10 +30,10 @@ Organizer Profile: Show ratings and reviews on the event organizer's profile.
 Feature 2
 
 User Authentication and Authorization (2 point)
-Account Creation: Customers must create an account to attend events.
-Roles: There are two roles: customer and event organizer.
-Referral Registration: Customers can register using a referral number.
-Referral Generation: Referral numbers are generated for new users and cannot be changed.
+Account Creation: Customers must create an account to attend events.✅
+Roles: There are two roles: customer and event organizer.✅
+Referral Registration: Customers can register using a referral number.✅
+Referral Generation: Referral numbers are generated for new users and cannot be changed.✅
 Role-Based Access: Protect pages based on user roles.
 
 Referral System, Profile, and Prizes (4 point)

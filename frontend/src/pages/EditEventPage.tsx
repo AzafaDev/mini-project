@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEventStore } from "../stores/useEventStore";
 import { useToastStore } from "../stores/useToastStore";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 const CATEGORIES = [
   "Conference",
@@ -36,6 +37,7 @@ export default function EditEventPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -131,6 +133,13 @@ export default function EditEventPage() {
       return;
     }
 
+    // Show confirmation dialog instead of directly updating
+    setIsConfirmDialogOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
+    if (!id) return;
+    
     try {
       const result = await updateEvent(id, {
         ...formData,
@@ -139,6 +148,7 @@ export default function EditEventPage() {
 
       if (result) {
         addToast("success", "Event updated successfully!");
+        setIsConfirmDialogOpen(false);
         navigate(`/events/${id}`);
       } else {
         setLocalError(error || "Failed to update event");
@@ -393,6 +403,17 @@ export default function EditEventPage() {
             </button>
           </div>
         </form>
+
+        {/* Confirm Dialog */}
+        <ConfirmDialog
+          isOpen={isConfirmDialogOpen}
+          onClose={() => setIsConfirmDialogOpen(false)}
+          onConfirm={handleConfirmSave}
+          title="Save Changes"
+          message={`Are you sure you want to save changes to "${formData.name}"? This action cannot be undone.`}
+          confirmText="Save"
+          cancelText="Cancel"
+        />
       </div>
     </div>
   );

@@ -220,8 +220,9 @@ export const eventService = {
     availableSeats,
     imageUrl,
     organizerId,
+    tickets,
   }: CreateEvent) => {
-    console.log("[DEBUG Event Service] createEvent input:", { name, description, location, category, totalSeats, price, availableSeats, organizerId, hasImage: !!imageUrl });
+    console.log("[DEBUG Event Service] createEvent input:", { name, description, location, category, totalSeats, price, availableSeats, organizerId, hasImage: !!imageUrl, hasTickets: !!tickets });
 
     if (!name?.trim() || !description?.trim() || !location?.trim() || !category?.trim()) {
       throw new AppError("All fields are required", 400);
@@ -239,32 +240,69 @@ export const eventService = {
     const parsedTotalSeats = parseNumber(totalSeats, "totalSeats");
     const parsedPrice = parseNumber(price, "price");
 
-    const fixedAvailableSeats = availableSeats
+    let eventTotalSeats = parsedTotalSeats;
+    let eventAvailableSeats = availableSeats
       ? parseNumber(availableSeats, "availableSeats")
       : parsedTotalSeats;
 
-    console.log("[DEBUG Event Service] createEvent parsed numbers:", { parsedTotalSeats, parsedPrice, fixedAvailableSeats });
+    if (tickets && tickets.length > 0) {
+      eventTotalSeats = tickets.reduce((sum, t) => sum + t.quantity, 0);
+      eventAvailableSeats = eventTotalSeats;
+    }
 
-    console.log("[DEBUG Event Service] creating event in DB");
-    const newEvent = await prisma.event.create({
-      data: {
-        name,
-        description,
-        location,
-        category,
-        startDate: parsedStartDate,
-        endDate: parsedEndDate,
-        totalSeats: parsedTotalSeats,
-        price: parsedPrice,
-        availableSeats: fixedAvailableSeats,
-        imageUrl,
-        organizer: {
-          connect: { id: organizerId },
+    console.log("[DEBUG Event Service] createEvent parsed numbers:", { eventTotalSeats, parsedPrice, eventAvailableSeats });
+
+    console.log("[DEBUG Event Service] creating event in DB with $transaction");
+    
+    const newEvent = await prisma.$transaction(async (tx) => {
+      const event = await tx.event.create({
+        data: {
+          name,
+          description,
+          location,
+          category,
+          startDate: parsedStartDate,
+          endDate: parsedEndDate,
+          totalSeats: eventTotalSeats,
+          price: parsedPrice,
+          availableSeats: eventAvailableSeats,
+          imageUrl,
+          organizer: {
+            connect: { id: organizerId },
+          },
         },
-      },
-    });
+      });
 
-    console.log("[DEBUG Event Service] createEvent success, eventId:", newEvent.id);
+      console.log("[DEBUG Event Service] createEvent success, eventId:", event.id);
+
+      if (tickets && tickets.length > 0) {
+        console.log("[DEBUG Event Service] creating custom tickets");
+        for (const ticket of tickets) {
+          await tx.ticket.create({
+            data: {
+              eventId: event.id,
+              type: ticket.type,
+              price: ticket.price,
+              quantity: ticket.quantity,
+              available: ticket.quantity,
+            },
+          });
+        }
+      } else {
+        console.log("[DEBUG Event Service] creating default GENERAL ticket");
+        await tx.ticket.create({
+          data: {
+            eventId: event.id,
+            type: 'GENERAL',
+            price: parsedPrice,
+            quantity: eventTotalSeats,
+            available: eventAvailableSeats,
+          },
+        });
+      }
+
+      return event;
+    });
 
     return newEvent;
   },

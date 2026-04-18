@@ -5,6 +5,7 @@ import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
 import { type TransactionStatus } from "../services/api";
 import { Sidebar } from "../components/sidebar";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 type FilterStatus = "ALL" | TransactionStatus;
 
@@ -36,6 +37,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -181,6 +183,11 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
   const openProofModal = (id: string) => {
     setSelectedTransactionId(id);
     setIsProofModalOpen(true);
+  };
+
+  const openAcceptDialog = (id: string) => {
+    setSelectedTransactionId(id);
+    setIsAcceptDialogOpen(true);
   };
 
   const openRejectModal = (id: string) => {
@@ -425,7 +432,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                             {txn.status === "WAITING_CONFIRMATION" ? (
                               <div className="flex justify-end gap-2">
                                 <button
-                                  onClick={() => handleAccept(txn.id)}
+                                  onClick={() => openAcceptDialog(txn.id)}
                                   disabled={isSubmitting}
                                   className="bg-[#c0c1ff] text-[#07006c] px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:brightness-110 disabled:opacity-50"
                                 >
@@ -533,6 +540,24 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
           </div>
         </div>
       )}
+
+      {/* Accept Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isAcceptDialogOpen}
+        onClose={() => {
+          setIsAcceptDialogOpen(false);
+          setSelectedTransactionId(null);
+        }}
+        onConfirm={async () => {
+          if (!selectedTransactionId) return;
+          await handleAccept(selectedTransactionId);
+          setIsAcceptDialogOpen(false);
+        }}
+        title="Approve Transaction"
+        message="Are you sure you want to approve this transaction? The customer will receive their tickets and points will be awarded."
+        confirmText="Approve"
+        cancelText="Cancel"
+      />
 
       {/* Reject Modal */}
       {isRejectModalOpen && (

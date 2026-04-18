@@ -15,79 +15,80 @@ import {
 
 const authRouter = Router();
 
-console.log("[DEBUG Route] Registering Auth routes");
+/**
+ * Authentication Routes
+ * All routes follow RESTful conventions
+ */
 
-// Apply stricter rate limiter for auth endpoints
+// Register - Create new user account
 authRouter.post(
   "/register",
   authLimiter,
   validate(registerSchema),
   authController.register,
 );
+
+// Verify email - Confirm user's email with verification token
 authRouter.post(
   "/verify-email",
   authLimiter,
   validate(verifyEmailSchema),
   authController.verifyEmail,
 );
+
+// Resend verification - Send new verification email (requires temp_token)
 authRouter.post(
   "/resend-verification",
   authLimiter,
   authMiddleware.verifyTempToken,
   authController.resendVerification,
 );
+
+// Login - Authenticate user and create session
 authRouter.post(
   "/login",
   authLimiter,
   validate(loginSchema),
   authController.login,
 );
-authRouter.post("/logout", (req, res, next) => {
-  console.log("[DEBUG Auth Route] logout hit");
-  next();
-}, authController.logout);
+
+// Logout - Clear authentication cookies
+authRouter.post("/logout", authController.logout);
+
+// Get current user - Fetch authenticated user's profile
 authRouter.get(
   "/me",
-  (req, res, next) => {
-    console.log("[DEBUG Auth Route] /me hit, cookies:", req.cookies);
-    next();
-  },
   authMiddleware.verifyAuthToken,
   authController.getCurrentUser,
 );
+
+// Update profile - Update user's profile information
 authRouter.put(
   "/update-profile",
   authMiddleware.verifyAuthToken,
-  (req, res, next) => { console.log("[DEBUG Auth Route] update-profile hit, body:", req.body, "files:", req.files); next(); },
   validate(updateProfileSchema),
   authController.updateProfile,
 );
+
+// Change password - Update user's password
 authRouter.put(
   "/change-password",
-  (req, res, next) => {
-    console.log("[DEBUG Auth Route] change-password hit");
-    next();
-  },
   authMiddleware.verifyAuthToken,
   validate(changePasswordSchema),
   authController.changePassword,
 );
+
+// Forgot password - Request password reset email
 authRouter.post(
   "/forgot-password",
-  (req, res, next) => {
-    console.log("[DEBUG Auth Route] forgot-password hit, email:", req.body.email);
-    next();
-  },
   authLimiter,
   validate(forgotPasswordSchema),
   authController.forgotPassword,
 );
+
+// Reset password - Set new password using reset token
 authRouter.post(
   "/reset-password/:token",
-  (req, res, next) => {
-    console.log("[DEBUG Auth Route] reset-password hit, token:", req.params.token);
-    next();
-  },
   authLimiter,
   validate(resetPasswordSchema),
   authController.resetPassword,

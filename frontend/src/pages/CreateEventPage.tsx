@@ -34,9 +34,19 @@ export default function CreateEventPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [useCustomTickets, setUseCustomTickets] = useState(false);
+  const [tickets, setTickets] = useState<
+    {
+      type: "GENERAL" | "VIP";
+      price: number;
+      quantity: number;
+    }[]
+  >([]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -95,10 +105,29 @@ export default function CreateEventPage() {
       return;
     }
 
+    // Validate custom tickets if enabled
+    if (useCustomTickets) {
+      if (tickets.length === 0) {
+        setLocalError("Please add at least one ticket type");
+        return;
+      }
+      for (const ticket of tickets) {
+        if (ticket.price < 0) {
+          setLocalError("Ticket price cannot be negative");
+          return;
+        }
+        if (ticket.quantity < 1) {
+          setLocalError("Ticket quantity must be at least 1");
+          return;
+        }
+      }
+    }
+
     try {
       const result = await createEvent({
         ...formData,
         imageFile: imageFile || undefined,
+        tickets: useCustomTickets && tickets.length > 0 ? tickets : undefined,
       });
 
       if (result) {
@@ -125,7 +154,9 @@ export default function CreateEventPage() {
           </button>
           <div>
             <h1 className="text-2xl font-bold">Create New Event</h1>
-            <p className="text-sm text-[#C7C4D8]">Fill in the details to create your event</p>
+            <p className="text-sm text-[#C7C4D8]">
+              Fill in the details to create your event
+            </p>
           </div>
         </div>
 
@@ -133,7 +164,10 @@ export default function CreateEventPage() {
         {(localError || error) && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-between">
             <p className="text-red-400">{localError || error}</p>
-            <button onClick={() => setLocalError(null)} className="text-red-400 hover:text-red-300">
+            <button
+              onClick={() => setLocalError(null)}
+              className="text-red-400 hover:text-red-300"
+            >
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -147,7 +181,11 @@ export default function CreateEventPage() {
             <div className="flex items-start gap-6">
               <div className="w-48 h-32 rounded-lg bg-[#2A2A2A] flex items-center justify-center overflow-hidden flex-shrink-0">
                 {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="material-symbols-outlined text-4xl text-[#353534]">
                     image
@@ -166,7 +204,9 @@ export default function CreateEventPage() {
                   htmlFor="event-image"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-[#353534] hover:bg-[#393939] rounded-lg cursor-pointer transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">upload</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    upload
+                  </span>
                   {imageFile ? "Change Image" : "Upload Image"}
                 </label>
                 <p className="text-xs text-[#666] mt-2">
@@ -290,26 +330,138 @@ export default function CreateEventPage() {
                   onChange={handleChange}
                   min={1}
                   placeholder="100"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  disabled={useCustomTickets}
+                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors disabled:opacity-50"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
-                  Price per Ticket ($) *
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  min={0}
-                  step={0.01}
-                  placeholder="0.00"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
-                />
-              </div>
+              {!useCustomTickets && (
+                <div>
+                  <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                    Price per Ticket ($) *
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    min={0}
+                    step={0.01}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  />
+                </div>
+              )}
             </div>
+
+            {/* Custom Ticket Types Toggle */}
+            <div className="mt-6 pt-6 border-t border-[#464555]/10">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useCustomTickets}
+                  onChange={(e) => {
+                    setUseCustomTickets(e.target.checked);
+                    if (!e.target.checked) {
+                      setTickets([]);
+                    }
+                  }}
+                  className="w-5 h-5 rounded border-[#464555] bg-[#2A2A2A] text-[#4B4DD8] focus:ring-[#4B4DD8] focus:ring-offset-0"
+                />
+                <span className="text-sm font-medium text-[#C7C4D8]">
+                  Create custom ticket types (e.g., VIP, General)
+                </span>
+              </label>
+            </div>
+
+            {/* Custom Ticket Types Form */}
+            {useCustomTickets && (
+              <div className="mt-4 space-y-4">
+                {tickets.map((ticket, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-wrap items-end gap-3 p-4 bg-[#2A2A2A] rounded-lg"
+                  >
+                    <div className="flex-1 min-w-[120px]">
+                      <label className="block text-xs text-[#C7C4D8] mb-1">
+                        Type
+                      </label>
+                      <select
+                        value={ticket.type}
+                        onChange={(e) => {
+                          const newTickets = [...tickets];
+                          newTickets[index].type = e.target.value as
+                            | "GENERAL"
+                            | "VIP";
+                          setTickets(newTickets);
+                        }}
+                        className="w-full px-3 py-2 bg-[#353534] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8]"
+                      >
+                        <option value="GENERAL">GENERAL</option>
+                        <option value="VIP">VIP</option>
+                      </select>
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                      <label className="block text-xs text-[#C7C4D8] mb-1">
+                        Price (IDR)
+                      </label>
+                      <input
+                        type="number"
+                        value={ticket.price}
+                        onChange={(e) => {
+                          const newTickets = [...tickets];
+                          newTickets[index].price = Number(e.target.value);
+                          setTickets(newTickets);
+                        }}
+                        min={0}
+                        placeholder="50000"
+                        className="w-full px-3 py-2 bg-[#353534] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8]"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                      <label className="block text-xs text-[#C7C4D8] mb-1">
+                        Quantity
+                      </label>
+                      <input
+                        type="number"
+                        value={ticket.quantity}
+                        onChange={(e) => {
+                          const newTickets = [...tickets];
+                          newTickets[index].quantity = Number(e.target.value);
+                          setTickets(newTickets);
+                        }}
+                        min={1}
+                        placeholder="100"
+                        className="w-full px-3 py-2 bg-[#353534] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8]"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTickets(tickets.filter((_, i) => i !== index))
+                      }
+                      className="p-2 text-red-400 hover:text-red-300"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTickets([
+                      ...tickets,
+                      { type: "GENERAL", price: 0, quantity: 100 },
+                    ])
+                  }
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#4B4DD8] hover:bg-[#4B4DD8]/10 rounded-lg transition-colors"
+                >
+                  <span className="material-symbols-outlined">add</span>
+                  Add Ticket Type
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Submit Buttons */}
@@ -328,7 +480,9 @@ export default function CreateEventPage() {
             >
               {loadingEventAction ? (
                 <>
-                  <span className="material-symbols-outlined animate-spin">sync</span>
+                  <span className="material-symbols-outlined animate-spin">
+                    sync
+                  </span>
                   Creating...
                 </>
               ) : (

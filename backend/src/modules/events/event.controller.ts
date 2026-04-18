@@ -1,14 +1,23 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { eventService } from "./event.service";
-import { handleFileUpload } from "../../utils/handleFileUpload";
+import { getUploadUrl } from "../../utils/uploadHelper";
 import { UploadedFile } from "express-fileupload";
 import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
 
+/**
+ * Event controller handling all event-related endpoints.
+ * Includes: CRUD operations, statistics, attendees management
+ */
 export const eventController = {
+  /**
+   * Get all events with filtering, sorting, and pagination.
+   * 
+   * @param req - Express request with query params (search, category, location, price range, date range, pagination, sorting)
+   * @param res - Express response
+   * @returns JSON with array of events and pagination info
+   */
   getAllEvents: async (req: Request, res: Response) => {
-    console.log("[DEBUG Event Controller] getAllEvents query:", req.query);
-
     const {
       search,
       category,
@@ -22,14 +31,6 @@ export const eventController = {
       sortBy,
       sortOrder,
     } = req.query;
-
-    console.log("[DEBUG Event Controller] getAllEvents params:", {
-      search,
-      category,
-      location,
-      page,
-      limit,
-    });
 
     const { data, pagination } = await eventService.getAllEvents({
       search: search as string,
@@ -45,28 +46,33 @@ export const eventController = {
       sortOrder: sortOrder as string,
     });
 
-    console.log(
-      "[DEBUG Event Controller] getAllEvents result count:",
-      data.length,
-    );
-
     res.status(200).json({ success: true, data, pagination });
   },
 
+  /**
+   * Get single event by ID.
+   * 
+   * @param req - Express request with event ID in params
+   * @param res - Express response
+   * @returns JSON with event data or 404 if not found
+   */
   getEventById: async (req: Request, res: Response) => {
     const { id } = req.params;
-    console.log("[DEBUG Event Controller] getEventById id:", id);
 
     const event = await eventService.getEventById({ id: id as string });
-    console.log("[DEBUG Event Controller] getEventById result:", !!event);
 
     res.status(200).json({ success: true, data: event });
   },
 
+  /**
+   * Create new event (Organizer only).
+   * Handles FormData parsing for file uploads and nested ticket data.
+   * 
+   * @param req - Express request with authenticated organizer and event data
+   * @param res - Express response
+   * @returns JSON with created event data
+   */
   createEvent: async (req: AuthRequest, res: Response) => {
-    console.log("[DEBUG Event Controller] createEvent body:", req.body);
-    console.log("[DEBUG Event Controller] createEvent userId:", req.userId);
-
     const {
       name,
       description,
@@ -77,28 +83,26 @@ export const eventController = {
       totalSeats,
       price,
       availableSeats,
-    }: CreateEvent = req.body;
+      tickets,
+    } = req.body as CreateEvent;
+    
     const organizerId = req.userId;
-    if (!organizerId)
+    if (!organizerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
-    let imageUrl: string | undefined;
-    if (req.files && "imageFile" in req.files) {
-      const imageFile = req.files.imageFile as UploadedFile;
-      console.log(
-        "[DEBUG Event Controller] createEvent imageFile:",
-        imageFile.name,
-      );
-      try {
-        imageUrl = await handleFileUpload(imageFile, {
-          folder: "events-image",
-        });
-        console.log("[DEBUG Event Controller] createEvent imageUrl:", imageUrl);
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Upload image failed",
-        });
+    const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
+
+    let parsedTickets: { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[] | undefined;
+    if (tickets) {
+      if (typeof tickets === 'string') {
+        try {
+          parsedTickets = JSON.parse(tickets);
+        } catch (e) {
+          // Ignore parse error, tickets will be undefined
+        }
+      } else {
+        parsedTickets = tickets as unknown as { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[];
       }
     }
 
@@ -107,19 +111,15 @@ export const eventController = {
       description,
       location,
       category,
-      startDate: startDate as any,
-      endDate: endDate as any,
-      totalSeats: totalSeats as any,
-      price: price as any,
-      availableSeats: availableSeats as any,
+      startDate,
+      endDate,
+      totalSeats,
+      price,
+      availableSeats,
       imageUrl,
       organizerId,
+      tickets: parsedTickets,
     });
-
-    console.log(
-      "[DEBUG Event Controller] createEvent success, eventId:",
-      event.id,
-    );
 
     res.status(201).json({
       success: true,
@@ -128,14 +128,20 @@ export const eventController = {
     });
   },
 
+  /**
+   * Update existing event (Organizer only, must be event owner).
+   * 
+   * @param req - Express request with event ID in params and updated data in body
+   * @param res - Express response
+   * @returns JSON with updated event data
+   */
   updateEvent: async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
-    console.log("[DEBUG Event Controller] updateEvent id:", id);
-    console.log("[DEBUG Event Controller] updateEvent userId:", req.userId);
 
     const organizerId = req.userId;
-    if (!organizerId)
+    if (!organizerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     const {
       name,
@@ -149,39 +155,12 @@ export const eventController = {
       price,
     } = req.body;
 
-    console.log("[DEBUG Event Controller] updateEvent body:", req.body);
-
     const existingEvent = await eventService.getEventById({ id });
-    console.log(
-      "[DEBUG Event Controller] updateEvent existingEvent organizerId:",
-      existingEvent?.organizerId,
-    );
-
-    if (existingEvent.organizerId !== organizerId) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Forbidden: Not the event owner" });
+    if (!existingEvent) {
+      return res.status(404).json({ success: false, message: "Event not found" });
     }
 
-    let imageUrl: string | undefined;
-    if (req.files && "imageFile" in req.files) {
-      const imageFile = req.files.imageFile as UploadedFile;
-      console.log(
-        "[DEBUG Event Controller] updateEvent imageFile:",
-        imageFile.name,
-      );
-      try {
-        imageUrl = await handleFileUpload(imageFile, {
-          folder: "events-image",
-        });
-        console.log("[DEBUG Event Controller] updateEvent imageUrl:", imageUrl);
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Upload image failed",
-        });
-      }
-    }
+    const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
 
     const event = await eventService.updateEvent({
       id,
@@ -197,11 +176,6 @@ export const eventController = {
       imageUrl,
     });
 
-    console.log(
-      "[DEBUG Event Controller] updateEvent success, eventId:",
-      event.id,
-    );
-
     res.status(200).json({
       success: true,
       message: "Updated event successfully",
@@ -209,23 +183,23 @@ export const eventController = {
     });
   },
 
+/**
+   * Soft delete event (Organizer only, must be event owner).
+   * Marks event as deleted without removing from database.
+   * 
+   * @param req - Express request with event ID in params
+   * @param res - Express response
+   * @returns JSON with success message
+   */
   deleteEvent: async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.userId;
-    console.log(
-      "[DEBUG Event Controller] deleteEvent id:",
-      id,
-      "userId:",
-      userId,
-    );
 
-    if (!userId)
-      return res
-        .status(400)
-        .json({ success: false, message: "User id not found" });
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User id not found" });
+    }
+    
     await eventService.deleteEvent({ id: id as string, userId });
-
-    console.log("[DEBUG Event Controller] deleteEvent success");
 
     res.status(200).json({
       success: true,
@@ -233,50 +207,48 @@ export const eventController = {
     });
   },
 
+  /**
+   * Get all events created by current organizer.
+   * 
+   * @param req - Express request with authenticated organizer
+   * @param res - Express response
+   * @returns JSON with array of events
+   */
   getMyEvents: async (req: AuthRequest, res: Response) => {
     const userId = req.userId;
-    console.log("[DEBUG Event Controller] getMyEvents userId:", userId);
 
-    if (!userId)
-      return res
-        .status(401)
-        .json({ success: false, message: "User id not found" });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "User id not found" });
+    }
+    
     const events = await eventService.getMyEvents({ id: userId });
-
-    console.log(
-      "[DEBUG Event Controller] getMyEvents result count:",
-      events.length,
-    );
 
     res.status(200).json({ success: true, data: events });
   },
 
+  /**
+   * Get statistics for a specific event (Organizer only).
+   * 
+   * @param req - Express request with event ID in params and authenticated organizer
+   * @param res - Express response
+   * @returns JSON with event statistics (revenue, tickets sold, etc.)
+   */
   getEventStats: async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.userId;
-    console.log(
-      "[DEBUG Event Controller] getEventStats id:",
-      id,
-      "userId:",
-      userId,
-    );
 
-    if (!userId)
+    if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     try {
       const stats = await eventService.getEventStats({
         id: id as string,
         organizerId: userId,
       });
-      console.log("[DEBUG Event Controller] getEventStats result:", stats);
 
       res.status(200).json({ success: true, data: stats });
     } catch (error: any) {
-      console.error(
-        "[DEBUG Event Controller] getEventStats error:",
-        error.message,
-      );
       res.status(error.statusCode || 500).json({
         success: false,
         message: error.message || "Internal server error",
@@ -284,22 +256,21 @@ export const eventController = {
     }
   },
 
+  /**
+   * Get aggregated statistics for all events by current organizer.
+   * Supports filtering by year, month, or day.
+   * 
+   * @param req - Express request with query params (year, month, day)
+   * @param res - Express response
+   * @returns JSON with organizer statistics
+   */
   getOrganizerStats: async (req: AuthRequest, res: Response) => {
     const userId = req.userId;
     const { year, month, day } = req.query;
-    console.log(
-      "[DEBUG Event Controller] getOrganizerStats userId:",
-      userId,
-      "year:",
-      year,
-      "month:",
-      month,
-      "day:",
-      day,
-    );
 
-    if (!userId)
+    if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     try {
       const stats = await eventService.getOrganizerStats({
@@ -308,14 +279,9 @@ export const eventController = {
         month: month ? Number(month) : undefined,
         day: day ? Number(day) : undefined,
       });
-      console.log("[DEBUG Event Controller] getOrganizerStats result:", stats);
 
       res.status(200).json({ success: true, data: stats });
     } catch (error: any) {
-      console.error(
-        "[DEBUG Event Controller] getOrganizerStats error:",
-        error.message,
-      );
       res.status(error.statusCode || 500).json({
         success: false,
         message: error.message || "Internal server error",
@@ -323,25 +289,23 @@ export const eventController = {
     }
   },
 
+  /**
+   * Get public profile of an organizer (including their events and reviews).
+   * 
+   * @param req - Express request with organizer ID in params
+   * @param res - Express response
+   * @returns JSON with organizer profile data
+   */
   getOrganizerProfile: async (req: Request, res: Response) => {
     const { id } = req.params;
-    console.log("[DEBUG Event Controller] getOrganizerProfile id:", id);
 
     try {
       const profile = await eventService.getOrganizerProfile({
         organizerId: id as string,
       });
-      console.log(
-        "[DEBUG Event Controller] getOrganizerProfile result:",
-        !!profile,
-      );
 
       res.status(200).json({ success: true, data: profile });
     } catch (error: any) {
-      console.error(
-        "[DEBUG Event Controller] getOrganizerProfile error:",
-        error.message,
-      );
       res.status(error.statusCode || 500).json({
         success: false,
         message: error.message || "Internal server error",
@@ -349,35 +313,29 @@ export const eventController = {
     }
   },
 
+  /**
+   * Get list of attendees for a specific event (Organizer only).
+   * 
+   * @param req - Express request with event ID in params and authenticated organizer
+   * @param res - Express response
+   * @returns JSON with array of attendee details
+   */
   getEventAttendees: async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.userId;
-    console.log(
-      "[DEBUG Event Controller] getEventAttendees id:",
-      id,
-      "userId:",
-      userId,
-    );
 
-    if (!userId)
+    if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     try {
       const attendees = await eventService.getEventAttendees({
         eventId: id as string,
         organizerId: userId,
       });
-      console.log(
-        "[DEBUG Event Controller] getEventAttendees result count:",
-        attendees.length,
-      );
 
       res.status(200).json({ success: true, data: attendees });
     } catch (error: any) {
-      console.error(
-        "[DEBUG Event Controller] getEventAttendees error:",
-        error.message,
-      );
       res.status(error.statusCode || 500).json({
         success: false,
         message: error.message || "Internal server error",

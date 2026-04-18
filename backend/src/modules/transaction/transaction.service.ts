@@ -2,7 +2,7 @@ import { prisma } from "../../config/prisma";
 import { sendEmail } from "../../utils/sendEmail";
 import { handleFileUpload } from "../../utils/handleFileUpload";
 import { UploadedFile } from "express-fileupload";
-import { TransactionStatus } from "../../../generated/prisma/enums";
+import { TransactionStatus, DiscountType } from "../../../generated/prisma/enums";
 import {
   restoreTicketAvailability,
   restoreUserPoints,
@@ -10,6 +10,7 @@ import {
   restoreCoupon,
 } from "../../utils/transactionHelpers";
 import { AppError } from "../../utils/AppError";
+import { calculateDiscount } from "../../utils/discountEngine";
 import {
   TRANSACTION_EXPIRATION_HOURS,
   TRANSACTION_AUTO_CANCEL_DAYS,
@@ -148,14 +149,13 @@ export const transactionService = {
 
       if (voucher) {
         voucherId = voucher.id;
-        const maxDiscount = ticket.price * quantity;
-        if (voucher.discountType === "PERCENTAGE") {
-          const calculatedDiscount =
-            (ticket.price * quantity * voucher.discountValue) / 100;
-          discount += Math.min(calculatedDiscount, maxDiscount);
-        } else {
-          discount += Math.min(voucher.discountValue, maxDiscount);
-        }
+        const calculatedDiscount = calculateDiscount(
+          ticket.price,
+          quantity,
+          voucher.discountType as DiscountType,
+          voucher.discountValue
+        );
+        discount += calculatedDiscount;
         console.log(
           "[DEBUG Transaction Service] voucher discountValue:",
           voucher.discountValue,
@@ -202,14 +202,13 @@ export const transactionService = {
         }
 
         couponId = coupon.id;
-        const maxDiscount = ticket.price * quantity;
-        if (coupon.discountType === "PERCENTAGE") {
-          const calculatedDiscount =
-            (ticket.price * quantity * coupon.discountValue) / 100;
-          discount += Math.min(calculatedDiscount, maxDiscount);
-        } else {
-          discount += Math.min(coupon.discountValue, maxDiscount);
-        }
+        const calculatedDiscount = calculateDiscount(
+          ticket.price,
+          quantity,
+          coupon.discountType as DiscountType,
+          coupon.discountValue
+        );
+        discount += calculatedDiscount;
         console.log(
           "[DEBUG Transaction Service] coupon discountValue:",
           coupon.discountValue,

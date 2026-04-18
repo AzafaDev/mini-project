@@ -1,6 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
-import { DiscountType } from "../../../generated/prisma/enums";
+import { calculateDiscount } from "../../utils/discountEngine";
 
 export const couponService = {
   /**
@@ -34,11 +34,12 @@ export const couponService = {
       throw new AppError("Invalid or expired coupon code", 404);
     }
 
-    let actualDiscount = coupon.discountValue;
-    if (coupon.discountType === DiscountType.PERCENTAGE && price > 0 && quantity > 0) {
-      actualDiscount = (price * quantity * coupon.discountValue) / 100;
-      console.log("[DEBUG Coupon Service] Percentage discount:", { price, quantity, percentage: coupon.discountValue, actualDiscount });
-    }
+    const actualDiscount = calculateDiscount(
+      price,
+      quantity,
+      coupon.discountType,
+      coupon.discountValue
+    );
 
     console.log("[DEBUG Coupon Service] validateCoupon success:", actualDiscount);
     return {
