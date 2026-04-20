@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@theme {
+  --color-dark: #131313;
+  --color-dark-surface: #1c1b1b;
+  --color-primary: #c0c1ff;
+  --color-accent: #4b4dd8;
+  --color-text-muted: #c7c4d8;
+  --color-text-light: #e5e2e1;
+  --color-error: #93000a;
+}
+
 /* Toast animation */
 @keyframes slide-in {
   from {
