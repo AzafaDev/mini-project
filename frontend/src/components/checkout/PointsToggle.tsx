@@ -1,4 +1,5 @@
 import React from "react";
+import { formatIDR } from "../../lib/formatters";
 
 interface PointsToggleProps {
   pointsBalance: number;
@@ -7,14 +8,6 @@ interface PointsToggleProps {
   isEnabled: boolean;
   onToggle: () => void;
 }
-
-const formatIDR = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount).replace("Rp", "IDR");
-};
 
 export const PointsToggle: React.FC<PointsToggleProps> = ({
   pointsBalance,

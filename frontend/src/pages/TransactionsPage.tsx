@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
+import { formatIDR, formatDate } from "../lib/formatters";
 import { type TransactionStatus } from "../services/api";
 import { Sidebar } from "../components/sidebar";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
@@ -82,33 +83,6 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
     
     return { total, waitingPayment, waitingConfirmation, done, rejected, totalRevenue };
   }, [transactions]);
-
-  const formatIDR = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("Rp", "Rp ");
-  };
-
-  const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) {
-      return "-";
-    }
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
-      return "-";
-    }
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
 
   const getStatusConfig = (status: TransactionStatus) => {
     const configs: Record<TransactionStatus, { label: string; color: string; bgColor: string; icon: string }> = {

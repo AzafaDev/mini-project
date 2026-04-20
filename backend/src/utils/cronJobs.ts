@@ -140,13 +140,57 @@ async function processAutoCancelTransactions() {
 async function cleanupExpiredPoints() {
   console.log("[CRON] Running cleanupExpiredPoints...");
   
-  const result = await prisma.pointTransaction.deleteMany({
-    where: {
-      expiresAt: { lte: new Date() },
-    },
+  const now = new Date();
+  
+  // 1. Find all expired point transactions grouped by user
+  const expiredTxns = await prisma.pointTransaction.findMany({
+    where: { expiresAt: { lte: now } },
+    select: { userId: true, amount: true },
   });
-
-  console.log("[CRON] Deleted expired points:", result.count);
+  
+  if (expiredTxns.length === 0) {
+    console.log("[CRON] No expired points to clean up");
+    return;
+  }
+  
+  // 2. Group by user and calculate total expired per user
+  const userExpiredMap = new Map<string, number>();
+  for (const tx of expiredTxns) {
+    const current = userExpiredMap.get(tx.userId) || 0;
+    userExpiredMap.set(tx.userId, current + tx.amount);
+  }
+  
+  console.log(`[CRON] Found ${expiredTxns.length} expired point transactions across ${userExpiredMap.size} users`);
+  
+  // 3. Batch update all users (decrement points) atomically
+  await prisma.$transaction(async (tx) => {
+    for (const [userId, totalExpired] of userExpiredMap.entries()) {
+      // Use conditional update to prevent negative points (defense in depth)
+      // The database constraint @@check([points >= 0]) will also protect
+      const result = await tx.user.updateMany({
+        where: { 
+          id: userId,
+          points: { gte: totalExpired } 
+        },
+        data: { points: { decrement: totalExpired } },
+      });
+      
+      if (result.count === 0) {
+        // User not found or points already less than totalExpired
+        // This shouldn't happen if data is consistent, but log for monitoring
+        console.warn(`[CRON] Could not decrement points for user ${userId}: insufficient balance or user not found`);
+      } else {
+        console.log(`[CRON] Decremented ${totalExpired} points from user ${userId}`);
+      }
+    }
+  });
+  
+  // 4. Delete expired transactions
+  const deleteResult = await prisma.pointTransaction.deleteMany({
+    where: { expiresAt: { lte: now } },
+  });
+  
+  console.log(`[CRON] Deleted ${deleteResult.count} expired point transactions`);
   console.log("[CRON] cleanupExpiredPoints completed");
 }
 

@@ -455,7 +455,8 @@ export default function CreateEventPage() {
                       { type: "GENERAL", price: 0, quantity: 100 },
                     ])
                   }
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#4B4DD8] hover:bg-[#4B4DD8]/10 rounded-lg transition-colors"
+                  disabled={tickets.length >= 2}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#4B4DD8] hover:bg-[#4B4DD8]/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined">add</span>
                   Add Ticket Type

@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
+import { useCountdown } from "../hooks/useCountdown";
+import { formatIDR, formatDate } from "../lib/formatters";
 import { type TransactionStatus } from "../services/api";
 
 const TransactionDetailPage: React.FC = () => {
@@ -31,10 +33,8 @@ const TransactionDetailPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasOpenedUploadModal, setHasOpenedUploadModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check if user is organizer
-  const isOrganizer = user?.role === "ORGANIZER";
 
   // Calculate countdown
   const getTimeRemaining = () => {
@@ -60,6 +60,18 @@ const TransactionDetailPage: React.FC = () => {
     };
   }, [id]);
 
+  // Auto-open upload modal for WAITING_PAYMENT transactions without payment proof
+  useEffect(() => {
+    if (
+      currentTransaction?.status === "WAITING_PAYMENT" &&
+      !currentTransaction.paymentProof &&
+      !hasOpenedUploadModal
+    ) {
+      setHasOpenedUploadModal(true);
+      setIsUploadModalOpen(true);
+    }
+  }, [currentTransaction, hasOpenedUploadModal]);
+
   useEffect(() => {
     if (currentTransaction?.status === "WAITING_PAYMENT") {
       const timer = setInterval(() => {
@@ -69,28 +81,6 @@ const TransactionDetailPage: React.FC = () => {
       return () => clearInterval(timer);
     }
   }, [currentTransaction?.status, currentTransaction?.expiresAt]);
-
-  const formatIDR = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("Rp", "Rp ");
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("id-ID", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
 
   const getStatusConfig = (status: TransactionStatus) => {
     const configs = {
@@ -342,30 +332,6 @@ const TransactionDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* User Info (for organizer) */}
-          {isOrganizer && currentTransaction.user && (
-            <div className="bg-[#1c1b1b] rounded-xl p-8 shadow-xl">
-              <h3 className="text-lg font-bold text-[#e5e2e1] mb-6">Customer Info</h3>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#353534] flex items-center justify-center overflow-hidden">
-                  {currentTransaction.user.profilePicture ? (
-                    <img 
-                      src={currentTransaction.user.profilePicture}
-                      alt={currentTransaction.user.fullName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="material-symbols-outlined text-[#c7c4d8]">person</span>
-                  )}
-                </div>
-                <div>
-                  <p className="font-bold text-[#e5e2e1]">{currentTransaction.user.fullName}</p>
-                  <p className="text-[#c7c4d8] text-sm">{currentTransaction.user.email}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Payment Proof */}
           {currentTransaction.paymentProof && (
             <div className="bg-[#1c1b1b] rounded-xl p-8 shadow-xl">
@@ -396,8 +362,7 @@ const TransactionDetailPage: React.FC = () => {
             <h3 className="text-lg font-bold text-[#e5e2e1] mb-6">Actions</h3>
             
             {/* User Actions */}
-            {!isOrganizer && (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {currentTransaction.status === "WAITING_PAYMENT" && (
                   <>
                     {countdown && countdown !== "Expired" && (
@@ -441,36 +406,9 @@ const TransactionDetailPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Organizer Actions */}
-            {isOrganizer && currentTransaction.status === "WAITING_CONFIRMATION" && (
-              <div className="flex gap-4">
-                <button
-                  onClick={handleAcceptTransaction}
-                  disabled={isSubmitting}
-                  className="flex-1 py-3 bg-gradient-to-r from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] font-bold rounded-lg hover:opacity-90 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <span className="material-symbols-outlined animate-spin">sync</span>
-                  ) : "Approve Transaction"}
-                </button>
-                <button
-                  onClick={() => setIsRejectModalOpen(true)}
-                  className="px-6 py-3 bg-[#93000a] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#b30000]"
-                >
-                  Reject
-                </button>
-              </div>
-            )}
-            {isOrganizer && !currentTransaction.paymentProof && currentTransaction.status === "WAITING_CONFIRMATION" && (
-              <p className="text-[#c7c4d8] text-sm mt-4">
-                Waiting for payment proof from customer
-              </p>
-            )}
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
 
       {/* Upload Payment Proof Modal */}
       {isUploadModalOpen && (

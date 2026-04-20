@@ -12,31 +12,23 @@ export const ProtectedRoute = ({
   requiredRole,
   fallbackPath = "/login",
 }: ProtectedRouteProps) => {
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  // Use selector - component TIDAK re-render kalau isLoading berubah
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  console.log("[ProtectedRoute] Render:", { isAuthenticated, isLoading, hasUser: !!user });
+  console.log("[ProtectedRoute] Render:", { isAuthenticated, hasUser: !!user });
 
-  // Not authenticated - redirect immediately (don't wait for loading)
+  // Not authenticated
   if (!isAuthenticated || !user) {
     console.log("[ProtectedRoute] Redirecting to", fallbackPath);
     return <Navigate to={fallbackPath} replace />;
   }
 
-  // Role check
+  // Role check - use fallbackPath instead of hardcoded "/"
   if (requiredRole && user.role !== requiredRole) {
-    console.log("[ProtectedRoute] Role check failed, redirecting to /");
-    return <Navigate to="/" replace />;
+    console.log("[ProtectedRoute] Role check failed, redirecting to", fallbackPath);
+    return <Navigate to={fallbackPath} replace />;
   }
 
-  // Render children - add loading overlay on top if still loading
-  return (
-    <>
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-      {children}
-    </>
-  );
+  return <>{children}</>;
 };

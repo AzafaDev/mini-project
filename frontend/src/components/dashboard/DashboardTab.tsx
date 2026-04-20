@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEventStore } from "../../stores/useEventStore";
+import { formatIDR, formatDate } from "../../lib/formatters";
 import type { Event, OrganizerStats } from "../../services/api";
 
 type TimeRange = "7D" | "30D" | "12M" | "1Y" | "ALL";
@@ -119,19 +120,6 @@ const EventItem = ({
   );
 };
 
-const formatDate = (dateString: string) => {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-};
-
 const getEventStatus = (event: {
   startDate: string;
   endDate: string;
@@ -146,15 +134,6 @@ const getEventStatus = (event: {
   if (now >= start && now <= end) return "Active";
   if (now > end) return "Completed";
   return "Unknown";
-};
-
-const formatIDR = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
 };
 
 interface DashboardTabProps {

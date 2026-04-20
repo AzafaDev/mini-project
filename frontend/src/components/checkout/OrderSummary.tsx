@@ -1,4 +1,5 @@
 import React from "react";
+import { formatIDR } from "../../lib/formatters";
 
 interface OrderSummaryProps {
   items: Array<{
@@ -10,14 +11,6 @@ interface OrderSummaryProps {
   discount?: number;
   total: number;
 }
-
-const formatIDR = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount).replace("Rp", "IDR");
-};
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
   items,

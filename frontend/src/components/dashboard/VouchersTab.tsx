@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useEventStore } from "../../stores/useEventStore";
 import { useToastStore } from "../../stores/useToastStore";
+import { formatDate } from "../../lib/formatters";
 import type { VoucherWithEvent } from "../../services/api";
 
 export function VouchersTab() {
@@ -152,18 +153,6 @@ export function VouchersTab() {
       addToast("success", `Voucher ${voucher.isActive ? "deactivated" : "activated"}!`);
     } else {
       addToast("error", error || "Failed to update voucher status");
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-    } catch {
-      return dateString;
     }
   };
 

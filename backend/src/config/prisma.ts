@@ -22,6 +22,20 @@ const prisma = new PrismaClient({ adapter }).$extends({
         args.where = { ...args.where, isDeleted: false };
         return query(args);
       },
+      async count({ args, query }) {
+        args.where = { ...args.where, isDeleted: false };
+        return query(args);
+      },
+      async update({ args, query }) {
+        args.where = { ...args.where, isDeleted: false };
+        return query(args);
+      },
+      async delete({ args, query }) {
+        return query({
+          ...args,
+          data: { isDeleted: true, deletedAt: new Date() },
+        });
+      },
     },
   },
 });

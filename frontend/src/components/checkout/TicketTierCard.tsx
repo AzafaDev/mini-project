@@ -1,4 +1,5 @@
 import React from "react";
+import { formatIDR } from "../../lib/formatters";
 
 interface TicketTierCardProps {
   type: "general" | "vip";
@@ -9,14 +10,6 @@ interface TicketTierCardProps {
   onQuantityChange: (delta: number) => void;
   isPopular?: boolean;
 }
-
-const formatIDR = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount).replace("Rp", "IDR");
-};
 
 export const TicketTierCard: React.FC<TicketTierCardProps> = ({
   type,

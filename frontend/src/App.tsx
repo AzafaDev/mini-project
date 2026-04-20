@@ -1,5 +1,5 @@
 import { Route, Routes, useLocation } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -25,6 +25,7 @@ import CreateEventPage from "./pages/CreateEventPage";
 import EditEventPage from "./pages/EditEventPage";
 import PointsHistoryPage from "./pages/PointsHistoryPage";
 import EventAttendeesPage from "./pages/EventAttendeesPage";
+import { profileService, type Coupon } from "./services/api";
 
 const noNavbarRoutes = [
   "/dashboard",
@@ -35,6 +36,45 @@ const noNavbarRoutes = [
 
 const isNoNavbarRoute = (pathname: string) => {
   return noNavbarRoutes.some((route) => pathname.startsWith(route));
+};
+
+// Wrapper component for ProfilePage that fetches data first
+const ProfilePageWrapper = () => {
+  const user = useAuthStore((state) => state.user);
+  const [loading, setLoading] = useState(true);
+  const [points, setPoints] = useState(0);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // HAPUS fetchCurrentUser() - sudah dipanggil di App level
+        const pointsRes = await profileService.getPoints();
+        if (pointsRes.success && pointsRes.points !== undefined) {
+          setPoints(pointsRes.points);
+        }
+        const couponsRes = await profileService.getCoupons();
+        if (couponsRes.success && couponsRes.data) {
+          setCoupons(couponsRes.data);
+        }
+      } catch (error) {
+        console.error("Failed to load profile data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return <ProfilePage user={user ?? undefined} />;
 };
 
 const App = () => {
@@ -105,7 +145,7 @@ const App = () => {
             path="/profile"
             element={
               <ProtectedRoute>
-                <ProfilePage />
+                <ProfilePageWrapper />
               </ProtectedRoute>
             }
           />

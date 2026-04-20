@@ -5,6 +5,7 @@ import { useEventStore } from "../stores/useEventStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useToastStore } from "../stores/useToastStore";
+import { formatIDR, formatDate } from "../lib/formatters";
 import { reviewsVouchersService } from "../services/api";
 import type { Review, Voucher } from "../services/api";
 
@@ -52,10 +53,10 @@ const EventDetailPage: React.FC = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
 
-  // Local state for checkout flow
-  const [usePoints, setUsePoints] = useState(false);
-  const [userPoints, setUserPoints] = useState(0);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+   // Local state for checkout flow
+   const [pointsToUse, setPointsToUse] = useState(0);
+   const [userPoints, setUserPoints] = useState(0);
+   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Check if user can write review (event ended and user logged in)
   const isEventEnded = currentEvent
@@ -116,7 +117,7 @@ const EventDetailPage: React.FC = () => {
   const total = calculateTotal();
 
   const totalWithDiscount = Math.max(0, total - appliedDiscount - appliedCouponDiscount);
-  const pointsDiscount = usePoints ? Math.min(userPoints, 50000) : 0;
+  const pointsDiscount = pointsToUse; // 1 poin = 1 IDR
   const finalTotal = totalWithDiscount - pointsDiscount;
 
   // Helper function to determine event status
@@ -266,27 +267,6 @@ const EventDetailPage: React.FC = () => {
     setIsReviewModalOpen(true);
   };
 
-  const formatIDR = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("Rp", "IDR ");
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("en-US", {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
   const handleUpdateTicket = (ticketId: string, delta: number) => {
     setTicketQuantities((prev) => ({
       ...prev,
@@ -336,6 +316,18 @@ const EventDetailPage: React.FC = () => {
       return;
     }
 
+    // Validate points before proceeding
+    if (pointsToUse > 0) {
+      if (pointsToUse > userPoints) {
+        addToast("error", "Saldo poin tidak cukup");
+        return;
+      }
+      if (pointsToUse > 50000) {
+        addToast("error", "Maksimal 50.000 poin per transaksi");
+        return;
+      }
+    }
+
     setIsProcessingPayment(true);
 
     // Determine ticketId based on selection
@@ -347,7 +339,7 @@ const EventDetailPage: React.FC = () => {
       quantity: totalQuantity,
       voucherCode: appliedDiscount > 0 ? voucherCode : undefined,
       couponCode: appliedCouponDiscount > 0 ? couponCode : undefined,
-      pointsUsed: usePoints ? pointsDiscount : undefined,
+      pointsUsed: pointsToUse > 0 ? pointsToUse : undefined,
     });
 
     setIsProcessingPayment(false);
@@ -973,31 +965,62 @@ const EventDetailPage: React.FC = () => {
                   {/* Points Section */}
                   {isAuthenticated && userPoints > 0 && (
                     <div className="mb-6 bg-[#1c1b1b] p-4 rounded-lg border border-white/5">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center mb-3">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-[#c0c1ff]">
                             stars
                           </span>
-                          <span className="text-[#c7c4d8] font-medium">Use Points</span>
+                          <span className="text-[#c7c4d8] font-medium">Loyalty Points</span>
                           <span className="text-xs bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-0.5 rounded-full">
                             {userPoints.toLocaleString()} pts
                           </span>
                         </div>
-                        <button
-                          onClick={() => setUsePoints(!usePoints)}
-                          disabled={userPoints === 0}
-                          className={`w-12 h-6 rounded-full relative transition-colors duration-200 ${usePoints ? "bg-[#c0c1ff]" : "bg-[#353534]"} ${userPoints === 0 ? "opacity-50" : ""}`}
-                        >
-                          <span
-                            className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${usePoints ? "left-7" : "left-1"}`}
-                          ></span>
-                        </button>
                       </div>
-                      {usePoints && pointsDiscount > 0 && (
-                        <p className="text-xs text-[#c0c1ff] mt-2">
-                          You will save {formatIDR(pointsDiscount)}
-                        </p>
-                      )}
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center bg-[#0e0e0e] p-3 rounded-lg">
+                          <div>
+                            <p className="text-sm font-semibold text-[#e5e2e1]">Saldo Anda</p>
+                            <p className="text-xs text-[#c7c4d8]">{userPoints.toLocaleString()} poin tersedia</p>
+                          </div>
+                          <span className="text-xs bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-1 rounded-full font-semibold">
+                            Maks redeem: {Math.min(userPoints, 50000).toLocaleString()}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-[#e5e2e1] mb-2">
+                            Jumlah Poin yang Digunakan
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max={Math.min(userPoints, 50000)}
+                            value={pointsToUse}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              setPointsToUse(Math.min(val, Math.min(userPoints, 50000)));
+                            }}
+                            className="w-full bg-[#0e0e0e] border border-[#464555]/30 text-[#e5e2e1] rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#c0c1ff] focus:border-transparent outline-none"
+                            placeholder="Masukkan poin (0 - maks)"
+                          />
+                          <div className="flex justify-between mt-2">
+                            <button
+                              type="button"
+                              onClick={() => setPointsToUse(0)}
+                              className="text-xs text-[#c7c4d8] hover:text-[#c0c1ff]"
+                            >
+                              Bersihkan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPointsToUse(Math.min(userPoints, 50000))}
+                              className="text-xs text-[#c0c1ff] hover:underline"
+                            >
+                              Gunakan Maks ({Math.min(userPoints, 50000).toLocaleString()})
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -1018,8 +1041,8 @@ const EventDetailPage: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  {usePoints && pointsDiscount > 0 && (
-                    <div className="flex justify-between items-center mb-4 text-sm">
+                  {pointsToUse > 0 && pointsDiscount > 0 && (
+                    <div className="flex justify-between text-sm items-center">
                       <span className="text-[#c7c4d8]">Points Discount</span>
                       <span className="text-[#c0c1ff]">-{formatIDR(pointsDiscount)}</span>
                     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { profileService, type PointsHistoryItem } from "../services/api";
+import { formatDate } from "../lib/formatters";
 
 export default function PointsHistoryPage() {
   const navigate = useNavigate();
@@ -38,20 +39,6 @@ export default function PointsHistoryPage() {
 
     fetchData();
   }, [page, limit]);
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateString;
-    }
-  };
 
   const getTransactionType = (type: string) => {
     switch (type) {

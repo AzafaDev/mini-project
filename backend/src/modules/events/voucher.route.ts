@@ -1,40 +1,17 @@
 import { Router } from "express";
 import { prisma } from "../../config/prisma";
 import { authMiddleware } from "../auth/auth.middleware";
+import { voucherService, couponService } from "./voucher.service";
 
 const voucherRouter = Router();
-
-console.log("[DEBUG Route] Registering Voucher routes");
 
 // Get vouchers for an event (public)
 voucherRouter.get("/:eventId/vouchers", async (req, res) => {
   try {
     const { eventId } = req.params;
-    console.log("[DEBUG Voucher Route] getVouchers eventId:", eventId);
-    
-    const vouchers = await prisma.voucher.findMany({
-      where: {
-        eventId,
-        isActive: true,
-        startDate: { lte: new Date() },
-        endDate: { gte: new Date() },
-        OR: [
-          { maxUsage: null },
-          { usedCount: { lt: prisma.voucher.fields.maxUsage } },
-        ],
-      },
-      select: {
-        code: true,
-        discountType: true,
-        discountValue: true,
-      },
-    });
-
-    console.log("[DEBUG Voucher Route] getVouchers result count:", vouchers.length);
-
+    const vouchers = await voucherService.getEventVouchers({ eventId });
     res.json({ success: true, data: vouchers });
   } catch (error: any) {
-    console.log("[DEBUG Voucher Route] getVouchers error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -176,58 +153,22 @@ voucherRouter.get("/coupons/validate", async (req, res) => {
     const code = req.query.code as string;
     const price = parseInt(req.query.price as string) || 0;
     const quantity = parseInt(req.query.quantity as string) || 1;
-    console.log("[DEBUG Voucher Route] validateCoupon code:", code, "price:", price, "quantity:", quantity);
     
     if (!code) {
       return res.status(400).json({ success: false, message: "Coupon code is required" });
     }
 
-    const coupon = await prisma.coupon.findFirst({
-      where: {
-        code: code,
-        isActive: true,
-        startDate: { lte: new Date() },
-        endDate: { gte: new Date() },
-      },
-    });
-
-    console.log("[DEBUG Voucher Route] validateCoupon coupon found:", !!coupon, coupon?.id, coupon?.code);
-    console.log("[DEBUG Voucher Route] validateCoupon isActive:", coupon?.isActive);
-    console.log("[DEBUG Voucher Route] validateCoupon dates:", { start: coupon?.startDate, end: coupon?.endDate, now: new Date() });
-
-    if (!coupon) {
-      console.log("[DEBUG Voucher Route] validateCoupon coupon NOT FOUND for code:", code);
-      return res.status(404).json({ 
-        success: false, 
-        message: "Invalid or expired coupon code" 
-      });
-    }
-
-    let actualDiscount = 0;
-    if (coupon.discountType === "PERCENTAGE") {
-      if (price > 0 && quantity > 0) {
-        actualDiscount = (price * quantity * coupon.discountValue) / 100;
-        console.log("[DEBUG Voucher Route] PERCENTAGE discount calculated:", { price, quantity, percentage: coupon.discountValue, actualDiscount });
-      } else {
-        console.log("[DEBUG Voucher Route] PERCENTAGE discount SKIPPED (price or quantity is 0):", { price, quantity });
-        // actualDiscount stays 0
-      }
-    } else {
-      actualDiscount = coupon.discountValue;  // FIXED type uses raw value
-      console.log("[DEBUG Voucher Route] FIXED discount:", actualDiscount);
-    }
-    console.log("[DEBUG Voucher Route] final actualDiscount:", actualDiscount);
+    const result = await couponService.validateCoupon({ code, price, quantity });
 
     res.json({
       success: true,
       valid: true,
-      discount: actualDiscount,
-      discountType: coupon.discountType,
-      discountValue: coupon.discountValue,
+      discount: result.discount,
+      discountType: result.discountType,
+      discountValue: result.discountValue,
       message: "Coupon valid!"
     });
   } catch (error: any) {
-    console.log("[DEBUG Voucher Route] validateCoupon error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -236,28 +177,9 @@ voucherRouter.get("/coupons/validate", async (req, res) => {
 voucherRouter.get("/coupons", async (req, res) => {
   try {
     const userId = req.query.userId as string;
-    console.log("[DEBUG Voucher Route] getCoupons userId:", userId);
-    
-    const coupons = await prisma.coupon.findMany({
-      where: {
-        userId,
-        isActive: true,
-        startDate: { lte: new Date() },
-        endDate: { gte: new Date() },
-      },
-      select: {
-        id: true,
-        code: true,
-        discountType: true,
-        discountValue: true,
-      },
-    });
-
-    console.log("[DEBUG Voucher Route] getCoupons result count:", coupons.length);
-
+    const coupons = await couponService.getAllCoupons({ userId });
     res.json({ success: true, data: coupons });
   } catch (error: any) {
-    console.log("[DEBUG Voucher Route] getCoupons error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -266,31 +188,9 @@ voucherRouter.get("/coupons", async (req, res) => {
 voucherRouter.get("/my-vouchers", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, async (req, res) => {
   try {
     const userId = req.userId;
-    console.log("[DEBUG Voucher Route] getMyVouchers userId:", userId);
-    
-    // Get all events by organizer
-    const events = await prisma.event.findMany({
-      where: { organizerId: userId },
-      select: { id: true },
-    });
-    
-    const eventIds = events.map(e => e.id);
-
-    const vouchers = await prisma.voucher.findMany({
-      where: { eventId: { in: eventIds } },
-      include: {
-        event: {
-          select: { id: true, name: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    console.log("[DEBUG Voucher Route] getMyVouchers result count:", vouchers.length);
-
+    const vouchers = await voucherService.getOrganizerVouchers({ organizerId: userId });
     res.json({ success: true, data: vouchers });
   } catch (error: any) {
-    console.log("[DEBUG Voucher Route] getMyVouchers error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -359,30 +259,9 @@ voucherRouter.delete("/voucher/:id", authMiddleware.verifyAuthToken, authMiddlew
 voucherRouter.get("/my-coupons", authMiddleware.verifyAuthToken, async (req, res) => {
   try {
     const userId = req.userId;
-    console.log("[DEBUG Voucher Route] getMyCoupons userId:", userId);
-    
-    const coupons = await prisma.coupon.findMany({
-      where: {
-        userId,
-        isActive: true,
-        startDate: { lte: new Date() },
-        endDate: { gte: new Date() },
-      },
-      select: {
-        id: true,
-        code: true,
-        discountType: true,
-        discountValue: true,
-        startDate: true,
-        endDate: true,
-      },
-    });
-
-    console.log("[DEBUG Voucher Route] getMyCoupons result count:", coupons.length);
-
+    const coupons = await couponService.getUserCoupons({ userId });
     res.json({ success: true, data: coupons });
   } catch (error: any) {
-    console.log("[DEBUG Voucher Route] getMyCoupons error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });

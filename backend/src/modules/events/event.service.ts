@@ -246,6 +246,22 @@ export const eventService = {
       : parsedTotalSeats;
 
     if (tickets && tickets.length > 0) {
+      if (tickets.length > 2) {
+        throw new AppError("Maximum 2 ticket types allowed per event", 400);
+      }
+
+      const ticketTypes = tickets.map((t) => t.type);
+      const uniqueTypes = new Set(ticketTypes);
+      if (uniqueTypes.size !== ticketTypes.length) {
+        throw new AppError("Duplicate ticket types not allowed", 400);
+      }
+
+      for (const ticket of tickets) {
+        if (ticket.type !== "GENERAL" && ticket.type !== "VIP") {
+          throw new AppError("Ticket type must be GENERAL or VIP", 400);
+        }
+      }
+
       eventTotalSeats = tickets.reduce((sum, t) => sum + t.quantity, 0);
       eventAvailableSeats = eventTotalSeats;
     }

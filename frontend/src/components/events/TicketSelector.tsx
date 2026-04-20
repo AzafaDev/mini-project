@@ -1,4 +1,5 @@
 import React from "react";
+import { formatIDR } from "../../lib/formatters";
 
 interface TicketSelectorProps {
   tickets: {
@@ -11,16 +12,6 @@ interface TicketSelectorProps {
     architect: number;
   };
 }
-
-const formatIDR = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  })
-    .format(amount)
-    .replace("Rp", "IDR ");
-};
 
 export const TicketSelector: React.FC<TicketSelectorProps> = ({
   tickets,

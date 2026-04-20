@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
+import { formatIDR, formatDate } from "../lib/formatters";
 import type { Transaction } from "../services/api";
 
 // --- Sub-komponen: Stat Card ---
@@ -244,25 +245,6 @@ export const MyTickets = () => {
         new Date(b.event?.startDate || 0).getTime()
     );
   const nextUpcoming = upcomingTransactions[0];
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  };
-
-  const formatIDR = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("Rp", "Rp ");
-  };
 
   const getTicketCardProps = (tx: Transaction) => {
     const eventStart = tx.event?.startDate ? new Date(tx.event.startDate) : null;

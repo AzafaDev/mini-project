@@ -144,6 +144,7 @@ model Transaction {
   @@index([eventId])
   @@index([status])
   @@index([expiresAt])
+  @@index([createdAt])
 }
 
 model Review {
@@ -213,4 +214,5 @@ model PointTransaction {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([userId, createdAt])
 }

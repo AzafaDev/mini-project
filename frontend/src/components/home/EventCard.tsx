@@ -1,30 +1,26 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Event } from "../../services/api";
+import { formatDate, formatNumber } from "../../lib/formatters";
 
 interface EventCardProps {
   event: Event;
   onClick?: () => void;
 }
 
-// Format price to IDR format
 const formatPrice = (price: number): string => {
   if (price === 0) return "Free";
-  return `IDR ${price.toLocaleString("id-ID")}`;
+  return `IDR ${formatNumber(price)}`;
 };
 
-// Format date to "MON DD" format
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${months[date.getMonth()]} ${date.getDate().toString().padStart(2, "0")}`;
+const formatEventDate = (dateString: string): string => {
+  return formatDate(dateString, "short");
 };
-
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const navigate = useNavigate();
   const formattedPrice = formatPrice(event.price);
-  const formattedDate = formatDate(event.startDate);
+  const formattedDate = formatEventDate(event.startDate);
   const imageUrl = event.imageUrl || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800";
 
   const handleClick = () => {

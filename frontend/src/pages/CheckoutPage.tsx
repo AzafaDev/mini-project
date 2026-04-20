@@ -4,6 +4,7 @@ import { useEventStore } from "../stores/useEventStore";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
+import { formatIDR, formatDate } from "../lib/formatters";
 
 const CheckoutPage: React.FC = () => {
   const { id: eventId } = useParams<{ id: string }>();
@@ -28,8 +29,12 @@ const CheckoutPage: React.FC = () => {
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
 
+  // State untuk coupon
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCouponDiscount, setAppliedCouponDiscount] = useState(0);
+
   // State untuk points
-  const [usePoints, setUsePoints] = useState(false);
+  const [pointsToUse, setPointsToUse] = useState(0);
   const [userPoints, setUserPoints] = useState(0);
 
   // Loading state
@@ -43,21 +48,11 @@ const CheckoutPage: React.FC = () => {
   const priceGeneral = generalTicket?.price ?? eventBasePrice;
   const priceVIP = vipTicket?.price ?? eventBasePrice * 2.5;
   
-  const pointsDiscount = usePoints ? Math.min(userPoints, 50000) : 0;
+  const pointsDiscount = pointsToUse; // 1 poin = 1 IDR
 
   // Hitung totals
   const subtotal = selectedTickets.general * priceGeneral + selectedTickets.vip * priceVIP;
   const total = subtotal - appliedDiscount - pointsDiscount;
-
-  const formatIDR = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("Rp", "Rp ");
-  };
 
   const handleUpdateTicket = (type: "general" | "vip", delta: number) => {
     setSelectedTickets((prev) => ({
@@ -94,50 +89,63 @@ const CheckoutPage: React.FC = () => {
     setAppliedDiscount(0);
   };
 
-  const handleProceedToPayment = async () => {
-    if (!isAuthenticated) {
-      addToast("error", "Please login to continue");
-      navigate("/login", { state: { from: window.location.pathname } });
-      return;
-    }
+   const handleProceedToPayment = async () => {
+     if (!isAuthenticated) {
+       addToast("error", "Please login to continue");
+       navigate("/login", { state: { from: window.location.pathname } });
+       return;
+     }
 
-    if (!eventId) {
-      addToast("error", "Event not found");
-      return;
-    }
+     if (!eventId) {
+       addToast("error", "Event not found");
+       return;
+     }
 
-    const totalQuantity = selectedTickets.general + selectedTickets.vip;
-    if (totalQuantity === 0) {
-      addToast("error", "Please select at least 1 ticket");
-      return;
-    }
+     const totalQuantity = selectedTickets.general + selectedTickets.vip;
+     if (totalQuantity === 0) {
+       addToast("error", "Please select at least 1 ticket");
+       return;
+     }
 
-    // Determine ticket ID based on ticket type selected
-    const ticketId = currentEvent?.tickets 
-      ? (selectedTickets.vip > 0 
-          ? vipTicket?.id 
-          : generalTicket?.id) || "default"
-      : "default";
+     // Validate points before proceeding
+     if (pointsToUse > 0) {
+       if (pointsToUse > userPoints) {
+         addToast("error", "Saldo poin tidak cukup");
+         return;
+       }
+       if (pointsToUse > 50000) {
+         addToast("error", "Maksimal 50.000 poin per transaksi");
+         return;
+       }
+     }
 
-    try {
-      const transaction = await createTransaction({
-        eventId,
-        ticketId,
-        quantity: totalQuantity,
-        voucherCode: appliedDiscount > 0 ? voucherCode : undefined,
-        pointsUsed: usePoints ? pointsDiscount : undefined,
-      });
+     // Determine ticket ID based on ticket type selected
+     const ticketId = currentEvent?.tickets 
+       ? (selectedTickets.vip > 0 
+           ? vipTicket?.id 
+           : generalTicket?.id) || "default"
+       : "default";
 
-      if (transaction) {
-        addToast("success", "Transaction created! Redirecting...");
-        navigate(`/transactions/${transaction.id}`);
-      } else {
-        addToast("error", transactionError || "Failed to create transaction");
-      }
-    } catch (err) {
-      addToast("error", "Failed to create transaction");
-    }
-  };
+     try {
+       const transaction = await createTransaction({
+         eventId,
+         ticketId,
+         quantity: totalQuantity,
+         voucherCode: appliedDiscount > 0 ? voucherCode : undefined,
+         couponCode: appliedCouponDiscount > 0 ? couponCode : undefined,
+         pointsUsed: pointsToUse > 0 ? pointsToUse : undefined,
+       });
+
+       if (transaction) {
+         addToast("success", "Transaction created! Redirecting...");
+         navigate(`/transactions/${transaction.id}`);
+       } else {
+         addToast("error", transactionError || "Failed to create transaction");
+       }
+     } catch (err) {
+       addToast("error", "Failed to create transaction");
+     }
+   };
 
   useEffect(() => {
     if (eventId) {
@@ -182,17 +190,6 @@ const CheckoutPage: React.FC = () => {
       </div>
     );
   }
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("en-US", {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
 
   return (
     <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
@@ -429,24 +426,54 @@ const CheckoutPage: React.FC = () => {
                     {userPoints.toLocaleString()} pts
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-[#0e0e0e] p-4 rounded-lg">
-                  <div>
-                    <p className="text-sm font-semibold text-[#e5e2e1]">
-                      Use Points for Discount
-                    </p>
-                    <p className="text-xs text-[#c7c4d8]">
-                      Save up to {formatIDR(pointsDiscount)}
-                    </p>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-[#0e0e0e] p-4 rounded-lg">
+                    <div>
+                      <p className="text-sm font-semibold text-[#e5e2e1]">
+                        Saldo Anda
+                      </p>
+                      <p className="text-xs text-[#c7c4d8]">
+                        {userPoints.toLocaleString()} poin tersedia
+                      </p>
+                    </div>
+                    <span className="text-xs bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-1 rounded-full font-semibold">
+                      Maks redeem: {Math.min(userPoints, 50000).toLocaleString()}
+                    </span>
                   </div>
-                  <button
-                    onClick={() => setUsePoints(!usePoints)}
-                    disabled={userPoints === 0}
-                    className={`w-12 h-6 rounded-full relative transition-colors duration-200 ${usePoints ? "bg-[#c0c1ff]" : "bg-zinc-700"} ${userPoints === 0 ? "opacity-50" : ""}`}
-                  >
-                    <span
-                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${usePoints ? "left-7" : "left-1"}`}
-                    ></span>
-                  </button>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#e5e2e1] mb-2">
+                      Jumlah Poin yang Digunakan
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={Math.min(userPoints, 50000)}
+                      value={pointsToUse}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setPointsToUse(Math.min(val, Math.min(userPoints, 50000)));
+                      }}
+                      className="w-full bg-[#0e0e0e] border border-[#464555]/30 text-[#e5e2e1] rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#c0c1ff] focus:border-transparent outline-none"
+                      placeholder="Masukkan poin (0 - maks)"
+                    />
+                    <div className="flex justify-between mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setPointsToUse(0)}
+                        className="text-xs text-[#c7c4d8] hover:text-[#c0c1ff]"
+                      >
+                        Bersihkan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPointsToUse(Math.min(userPoints, 50000))}
+                        className="text-xs text-[#c0c1ff] hover:underline"
+                      >
+                        Gunakan Maks ({Math.min(userPoints, 50000).toLocaleString()})
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -501,7 +528,7 @@ const CheckoutPage: React.FC = () => {
                       </span>
                     </div>
                   )}
-                  {usePoints && pointsDiscount > 0 && (
+                  {pointsToUse > 0 && pointsDiscount > 0 && (
                     <div className="flex justify-between text-sm items-center">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-xs text-[#c0c1ff]">

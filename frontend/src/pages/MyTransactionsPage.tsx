@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
+import { formatIDR, formatDate } from "../lib/formatters";
 import { type Transaction, type TransactionStatus } from "../services/api";
 import { useAuthStore } from "../stores/useAuthStore";
 
@@ -42,28 +43,13 @@ const MyTransactionsPage: React.FC = () => {
     return txn.status === filter;
   });
 
+  // Check if transaction needs payment proof upload
+  const needsPaymentProof = (txn: Transaction) =>
+    txn.status === "WAITING_PAYMENT" && !txn.paymentProof;
+
   useEffect(() => {
     fetchMyTransactions(pagination.page, 20);
   }, [pagination.page]);
-
-  const formatIDR = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    })
-      .format(amount)
-      .replace("Rp", "Rp ");
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  };
 
   const getStatusConfig = (status: TransactionStatus) => {
     const configs: Record<
@@ -227,13 +213,20 @@ const MyTransactionsPage: React.FC = () => {
                           {transaction.ticket?.name}
                         </p>
                       </div>
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusConfig(transaction.status).bgColor} ${getStatusConfig(transaction.status).color} flex justify-center items-center`}
-                      >
-                        <span className="material-symbols-outlined text-xs mr-1">
-                          {getStatusConfig(transaction.status).icon}
-                        </span>
-                        {getStatusConfig(transaction.status).label}
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusConfig(transaction.status).bgColor} ${getStatusConfig(transaction.status).color} flex justify-center items-center`}
+                        >
+                          <span className="material-symbols-outlined text-xs mr-1">
+                            {getStatusConfig(transaction.status).icon}
+                          </span>
+                          {getStatusConfig(transaction.status).label}
+                        </div>
+                        {needsPaymentProof(transaction) && (
+                          <span className="text-xs bg-[#ffb695] text-[#07006c] px-2 py-1 rounded-full font-bold animate-pulse">
+                            Upload Required
+                          </span>
+                        )}
                       </div>
                     </div>
 

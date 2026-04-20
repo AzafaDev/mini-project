@@ -16,6 +16,10 @@ import { startCronJobs } from "./utils/cronJobs";
 
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is required. Server cannot start.");
+}
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 const __dirname = path.resolve();

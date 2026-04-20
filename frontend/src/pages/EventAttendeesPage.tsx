@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEventStore } from "../stores/useEventStore";
 import { useToastStore } from "../stores/useToastStore";
+import { formatDate } from "../lib/formatters";
 import type { EventAttendee } from "../services/api";
 
 export default function EventAttendeesPage() {
@@ -45,20 +46,6 @@ export default function EventAttendeesPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateString;
-    }
-  };
 
   if (loading || loadingEventAttendees) {
     return (

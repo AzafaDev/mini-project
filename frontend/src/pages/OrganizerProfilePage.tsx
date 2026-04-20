@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEventStore } from '../stores/useEventStore';
+import { formatDate } from '../lib/formatters';
 
 const OrganizerProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,15 +18,6 @@ const OrganizerProfilePage: React.FC = () => {
       clearOrganizerProfile();
     };
   }, [id]);
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
-  };
 
   if (loading && !organizerProfile) {
     return (

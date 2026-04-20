@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEventStore } from "../../stores/useEventStore";
+import { formatDate } from "../../lib/formatters";
 
 interface EventItemProps {
   id: string;
@@ -111,19 +112,6 @@ const EventItem = ({
 };
 
 // Helper functions
-const formatDate = (dateString: string) => {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
-};
-
 const getEventStatus = (event: { startDate: string; endDate: string; isDeleted?: boolean }) => {
   const now = new Date();
   const start = new Date(event.startDate);
@@ -180,7 +168,7 @@ export function EventsTab({ onStatsClick }: EventsTabProps) {
                 event.endDate
               )}`}
               location={event.location}
-              sold={event.sold ?? (event.totalSeats - event.availableSeats)}
+              sold={event.totalSeats - event.availableSeats}
               capacity={event.totalSeats}
               status={getEventStatus(event)}
               image={event.imageUrl || ""}

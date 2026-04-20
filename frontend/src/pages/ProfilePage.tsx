@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useFormik } from "formik";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
@@ -8,10 +8,15 @@ import {
   type ChangePasswordRequest,
   type Coupon,
 } from "../services/api";
+import type { User } from "../types/authTypes";
 import {
   updateProfileSchema,
   changePasswordSchema,
 } from "../validation/authSchemas";
+
+interface ProfilePageProps {
+  user?: User;
+}
 
 // --- Sidebar Component ---
 
@@ -200,21 +205,25 @@ const ProfileSkeleton = () => (
 
 // --- Main Page Component ---
 
-export default function ProfilePage() {
-  const { user, fetchCurrentUser } = useAuthStore();
+export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
+  const { fetchCurrentUser } = useAuthStore();
   const addToast = useToastStore((state) => state.addToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [points, setPoints] = useState<number>(0);
+  // Get user from props or fallback to store
+  const storeUser = useAuthStore((state) => state.user);
+  const user = propsUser || storeUser;
+
+  const [points, setPoints] = useState<number>(user?.points ?? 0);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Profile form with Formik
+  // Profile form with Formik - initialize with user data directly
   const profileFormik = useFormik({
     initialValues: {
-      fullName: "",
-      phoneNumber: "",
+      fullName: user?.fullName ?? "",
+      phoneNumber: user?.phoneNumber ?? "",
     },
     validationSchema: updateProfileSchema,
     onSubmit: async (values, { setSubmitting }) => {
@@ -280,60 +289,6 @@ export default function ProfilePage() {
   // Profile picture upload states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  // Use refs to get stable references to store functions
-  // This prevents infinite loops caused by unstable function references in useEffect deps
-  const fetchCurrentUserRef = useRef(fetchCurrentUser);
-  const addToastRef = useRef(addToast);
-
-  // Track if data has been loaded to prevent duplicate fetching
-  const dataLoadedRef = useRef(false);
-
-  useEffect(() => {
-    console.log("[ProfilePage] useEffect1 running, dataLoaded:", dataLoadedRef.current);
-    if (dataLoadedRef.current) return;
-    
-    const loadData = async () => {
-      dataLoadedRef.current = true;
-      console.log("[ProfilePage] loadData starting...");
-      setLoading(true);
-      try {
-        await fetchCurrentUserRef.current();
-        const pointsRes = await profileService.getPoints();
-        if (pointsRes.success && pointsRes.points !== undefined) {
-          setPoints(pointsRes.points);
-        }
-        const couponsRes = await profileService.getCoupons();
-        if (couponsRes.success && couponsRes.data) {
-          setCoupons(couponsRes.data);
-        }
-      } catch (error) {
-        console.error("Failed to load profile data:", error);
-        addToastRef.current("error", "Failed to load profile data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []); // Empty deps - run only once on mount
-
-  // Use ref to track if form values have been initialized to prevent infinite loop
-  const formValuesInitialized = useRef(false);
-
-  useEffect(() => {
-    console.log("[ProfilePage] useEffect2 running, user:", user?.email, "initialized:", formValuesInitialized.current);
-    if (user && !formValuesInitialized.current) {
-      profileFormik.setValues({
-        fullName: user.fullName || "",
-        phoneNumber: user.phoneNumber || "",
-      });
-      if (user.points !== undefined) {
-        setPoints(user.points);
-      }
-      formValuesInitialized.current = true;
-      console.log("[ProfilePage] form values set");
-    }
-  }, [user]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

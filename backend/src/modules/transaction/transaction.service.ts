@@ -15,7 +15,9 @@ import {
   TRANSACTION_EXPIRATION_HOURS,
   TRANSACTION_AUTO_CANCEL_DAYS,
   POINTS_EARNED_MULTIPLIER,
+  MAX_POINTS_PER_TRANSACTION,
 } from "../../config/constants";
+import { pointsService } from "../points/points.service";
 
 export const transactionService = {
   createTransaction: async ({
@@ -53,6 +55,11 @@ export const transactionService = {
       couponCode,
       pointsUsed,
     });
+
+    // Validate points input early
+    if (pointsUsed < 0) {
+      throw new AppError("Points used cannot be negative", 400);
+    }
 
     // Check for existing PENDING transaction within last 5 minutes (idempotency)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -120,10 +127,6 @@ export const transactionService = {
       "requested:",
       quantity,
     );
-
-    if (ticket.available < quantity) {
-      throw new AppError("Not enough tickets available", 400);
-    }
 
     let voucherId: string | null = null;
     let couponId: string | null = null;
@@ -244,6 +247,43 @@ export const transactionService = {
 
     return prisma.$transaction(async (tx) => {
       console.log("[DEBUG Transaction Service] creating transaction in DB");
+
+      // ==================== POINT DEDUCTION LOGIC ====================
+      if (pointsUsed > 0) {
+        // 1. Calculate active points (non-expired)
+        const activePoints = await pointsService.getActivePointsTx(tx, userId);
+
+        // 2. Validate sufficient balance
+        if (pointsUsed > activePoints) {
+          throw new AppError("Insufficient points balance", 400);
+        }
+
+        // 3. Validate max points per transaction
+        if (pointsUsed > MAX_POINTS_PER_TRANSACTION) {
+          throw new AppError(
+            `Maximum points per transaction is ${MAX_POINTS_PER_TRANSACTION}`,
+            400
+          );
+        }
+
+        // 4. Deduct points using conditional update (prevents negative balance)
+        // Using updateMany with condition to ensure atomic check-and-update
+        const updateResult = await tx.user.updateMany({
+          where: { 
+            id: userId,
+            points: { gte: pointsUsed } 
+          },
+          data: { points: { decrement: pointsUsed } },
+        });
+
+        if (updateResult.count === 0) {
+          throw new AppError("Failed to deduct points: insufficient balance or user not found", 400);
+        }
+
+        console.log("[DEBUG Transaction Service] points deducted:", pointsUsed, "remaining active:", activePoints - pointsUsed);
+      }
+      // ================================================================
+
       const transaction = await tx.transaction.create({
         data: {
           userId,
@@ -282,16 +322,28 @@ export const transactionService = {
         transaction.id,
       );
 
-      if (ticketId === "default-ticket") {
-        await tx.event.update({
-          where: { id: eventId },
-          data: { availableSeats: event.availableSeats - quantity },
-        });
-      } else {
-        await tx.ticket.update({
-          where: { id: ticketId },
-          data: { available: ticket.available - quantity },
-        });
+      try {
+        if (ticketId === "default-ticket") {
+          await tx.event.update({
+            where: { id: eventId },
+            data: { availableSeats: { decrement: quantity } },
+          });
+        } else {
+          // Atomic update with availability check - prevents race condition
+          await tx.ticket.update({
+            where: { 
+              id: ticketId,
+              available: { gte: quantity } // DB only updates if sufficient
+            },
+            data: { available: { decrement: quantity } },
+          });
+        }
+      } catch (error: any) {
+        // Prisma P2025 = Record to update not found (not enough tickets)
+        if (error.code === "P2025") {
+          throw new AppError("Not enough tickets available", 400);
+        }
+        throw error;
       }
 
       console.log("[DEBUG Transaction Service] ticket availability updated");

@@ -3,34 +3,116 @@ import { AppError } from "../../utils/AppError";
 import { calculateDiscount } from "../../utils/discountEngine";
 import { DiscountType } from "../../../generated/prisma/enums";
 
-export const voucherService = {
+export const couponService = {
   /**
-   * Get all active vouchers for an event
+   * Validate a coupon code (system-wide)
    */
-  getEventVouchers: async ({ eventId }: { eventId: string }) => {
-    console.log("[DEBUG Voucher Service] getEventVouchers input:", { eventId });
-
-    const now = new Date();
-    const vouchers = await prisma.voucher.findMany({
+  validateCoupon: async ({
+    code,
+    price,
+    quantity,
+  }: {
+    code: string;
+    price: number;
+    quantity: number;
+  }) => {
+    const coupon = await prisma.coupon.findFirst({
       where: {
-        eventId,
+        code: code,
         isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-        OR: [
-          { maxUsage: null },
-          { usedCount: { lt: prisma.voucher.fields.maxUsage } },
-        ],
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() },
+      },
+    });
+
+    if (!coupon) {
+      throw new AppError("Invalid or expired coupon code", 404);
+    }
+
+    const discount = calculateDiscount(
+      price,
+      quantity,
+      coupon.discountType,
+      coupon.discountValue
+    );
+
+    return {
+      discount,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+      couponId: coupon.id,
+    };
+  },
+
+  /**
+   * Get available coupons for a user
+   */
+  getUserCoupons: async ({ userId }: { userId: string }) => {
+    const coupons = await prisma.coupon.findMany({
+      where: {
+        userId,
+        isActive: true,
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() },
       },
       select: {
+        id: true,
+        code: true,
+        discountType: true,
+        discountValue: true,
+        startDate: true,
+        endDate: true,
+      },
+    });
+
+    return coupons;
+  },
+
+  /**
+   * Get all system-wide active coupons
+   */
+  getAllCoupons: async ({ userId }: { userId?: string }) => {
+    const where: any = {
+      isActive: true,
+      startDate: { lte: new Date() },
+      endDate: { gte: new Date() },
+    };
+
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const coupons = await prisma.coupon.findMany({
+      where,
+      select: {
+        id: true,
         code: true,
         discountType: true,
         discountValue: true,
       },
     });
 
-    console.log("[DEBUG Voucher Service] getEventVouchers result:", vouchers.length);
-    return vouchers;
+    return coupons;
+  },
+};
+
+export const voucherService = {
+  /**
+   * Get all active vouchers for an event
+   */
+  getEventVouchers: async ({ eventId }: { eventId: string }) => {
+    const now = new Date();
+    const vouchers = await prisma.$queryRaw`
+      SELECT code, "discountType", "discountValue"
+      FROM "Voucher"
+      WHERE "eventId" = ${eventId}
+        AND "isActive" = true
+        AND "startDate" <= ${now}
+        AND "endDate" >= ${now}
+        AND ("maxUsage" IS NULL OR "usedCount" < "maxUsage")
+    `;
+
+    return vouchers as Array<{ code: string; discountType: DiscountType; discountValue: number }>;
   },
 
   /**

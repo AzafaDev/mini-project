@@ -64,6 +64,19 @@ export const pointsService = {
     };
   },
 
+  /**
+   * Calculate active (non-expired) points for a user within a transaction.
+   * Use this inside prisma.$transaction blocks for atomic consistency.
+   */
+  getActivePointsTx: async (tx: any, userId: string): Promise<number> => {
+    const now = new Date();
+    const result = await tx.pointTransaction.aggregate({
+      where: { userId, expiresAt: { gt: now } },
+      _sum: { amount: true },
+    });
+    return result._sum.amount || 0;
+  },
+
   cleanupExpiredPoints: async () => {
     console.log("[DEBUG Points Service] cleanupExpiredPoints called");
 

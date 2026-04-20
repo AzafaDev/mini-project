@@ -1,16 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/AppError";
 
-/**
- * Global error handler middleware
- * Catches all unhandled errors and formats them as JSON responses
- * 
- * Handles:
- * - AppError (custom application errors with status codes)
- * - Generic Error (unknown errors)
- * 
- * Response format: { success: false, message: string }
- */
+const isProduction = process.env.NODE_ENV === "production";
+
 export const errorHandler = (
   err: Error | AppError,
   req: Request,
@@ -24,9 +16,18 @@ export const errorHandler = (
     });
   }
 
-  console.error("Unhandled error:", err);
+  const errorId = crypto.randomUUID();
+  console.error(`[ERROR:${errorId}] Unhandled error:`, {
+    message: err.message,
+    stack: isProduction ? undefined : err.stack,
+    url: req.originalUrl,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+  });
+
   return res.status(500).json({
     success: false,
-    message: "Internal server error",
+    message: isProduction ? "Internal server error" : err.message,
+    ...(isProduction ? {} : { errorId }),
   });
 };

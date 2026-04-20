@@ -1,5 +1,6 @@
 import { prisma } from "../src/config/prisma";
 import bcrypt from "bcrypt";
+import { generateUniqueReferralCode } from "../src/utils/generateToken";
 
 type TicketType = "GENERAL" | "VIP";
 
@@ -16,6 +17,10 @@ const SALT_ROUNDS = 10;
 async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
+
+const generateReferralCode = async (): Promise<string> => {
+  return generateUniqueReferralCode();
+};
 
 const organizerUsers = [
   { email: "organizer1@eventry.com", fullName: "Organizer Satu" },
@@ -500,8 +505,9 @@ async function main() {
   const hashedPassword = await hashPassword("12345678");
 
   const organizers = await Promise.all(
-    organizerUsers.map((org) =>
-      prisma.user.upsert({
+    organizerUsers.map(async (org) => {
+      const referralCode = await generateReferralCode();
+      return prisma.user.upsert({
         where: { email: org.email },
         update: {},
         create: {
@@ -510,15 +516,17 @@ async function main() {
           fullName: org.fullName,
           role: "ORGANIZER",
           isVerified: true,
+          referralCode,
         },
-      }),
-    ),
+      });
+    }),
   );
   console.log(`✅ Created ${organizers.length} organizer users`);
 
   const customers = await Promise.all(
-    customerUsers.map((cust) =>
-      prisma.user.upsert({
+    customerUsers.map(async (cust) => {
+      const referralCode = await generateReferralCode();
+      return prisma.user.upsert({
         where: { email: cust.email },
         update: {},
         create: {
@@ -527,9 +535,10 @@ async function main() {
           fullName: cust.fullName,
           role: "CUSTOMER",
           isVerified: true,
+          referralCode,
         },
-      }),
-    ),
+      });
+    }),
   );
   console.log(`✅ Created ${customers.length} customer users`);
 
@@ -652,7 +661,6 @@ async function main() {
           status: "DONE",
           paidAt: new Date(),
           expiresAt: new Date(),
-          autoCancelAt: new Date(),
         },
       });
 
@@ -691,7 +699,6 @@ async function main() {
         status: "DONE",
         paidAt: new Date(),
         expiresAt: new Date(),
-        autoCancelAt: new Date(),
       },
     });
 
@@ -740,7 +747,6 @@ async function main() {
           status: "DONE",
           paidAt: new Date(),
           expiresAt: new Date(),
-          autoCancelAt: new Date(),
         },
       });
 
