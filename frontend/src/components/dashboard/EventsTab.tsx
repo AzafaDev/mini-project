@@ -168,7 +168,7 @@ export function EventsTab({ onStatsClick }: EventsTabProps) {
                 event.endDate
               )}`}
               location={event.location}
-              sold={event.totalSeats - event.availableSeats}
+              sold={event.sold ?? (event.totalSeats - event.availableSeats)}
               capacity={event.totalSeats}
               status={getEventStatus(event)}
               image={event.imageUrl || ""}

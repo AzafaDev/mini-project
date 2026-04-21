@@ -16,9 +16,7 @@ export interface TransactionEvent {
 
 export interface TransactionTicket {
   id: string;
-  name: string;
   price: number;
-  description?: string;
 }
 
 export interface Transaction {
@@ -36,11 +34,9 @@ export interface Transaction {
   status: TransactionStatus;
   paymentProof?: string;
   paymentProofUploadedAt?: string;
-  expiresAt: string;
-  createdAt: string;
-  updatedAt: string;
-  rejectionReason?: string;
-  user?: {
+   expiresAt: string;
+   createdAt: string;
+   user?: {
     id: string;
     fullName: string;
     email: string;

@@ -5,6 +5,7 @@ import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
 import { formatIDR, formatDate } from "../lib/formatters";
+import { calculateSubtotal, calculateFinalPrice } from "../lib/priceCalculator";
 
 const CheckoutPage: React.FC = () => {
   const { id: eventId } = useParams<{ id: string }>();
@@ -50,15 +51,33 @@ const CheckoutPage: React.FC = () => {
   
   const pointsDiscount = pointsToUse; // 1 poin = 1 IDR
 
-  // Hitung totals
-  const subtotal = selectedTickets.general * priceGeneral + selectedTickets.vip * priceVIP;
-  const total = subtotal - appliedDiscount - pointsDiscount;
+  // Hitung totals menggunakan priceCalculator
+  const ticketPrices = [
+    { price: priceGeneral, quantity: selectedTickets.general },
+    { price: priceVIP, quantity: selectedTickets.vip },
+  ];
+  const subtotal = calculateSubtotal(ticketPrices);
+  const total = calculateFinalPrice(subtotal, appliedDiscount, appliedCouponDiscount, pointsDiscount);
 
   const handleUpdateTicket = (type: "general" | "vip", delta: number) => {
-    setSelectedTickets((prev) => ({
-      ...prev,
-      [type]: Math.max(0, prev[type] + delta),
-    }));
+    const ticket = type === "general" ? generalTicket : vipTicket;
+    const availableQuantity = ticket?.availableQuantity ?? currentEvent?.availableSeats ?? 0;
+    
+    setSelectedTickets((prev) => {
+      const currentQuantity = prev[type];
+      const newQuantity = currentQuantity + delta;
+      
+      // Validate: tidak boleh kurang dari 0
+      if (newQuantity < 0) return prev;
+      
+      // Validate: tidak boleh lebih dari available
+      if (newQuantity > availableQuantity) {
+        addToast("error", `Maksimal ${availableQuantity} tiket tersedia`);
+        return prev;
+      }
+      
+      return { ...prev, [type]: newQuantity };
+    });
   };
 
   const handleApplyVoucher = async () => {

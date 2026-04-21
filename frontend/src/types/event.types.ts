@@ -8,6 +8,7 @@ export interface Event {
   endDate: string;
   totalSeats: number;
   availableSeats: number;
+  sold?: number;
   price: number;
   imageUrl?: string;
   createdAt: string;
@@ -75,7 +76,7 @@ export interface CreateEventRequest {
 
 export interface OrganizerStats {
   totalRevenue: number;
-  ticketsSold: number;
+  totalTicketsSold: number;
   totalEvents: number;
   totalAttendees: number;
   monthlyStats?: Array<{ month: string; revenue: number; tickets: number }>;

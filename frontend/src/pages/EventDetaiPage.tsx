@@ -268,10 +268,25 @@ const EventDetailPage: React.FC = () => {
   };
 
   const handleUpdateTicket = (ticketId: string, delta: number) => {
-    setTicketQuantities((prev) => ({
-      ...prev,
-      [ticketId]: Math.max(0, (prev[ticketId] || 0) + delta),
-    }));
+    const tickets = getEventTickets();
+    const selectedTicket = tickets.find((t) => t.id === ticketId);
+    const availableQuantity = selectedTicket?.availableQuantity ?? currentEvent?.availableSeats ?? 0;
+    
+    setTicketQuantities((prev) => {
+      const currentQuantity = prev[ticketId] || 0;
+      const newQuantity = currentQuantity + delta;
+      
+      // Validate: tidak boleh kurang dari 0
+      if (newQuantity < 0) return prev;
+      
+      // Validate: tidak boleh lebih dari available
+      if (newQuantity > availableQuantity) {
+        addToast("error", `Maksimal ${availableQuantity} tiket tersedia`);
+        return prev;
+      }
+      
+      return { ...prev, [ticketId]: newQuantity };
+    });
   };
 
   useEffect(() => {

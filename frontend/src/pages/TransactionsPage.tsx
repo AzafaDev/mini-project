@@ -37,10 +37,9 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+   const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
+   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch transactions on mount
   useEffect(() => {
@@ -138,21 +137,20 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
     }
   };
 
-  const handleReject = async () => {
-    if (!selectedTransactionId) return;
-    setIsSubmitting(true);
-    const success = await rejectTransaction(selectedTransactionId, rejectReason);
-    setIsSubmitting(false);
-    
-    if (success) {
-      addToast("success", "Transaction rejected");
-      setIsRejectModalOpen(false);
-      setRejectReason("");
-      setSelectedTransactionId(null);
-    } else {
-      addToast("error", "Failed to reject transaction");
-    }
-  };
+   const handleReject = async () => {
+     if (!selectedTransactionId) return;
+     setIsSubmitting(true);
+     const success = await rejectTransaction(selectedTransactionId);
+     setIsSubmitting(false);
+     
+     if (success) {
+       addToast("success", "Transaction rejected");
+       setIsRejectModalOpen(false);
+       setSelectedTransactionId(null);
+     } else {
+       addToast("error", "Failed to reject transaction");
+     }
+   };
 
   const openProofModal = (id: string) => {
     setSelectedTransactionId(id);
@@ -345,38 +343,23 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                           <td className="px-6 py-5 font-mono text-xs text-[#c0c1ff]">
                             {txn.id}
                           </td>
-                          <td className="px-6 py-5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-[#353534] flex items-center justify-center overflow-hidden">
-                                {txn.user?.profilePicture ? (
-                                  <img
-                                    alt={txn.user.fullName}
-                                    src={txn.user.profilePicture}
-                                    className="object-cover w-full h-full"
-                                  />
-                                ) : (
-                                  <span className="material-symbols-outlined text-sm">
-                                    person
-                                  </span>
-                                )}
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold text-[#e5e2e1]">
-                                  {txn.user?.fullName || "Unknown"}
-                                </p>
-                                <p className="text-xs text-[#c7c4d8]">
-                                  {txn.user?.email || ""}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
+                           <td className="px-6 py-5">
+                             <div>
+                               <p className="text-sm font-semibold text-[#e5e2e1]">
+                                 {txn.user?.fullName || "Unknown"}
+                               </p>
+                               <p className="text-xs text-[#c7c4d8]">
+                                 {txn.user?.email || ""}
+                               </p>
+                             </div>
+                           </td>
                           <td className="px-6 py-5">
                             <p className="text-sm text-[#c7c4d8]">
                               {txn.event?.name}
                             </p>
-                            <p className="text-xs text-[#666]">
-                              {txn.ticket?.name} x{txn.quantity}
-                            </p>
+                             <p className="text-xs text-[#666]">
+                               Qty: {txn.quantity}
+                             </p>
                           </td>
                           <td className="px-6 py-5 text-sm font-bold text-[#e5e2e1]">
                             {formatIDR(txn.finalPrice)}
@@ -406,6 +389,13 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                             {txn.status === "WAITING_CONFIRMATION" ? (
                               <div className="flex justify-end gap-2">
                                 <button
+                                  onClick={() => openRejectModal(txn.id)}
+                                  disabled={isSubmitting}
+                                  className="bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-red-500/30 disabled:opacity-50"
+                                >
+                                  Reject
+                                </button>
+                                <button
                                   onClick={() => openAcceptDialog(txn.id)}
                                   disabled={isSubmitting}
                                   className="bg-[#c0c1ff] text-[#07006c] px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:brightness-110 disabled:opacity-50"
@@ -419,15 +409,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                                   View Proof
                                 </button>
                               </div>
-                            ) : txn.status === "WAITING_PAYMENT" ? (
-                              <span className="text-[#c7c4d8] italic text-xs">
-                                Awaiting payment
-                              </span>
-                            ) : (
-                              <span className="text-[#c7c4d8] italic text-xs">
-                                {formatDate(txn.updatedAt)}
-                              </span>
-                            )}
+                            ) : null}
                           </td>
                         </tr>
                       );
@@ -533,44 +515,46 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
         cancelText="Cancel"
       />
 
-      {/* Reject Modal */}
-      {isRejectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={() => setIsRejectModalOpen(false)}
-          />
-          <div className="relative bg-[#1c1b1b] p-6 rounded-xl border border-white/10 w-full max-w-md">
-            <button
-              onClick={() => setIsRejectModalOpen(false)}
-              className="absolute top-4 right-4 text-[#c7c4d8] hover:text-[#e5e2e1]"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-            <h3 className="text-xl font-bold text-[#e5e2e1] mb-4">
-              Reject Transaction
-            </h3>
-            <p className="text-[#c7c4d8] mb-4">
-              Please provide a reason for rejecting this transaction:
-            </p>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Enter rejection reason..."
-              className="w-full h-32 bg-[#0e0e0e] border border-white/10 rounded-lg px-4 py-3 text-[#e5e2e1] placeholder-[#c7c4d8]/50 focus:outline-none focus:border-[#c0c1ff] resize-none"
-            />
-            <button
-              onClick={handleReject}
-              disabled={isSubmitting || !rejectReason.trim()}
-              className="w-full mt-4 py-3 bg-[#93000a] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#b30000] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <span className="material-symbols-outlined animate-spin">sync</span>
-              ) : "Reject Transaction"}
-            </button>
-          </div>
-        </div>
-      )}
+       {/* Reject Modal */}
+       {isRejectModalOpen && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+           <div
+             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+             onClick={() => setIsRejectModalOpen(false)}
+           />
+           <div className="relative bg-[#1c1b1b] p-6 rounded-xl border border-white/10 w-full max-w-md">
+             <button
+               onClick={() => setIsRejectModalOpen(false)}
+               className="absolute top-4 right-4 text-[#c7c4d8] hover:text-[#e5e2e1]"
+             >
+               <span className="material-symbols-outlined">close</span>
+             </button>
+             <h3 className="text-xl font-bold text-[#e5e2e1] mb-4">
+               Reject Transaction?
+             </h3>
+             <p className="text-[#c7c4d8] mb-6">
+               Are you sure you want to reject this transaction? This action cannot be undone.
+             </p>
+             <div className="flex gap-4">
+               <button
+                 onClick={() => setIsRejectModalOpen(false)}
+                 className="flex-1 py-3 bg-[#353534] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#4a4a4a]"
+               >
+                 Cancel
+               </button>
+               <button
+                 onClick={handleReject}
+                 disabled={isSubmitting}
+                 className="flex-1 py-3 bg-[#93000a] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#b30000] disabled:opacity-50 disabled:cursor-not-allowed"
+               >
+                 {isSubmitting ? (
+                   <span className="material-symbols-outlined animate-spin">sync</span>
+                 ) : "Reject"}
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 };

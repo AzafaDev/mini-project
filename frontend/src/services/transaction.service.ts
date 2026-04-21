@@ -60,15 +60,12 @@ export const transactionService = {
     return response.data;
   },
 
-  rejectTransaction: async (
-    id: string,
-    reason?: string
-  ): Promise<TransactionActionResponse> => {
-    const response = await axiosInstance.put(`/transactions/${id}/reject`, {
-      reason,
-    });
-    return response.data;
-  },
+   rejectTransaction: async (
+     id: string
+   ): Promise<TransactionActionResponse> => {
+     const response = await axiosInstance.put(`/transactions/${id}/reject`);
+     return response.data;
+   },
 
   getEventTransactions: async (
     eventId: string,

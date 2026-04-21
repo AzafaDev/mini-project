@@ -138,7 +138,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch events",
+        error: error.message || "Failed to fetch events",
         loading: false,
       });
     }
@@ -180,7 +180,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       set({
         error:
-          error.response?.data?.message ||
+          error.message ||
           `Failed to fetch event with id ${id}`,
         loading: false,
       });
@@ -195,7 +195,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       console.error(
         "Failed to fetch reviews:",
-        error.response?.data?.message || error.message,
+        error.message || error.message,
       );
       set({ currentEventReviews: [] });
     }
@@ -208,7 +208,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       console.error(
         "Failed to fetch vouchers:",
-        error.response?.data?.message || error.message,
+        error.message || error.message,
       );
       set({ currentEventVouchers: [] });
     }
@@ -222,7 +222,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       console.error(
         "Failed to fetch organizer profile:",
-        error.response?.data?.message || error.message,
+        error.message || error.message,
       );
       set({ organizerProfile: null });
       return null;
@@ -244,7 +244,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       console.error(
         "Failed to create review:",
-        error.response?.data?.message || error.message,
+        error.message || error.message,
       );
       return false;
     }
@@ -270,7 +270,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       console.error(
         "Failed to update review:",
-        error.response?.data?.message || error.message,
+        error.message || error.message,
       );
       return false;
     }
@@ -296,7 +296,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       console.error(
         "Failed to validate voucher:",
-        error.response?.data?.message || error.message,
+        error.message || error.message,
       );
       return 0;
     }
@@ -314,7 +314,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       set({ myEvents: response.data, loadingMyEvents: false });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch my events",
+        error: error.message || "Failed to fetch my events",
         loadingMyEvents: false,
       });
     }
@@ -330,7 +330,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       set({ organizerStats: response.data, loadingOrganizerStats: false });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch organizer stats",
+        error: error.message || "Failed to fetch organizer stats",
         loadingOrganizerStats: false,
       });
     }
@@ -343,7 +343,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       set({ eventStats: response.data, loadingEventStats: false });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch event stats",
+        error: error.message || "Failed to fetch event stats",
         loadingEventStats: false,
       });
     }
@@ -356,7 +356,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       set({ eventAttendees: response.data, loadingEventAttendees: false });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch event attendees",
+        error: error.message || "Failed to fetch event attendees",
         loadingEventAttendees: false,
       });
     }
@@ -376,7 +376,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       return null;
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to create event",
+        error: error.message || "Failed to create event",
         loadingEventAction: false,
       });
       return null;
@@ -397,7 +397,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       return null;
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to update event",
+        error: error.message || "Failed to update event",
         loadingEventAction: false,
       });
       return null;
@@ -418,7 +418,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       return false;
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to delete event",
+        error: error.message || "Failed to delete event",
         loadingEventAction: false,
       });
       return false;
@@ -432,7 +432,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       set({ myVouchers: response.data, loadingMyVouchers: false });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch vouchers",
+        error: error.message || "Failed to fetch vouchers",
         loadingMyVouchers: false,
       });
     }
@@ -451,7 +451,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       return false;
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to create voucher",
+        error: error.message || "Failed to create voucher",
         loadingEventAction: false,
       });
       return false;
@@ -471,7 +471,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       return false;
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to update voucher",
+        error: error.message || "Failed to update voucher",
         loadingEventAction: false,
       });
       return false;
@@ -491,7 +491,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       return false;
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to delete voucher",
+        error: error.message || "Failed to delete voucher",
         loadingEventAction: false,
       });
       return false;

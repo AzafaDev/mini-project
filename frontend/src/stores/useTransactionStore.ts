@@ -63,7 +63,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch transactions",
+        error: error.message || "Failed to fetch transactions",
         loading: false,
       });
     }
@@ -79,7 +79,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     } catch (error: any) {
       set({
         error:
-          error.response?.data?.message ||
+          error.message ||
           `Failed to fetch transaction with id ${id}`,
         loading: false,
       });
@@ -104,7 +104,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to create transaction",
+        error: error.message || "Failed to create transaction",
         loading: false,
       });
       return null;
@@ -130,7 +130,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     } catch (error: any) {
       set({
         error:
-          error.response?.data?.message || "Failed to upload payment proof",
+          error.message || "Failed to upload payment proof",
         loading: false,
       });
       return false;
@@ -155,7 +155,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to cancel transaction",
+        error: error.message || "Failed to cancel transaction",
         loading: false,
       });
       return false;
@@ -186,7 +186,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to accept transaction",
+        error: error.message || "Failed to accept transaction",
         loading: false,
       });
       return false;
@@ -217,7 +217,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to reject transaction",
+        error: error.message || "Failed to reject transaction",
         loading: false,
       });
       return false;
@@ -236,7 +236,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch transactions",
+        error: error.message || "Failed to fetch transactions",
         loading: false,
       });
     }
@@ -254,7 +254,7 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
       });
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to fetch transactions",
+        error: error.message || "Failed to fetch transactions",
         loading: false,
       });
     }

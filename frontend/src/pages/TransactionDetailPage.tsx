@@ -29,11 +29,10 @@ const TransactionDetailPage: React.FC = () => {
   // State untuk modal
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+   const [isSubmitting, setIsSubmitting] = useState(false);
+   const [hasOpenedUploadModal, setHasOpenedUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasOpenedUploadModal, setHasOpenedUploadModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calculate countdown
@@ -178,20 +177,20 @@ const TransactionDetailPage: React.FC = () => {
     }
   };
 
-  const handleRejectTransaction = async () => {
-    if (!id) return;
-    setIsSubmitting(true);
-    
-    const success = await rejectTransaction(id, rejectReason);
-    setIsSubmitting(false);
-    
-    if (success) {
-      addToast("success", "Transaction rejected");
-      setIsRejectModalOpen(false);
-    } else {
-      addToast("error", "Failed to reject transaction");
-    }
-  };
+   const handleRejectTransaction = async () => {
+     if (!id) return;
+     setIsSubmitting(true);
+     
+     const success = await rejectTransaction(id);
+     setIsSubmitting(false);
+     
+     if (success) {
+       addToast("success", "Transaction rejected");
+       setIsRejectModalOpen(false);
+     } else {
+       addToast("error", "Failed to reject transaction");
+     }
+   };
 
   if (loading && !currentTransaction) {
     return (
@@ -229,7 +228,7 @@ const TransactionDetailPage: React.FC = () => {
         {/* Breadcrumb / Header */}
         <div className="mb-12">
           <div className="flex items-center gap-2 text-[#c7c4d8] text-xs mb-4">
-            <Link to="/transactions" className="hover:text-[#c0c1ff]">Transactions</Link>
+            <Link to="/my-transactions" className="hover:text-[#c0c1ff]">Transactions</Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-[#c0c1ff]">Transaction Details</span>
           </div>
@@ -293,10 +292,6 @@ const TransactionDetailPage: React.FC = () => {
                 <p className="font-mono text-[#c0c1ff]">{currentTransaction.id}</p>
               </div>
               <div>
-                <p className="text-[#c7c4d8] text-sm mb-1">Ticket Type</p>
-                <p className="text-[#e5e2e1]">{currentTransaction.ticket?.name}</p>
-              </div>
-              <div>
                 <p className="text-[#c7c4d8] text-sm mb-1">Quantity</p>
                 <p className="text-[#e5e2e1]">{currentTransaction.quantity} ticket(s)</p>
               </div>
@@ -330,34 +325,9 @@ const TransactionDetailPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+           </div>
 
-          {/* Payment Proof */}
-          {currentTransaction.paymentProof && (
-            <div className="bg-[#1c1b1b] rounded-xl p-8 shadow-xl">
-              <h3 className="text-lg font-bold text-[#e5e2e1] mb-6">Payment Proof</h3>
-              <div className="bg-[#0e0e0e] rounded-lg p-4">
-                <img 
-                  src={currentTransaction.paymentProof} 
-                  alt="Payment Proof"
-                  className="max-w-md w-full rounded-lg"
-                />
-              </div>
-              <p className="text-[#c7c4d8] text-sm mt-4">
-                Uploaded at: {currentTransaction.paymentProofUploadedAt ? formatDate(currentTransaction.paymentProofUploadedAt) : "N/A"}
-              </p>
-            </div>
-          )}
-
-          {/* Rejection Reason */}
-          {currentTransaction.rejectionReason && (
-            <div className="bg-[#93000a]/10 border border-[#93000a]/30 rounded-xl p-8">
-              <h3 className="text-lg font-bold text-[#ffb4ab] mb-4">Rejection Reason</h3>
-              <p className="text-[#c7c4d8]">{currentTransaction.rejectionReason}</p>
-            </div>
-          )}
-
-          {/* Actions */}
+           {/* Actions */}
           <div className="bg-[#1c1b1b] rounded-xl p-8 shadow-xl">
             <h3 className="text-lg font-bold text-[#e5e2e1] mb-6">Actions</h3>
             
@@ -511,25 +481,27 @@ const TransactionDetailPage: React.FC = () => {
             >
               <span className="material-symbols-outlined">close</span>
             </button>
-            <h3 className="text-xl font-bold text-[#e5e2e1] mb-4">Reject Transaction</h3>
-            <p className="text-[#c7c4d8] mb-4">
-              Please provide a reason for rejecting this transaction:
+            <h3 className="text-xl font-bold text-[#e5e2e1] mb-4">Reject Transaction?</h3>
+            <p className="text-[#c7c4d8] mb-6">
+              Are you sure you want to reject this transaction? This action cannot be undone.
             </p>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Enter rejection reason..."
-              className="w-full h-32 bg-[#0e0e0e] border border-white/10 rounded-lg px-4 py-3 text-[#e5e2e1] placeholder-[#c7c4d8]/50 focus:outline-none focus:border-[#c0c1ff] resize-none"
-            />
-            <button
-              onClick={handleRejectTransaction}
-              disabled={isSubmitting || !rejectReason.trim()}
-              className="w-full mt-4 py-3 bg-[#93000a] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#b30000] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <span className="material-symbols-outlined animate-spin">sync</span>
-              ) : "Reject Transaction"}
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="flex-1 py-3 bg-[#353534] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#4a4a4a]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectTransaction}
+                disabled={isSubmitting}
+                className="flex-1 py-3 bg-[#93000a] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#b30000] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <span className="material-symbols-outlined animate-spin">sync</span>
+                ) : "Reject"}
+              </button>
+            </div>
           </div>
         </div>
       )}
