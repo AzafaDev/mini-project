@@ -7,12 +7,13 @@ import { catchAsync } from "../../utils/catchAsync";
 /**
  * Transaction controller handling all transaction-related endpoints.
  * Includes: create, view, upload payment proof, accept/reject/cancel transactions
- * 
- * ⚠️ PENTING: JANGAN BUAT TRY-CATCH MANUAL DI CONTROLLER
- * Semua error handling sudah ditangani oleh catchAsync wrapper
  */
 export const transactionController = {
+  // Semua error otomatis ditangkap oleh catchAsync wrapper
+  // Tidak perlu buat try-catch manual di setiap controller
   createTransaction: catchAsync<AuthRequest>(async (req, res) => {
+    // userId diambil dari token JWT yang sudah di-verify oleh auth middleware
+    // Nilai ini sudah dijamin valid oleh middleware sebelumnya
     const userId = req.userId;
 
     if (!userId) {

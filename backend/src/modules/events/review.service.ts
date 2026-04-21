@@ -2,6 +2,7 @@ import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 
 export const reviewService = {
+  // Buat review untuk event
   createReview: async ({
     userId,
     eventId,
@@ -25,6 +26,7 @@ export const reviewService = {
       throw new AppError("Event not found", 404);
     }
 
+    // Validasi: user harus sudah membeli tiket event ini
     const existingTransaction = await prisma.transaction.findFirst({
       where: {
         userId,
@@ -39,6 +41,7 @@ export const reviewService = {
       throw new AppError("You must purchase a ticket for this event before reviewing", 400);
     }
 
+    // Validasi: user hanya boleh membuat 1 review per event
     const existingReview = await prisma.review.findUnique({
       where: {
         userId_eventId: {
@@ -152,6 +155,7 @@ export const reviewService = {
     return { success: true };
   },
 
+  // Ambil semua review untuk event tertentu dengan pagination
   getEventReviews: async ({
     eventId,
     page = 1,
@@ -165,6 +169,7 @@ export const reviewService = {
 
     const skip = (page - 1) * limit;
 
+    // Jalankan query count dan findMany secara paralel
     const [reviews, total] = await Promise.all([
       prisma.review.findMany({
         where: { eventId },

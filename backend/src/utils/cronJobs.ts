@@ -194,17 +194,17 @@ async function cleanupExpiredPoints() {
   console.log("[CRON] cleanupExpiredPoints completed");
 }
 
-// Export a function to start all cron jobs
+// Jalankan semua cron job background secara otomatis ketika server start
 export function startCronJobs() {
   console.log("[CRON] Starting cron jobs...");
   
-  // Run expired transaction check every 5 minutes
+  // Cek transaksi expired setiap 5 menit
   setInterval(processExpiredTransactions, 5 * 60 * 1000);
   
-  // Run auto-cancel check every 5 minutes
+  // Cek transaksi yang perlu auto cancel setiap 5 menit
   setInterval(processAutoCancelTransactions, 5 * 60 * 1000);
   
-  // Run points cleanup every hour
+  // Bersihkan poin expired setiap 1 jam
   setInterval(cleanupExpiredPoints, 60 * 60 * 1000);
   
   console.log("[CRON] Cron jobs scheduled");

@@ -3,6 +3,7 @@ import { pointsService } from "./points.service";
 import { AuthRequest } from "../auth/auth.type";
 
 export const pointsController = {
+  // Ambil riwayat transaksi poin user
   getPointsHistory: async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.userId;
@@ -36,6 +37,7 @@ export const pointsController = {
     }
   },
 
+  // Ambil total poin aktif user yang masih bisa digunakan
   getActivePoints: async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.userId;

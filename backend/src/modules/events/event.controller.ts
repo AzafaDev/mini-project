@@ -5,18 +5,8 @@ import { UploadedFile } from "express-fileupload";
 import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
 
-/**
- * Event controller handling all event-related endpoints.
- * Includes: CRUD operations, statistics, attendees management
- */
 export const eventController = {
-  /**
-   * Get all events with filtering, sorting, and pagination.
-   * 
-   * @param req - Express request with query params (search, category, location, price range, date range, pagination, sorting)
-   * @param res - Express response
-   * @returns JSON with array of events and pagination info
-   */
+  // Ambil semua event dengan support filter, sorting, dan pagination
   getAllEvents: async (req: Request, res: Response) => {
     const {
       search,
@@ -72,6 +62,7 @@ export const eventController = {
    * @param res - Express response
    * @returns JSON with created event data
    */
+  // Buat event baru - Hanya untuk role ORGANIZER
   createEvent: async (req: AuthRequest, res: Response) => {
     const {
       name,
@@ -91,15 +82,17 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    // Upload gambar event jika ada
     const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
 
     let parsedTickets: { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[] | undefined;
     if (tickets) {
+      // Jika tickets dikirim sebagai string JSON (karena FormData), parse terlebih dahulu
       if (typeof tickets === 'string') {
         try {
           parsedTickets = JSON.parse(tickets);
         } catch (e) {
-          // Ignore parse error, tickets will be undefined
+          // Jika gagal parse, gunakan default ticket
         }
       } else {
         parsedTickets = tickets as unknown as { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[];
