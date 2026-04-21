@@ -61,9 +61,10 @@ export const transactionService = {
   },
 
    rejectTransaction: async (
-     id: string
+     id: string,
+     reason?: string
    ): Promise<TransactionActionResponse> => {
-     const response = await axiosInstance.put(`/transactions/${id}/reject`);
+     const response = await axiosInstance.put(`/transactions/${id}/reject`, { reason });
      return response.data;
    },
 
