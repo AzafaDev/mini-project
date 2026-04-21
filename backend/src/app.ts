@@ -65,9 +65,16 @@ app.use("/api/transactions", transactionRouter);
 app.use(errorHandler);
 
 // Menjalankan semua cron job otomatis (pembersihan poin expired, dll)
-// startCronJobs();
+if (process.env.NODE_ENV !== 'production') {
+  // startCronJobs();
+}
 
 // Menjalankan server pada port yang ditentukan
-app.listen(PORT, () => {
-  console.log(`Server is running on port: ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port: ${PORT}`);
+  });
+}
+
+// Export untuk Vercel serverless function
+export default app;
