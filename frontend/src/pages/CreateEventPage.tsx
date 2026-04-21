@@ -119,7 +119,7 @@ export default function CreateEventPage() {
 
   return (
     <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter'] selection:bg-[#4B4DD8] selection:text-[#D9D8FF]">
-      <div className="max-w-4xl mx-auto px-8 py-12">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button

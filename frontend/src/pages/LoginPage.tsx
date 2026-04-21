@@ -6,14 +6,7 @@ import { loginSchema } from "../validation/authSchemas";
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading, error, clearError, isAuthenticated, user } =
-    useAuthStore();
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      navigate("/");
-    }
-  }, [isAuthenticated, user, navigate]);
+  const { login, isLoading, error, clearError } = useAuthStore();
 
   const formik = useFormik({
     initialValues: {

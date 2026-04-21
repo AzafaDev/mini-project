@@ -19,6 +19,7 @@ import { Footer } from "./components/footer";
 import { Toast } from "./components/ui/Toast";
 import { useAuthStore } from "./stores/useAuthStore";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { GuestRoute } from "./components/GuestRoute";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OrganizerProfilePage from "./pages/OrganizerProfilePage";
 import CreateEventPage from "./pages/CreateEventPage";
@@ -102,8 +103,22 @@ const App = () => {
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <LoginPage />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestRoute>
+                <RegisterPage />
+              </GuestRoute>
+            }
+          />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -130,7 +145,9 @@ const App = () => {
           <Route
             path="/my-transactions"
             element={
+              <ProtectedRoute>
                 <MyTransactionsPage />
+              </ProtectedRoute>
             }
           />
           <Route

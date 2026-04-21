@@ -10,6 +10,20 @@
   --color-error: #93000a;
 }
 
+/* Responsive fix */
+body {
+  overflow-x: hidden;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Toast animation */
 @keyframes slide-in {
   from {

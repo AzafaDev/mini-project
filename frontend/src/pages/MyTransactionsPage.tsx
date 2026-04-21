@@ -9,12 +9,7 @@ type FilterStatus = "ALL" | TransactionStatus;
 
 const MyTransactionsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
-  useEffect(() => {
-    if (!isAuthenticated && !user) {
-      navigate("/");
-    }
-  }, [isAuthenticated, user, navigate]);
+  const { user } = useAuthStore();
   const {
     transactions,
     fetchMyTransactions,

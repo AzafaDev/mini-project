@@ -296,9 +296,9 @@ export default function OrganizerDashboard() {
       <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Main Area */}
-      <main className="md:ml-64 min-h-screen">
+      <main className="md:ml-64 min-h-screen pt-16">
         {/* Header */}
-        <div className="pt-20 pb-4 px-8 border-b border-white/5">
+        <div className="pt-4 pb-4 px-4 md:px-8 border-b border-white/5">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">
@@ -315,7 +315,7 @@ export default function OrganizerDashboard() {
 
         {/* Error Display */}
         {error && (
-          <div className="mx-8 mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-between">
+          <div className="mx-4 md:mx-8 mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center justify-between">
             <p className="text-red-400">{error}</p>
             <button
               onClick={clearError}
@@ -327,7 +327,7 @@ export default function OrganizerDashboard() {
         )}
 
         {/* Content */}
-        <div className="pt-4 pb-12 px-8">
+        <div className="pt-4 pb-12 px-4 md:px-8">
           {activeTab === "dashboard" && (
             <DashboardTab
               onNavigateToEvents={() => setActiveTab("events")}

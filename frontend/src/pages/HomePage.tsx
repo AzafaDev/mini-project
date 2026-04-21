@@ -94,7 +94,7 @@ export default function KinetixEvents() {
     <div className="bg-[#131313] text-[#E5E2E1] font-sans selection:bg-[#c0c1ff] selection:text-[#1000a9] min-h-screen overflow-x-hidden">
       <main className="pt-16">
         {/* Hero Section with Animation */}
-        <section className="relative h-[450px] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[400px] md:h-[450px] flex items-center justify-center overflow-hidden">
           <motion.div
             initial={{ scale: 1.2, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.4 }}
@@ -109,11 +109,11 @@ export default function KinetixEvents() {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#131313]/60 to-[#131313]"></div>
           </motion.div>
 
-          <div className="relative z-10 text-center px-6 max-w-4xl">
-            <motion.h1
+           <div className="relative z-10 text-center px-4 md:px-6 max-w-4xl">
+             <motion.h1
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight text-white"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight mb-4 md:mb-6 leading-tight text-white"
             >
               Architect Your{" "}
               <span className="text-[#c0c1ff] italic">Moment</span>.
@@ -122,23 +122,29 @@ export default function KinetixEvents() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="flex flex-col gap-3 items-center bg-[#2a2a2a]/80 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-white/10 max-w-lg mx-auto"
+              className="flex flex-col gap-2 md:gap-3 items-center bg-[#2a2a2a]/80 backdrop-blur-md p-4 md:p-6 rounded-xl shadow-2xl border border-white/10 w-full max-w-lg mx-auto"
             >
-              <input
-                onChange={handleSearchChange}
-                className="bg-[#1c1b1b] border border-white/10 rounded-lg px-4 py-3 w-full text-white outline-none focus:border-[#c0c1ff] transition-colors"
-                placeholder="Search event title..."
-                type="text"
-                value={searchQuery}
-              />
-              <input
-                onChange={(e) => setLocationQuery(e.target.value)}
-                className="bg-[#1c1b1b] border border-white/10 rounded-lg px-4 py-3 w-full text-white outline-none focus:border-[#c0c1ff] transition-colors"
-                placeholder="Filter by location..."
-                type="text"
-                value={locationQuery}
-              />
-              <button className="bg-[#c0c1ff] text-[#1000a9] font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all w-full">
+              <div className="relative w-full">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#c7c4d8] text-xl">search</span>
+                <input
+                  onChange={handleSearchChange}
+                  className="bg-[#1c1b1b] border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white text-sm md:text-base outline-none focus:border-[#c0c1ff] transition-colors"
+                  placeholder="Search event title..."
+                  type="text"
+                  value={searchQuery}
+                />
+              </div>
+              <div className="relative w-full">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#c7c4d8] text-xl">location_on</span>
+                <input
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  className="bg-[#1c1b1b] border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white text-sm md:text-base outline-none focus:border-[#c0c1ff] transition-colors"
+                  placeholder="Filter by location..."
+                  type="text"
+                  value={locationQuery}
+                />
+              </div>
+              <button className="bg-[#c0c1ff] text-[#1000a9] font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all w-full text-sm md:text-base">
                 <span className="material-symbols-outlined">search</span> Search Events
               </button>
             </motion.div>
@@ -146,20 +152,20 @@ export default function KinetixEvents() {
         </section>
 
         {/* Interactive Category Filters */}
-        <section className="px-8 mb-12 mt-8 relative z-20 flex justify-center">
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide no-scrollbar">
+        <section className="px-4 md:px-8 mb-12 mt-8 relative z-20">
+          <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 no-scrollbar justify-start md:justify-center -mx-4 px-4 md:mx-0 md:px-0 scroll-pl-4 snap-x snap-mandatory">
             {categories.map((cat) => (
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 key={cat.label}
                 onClick={() => setActiveCategory(cat.label)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium whitespace-nowrap transition-all duration-300 ${
+                className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-medium whitespace-nowrap transition-all duration-300 text-sm md:text-base snap-always ${
                   activeCategory === cat.label
                     ? "bg-[#c0c1ff] text-[#1000a9] shadow-[0_0_20px_rgba(192,193,255,0.4)]"
                     : "bg-[#2a2a2a] hover:bg-[#393939] text-[#c7c4d8] hover:text-white"
                 }`}
               >
-                <span className="material-symbols-outlined text-xl">
+                <span className="material-symbols-outlined text-lg md:text-xl">
                   {cat.icon}
                 </span>{" "}
                 {cat.label}
@@ -169,7 +175,7 @@ export default function KinetixEvents() {
         </section>
 
         {/* Dynamic Events Grid */}
-        <section className="px-8 pb-24 max-w-[1440px] mx-auto">
+        <section className="px-4 md:px-8 pb-24 max-w-[1440px] mx-auto">
           <div className="flex items-end justify-between mb-10">
             <div>
               <span className="text-[#c0c1ff] font-bold tracking-widest text-xs uppercase mb-2 block">
@@ -217,7 +223,7 @@ export default function KinetixEvents() {
           {!loading && !error && (
             <motion.div
               layout
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 min-h-[400px]"
             >
               <AnimatePresence mode="popLayout">
                 {filteredEvents.length > 0 ? (

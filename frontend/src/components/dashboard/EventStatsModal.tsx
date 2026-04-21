@@ -37,8 +37,8 @@ export function EventStatsModal({
   const soldPercentage = totalSeats > 0 ? (ticketsSold / totalSeats) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1C1B1B] rounded-lg w-full max-w-md border border-[#464555]/10">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4">
+      <div className="bg-[#1C1B1B] rounded-lg w-full max-w-md max-h-[90vh] flex flex-col border border-[#464555]/10">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#464555]/10">
           <div>
@@ -55,7 +55,7 @@ export function EventStatsModal({
 
         {/* Content */}
         {loadingEventStats ? (
-          <div className="p-6">
+          <div className="p-6 flex-shrink-0">
             <div className="animate-pulse space-y-4">
               <div className="h-20 bg-[#2A2A2A] rounded-lg"></div>
               <div className="h-20 bg-[#2A2A2A] rounded-lg"></div>
@@ -63,7 +63,7 @@ export function EventStatsModal({
             </div>
           </div>
         ) : (
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Total Revenue */}
             <div className="bg-[#2A2A2A] rounded-lg p-4">
               <div className="flex items-center gap-3 mb-2">
@@ -130,7 +130,7 @@ export function EventStatsModal({
         )}
 
         {/* Footer */}
-        <div className="p-6 border-t border-[#464555]/10">
+        <div className="p-6 border-t border-[#464555]/10 flex-shrink-0">
           <button
             onClick={onClose}
             className="w-full py-3 bg-[#353534] hover:bg-[#393939] rounded-lg font-medium transition-colors"

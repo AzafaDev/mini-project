@@ -15,7 +15,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   iconColor,
 }) => (
-  <div className="p-6 bg-[#1C1B1B] rounded-lg">
+  <div className="p-4 md:p-6 bg-[#1C1B1B] rounded-lg">
     <div
       className={`w-10 h-10 rounded flex items-center justify-center mb-4`}
       style={{ backgroundColor: `${iconColor}1A` }}
@@ -27,7 +27,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     <span className="text-on-surface-variant text-xs uppercase tracking-widest">
       {label}
     </span>
-    <p className="text-2xl font-bold text-on-surface mt-1">{value}</p>
+    <p className="text-xl md:text-2xl font-bold text-on-surface mt-1">{value}</p>
     {trend && (
       <div className="mt-4 flex items-center gap-1 text-[10px] text-on-surface-variant font-medium">
         <span className="material-symbols-outlined text-[12px]">

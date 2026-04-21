@@ -1,20 +1,23 @@
 import { motion } from "framer-motion";
 import { useAuthStore } from "../stores/useAuthStore";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
+    setIsMobileMenuOpen(false);
   };
 
   return (
     <header className="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all duration-200">
-      <div className="flex items-center justify-between px-8 h-16 w-full max-w-[1440px] mx-auto">
-        <div className="flex items-center gap-8">
+      <div className="flex items-center justify-between px-4 md:px-8 h-16 w-full max-w-[1440px] mx-auto">
+        <div className="flex items-center gap-6">
           <Link to="/">
             <motion.span
               initial={{ opacity: 0, x: -20 }}
@@ -53,10 +56,18 @@ const Navbar = () => {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {/* Dropdown menu with links */}
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden text-white p-2"
+            >
+              <span className="material-symbols-outlined text-2xl">
+                {isMobileMenuOpen ? "close" : "menu"}
+              </span>
+            </button>
 
             {!isAuthenticated ? (
-              <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <Link
                   to="/login"
                   className="text-[#C7C4D8] text-sm font-medium hover:text-white px-4"
@@ -64,7 +75,7 @@ const Navbar = () => {
                   Login
                 </Link>
                 <Link to="/register">
-                  <button className="bg-[#E5E2E1] text-[#131313] px-5 py-2 text-sm font-bold rounded-lg hover:bg-white transition-all">
+                  <button className="bg-[#E5E2E1] text-[#131313] px-5 py-2 text-sm font-bold rounded-lg hover:bg-white transition-all min-h-[48px]">
                     Register
                   </button>
                 </Link>
@@ -102,7 +113,7 @@ const Navbar = () => {
                     {user?.role === "ORGANIZER" && (
                       <Link
                         to="/dashboard"
-                        className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2 min-h-[48px]"
                       >
                         <span className="material-symbols-outlined text-sm">
                           dashboard
@@ -114,7 +125,7 @@ const Navbar = () => {
                     {/* Profile */}
                     <Link
                       to="/profile"
-                      className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2 min-h-[48px]"
                     >
                       <span className="material-symbols-outlined text-sm">
                         person
@@ -125,7 +136,7 @@ const Navbar = () => {
                     {/* My Tickets */}
                     <Link
                       to="/my-tickets"
-                      className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2 min-h-[48px]"
                     >
                       <span className="material-symbols-outlined text-sm">
                         confirmation_number
@@ -136,7 +147,7 @@ const Navbar = () => {
                     {/* History */}
                     <Link
                       to="/my-transactions"
-                      className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2 min-h-[48px]"
                     >
                       <span className="material-symbols-outlined text-sm">
                         history
@@ -148,7 +159,7 @@ const Navbar = () => {
 
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 min-h-[48px]"
                     >
                       <span className="material-symbols-outlined text-sm">
                         logout
@@ -162,6 +173,87 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Drawer */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-[#131313] border-t border-white/5 shadow-2xl">
+          <div className="px-4 py-4 space-y-2">
+            <Link
+              to="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-lg min-h-[48px]"
+            >
+              <span className="material-symbols-outlined">search</span>
+              Discover
+            </Link>
+            
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/my-tickets"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-lg min-h-[48px]"
+                >
+                  <span className="material-symbols-outlined">confirmation_number</span>
+                  My Tickets
+                </Link>
+                <Link
+                  to="/my-transactions"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-lg min-h-[48px]"
+                >
+                  <span className="material-symbols-outlined">history</span>
+                  History
+                </Link>
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-lg min-h-[48px]"
+                >
+                  <span className="material-symbols-outlined">person</span>
+                  Profile
+                </Link>
+                
+                {user?.role === "ORGANIZER" && (
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-[#C7C4D8] hover:bg-[#2A2A2A] rounded-lg min-h-[48px]"
+                  >
+                    <span className="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                  </Link>
+                )}
+                
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg min-h-[48px]"
+                >
+                  <span className="material-symbols-outlined">logout</span>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <div className="pt-4 border-t border-white/5 space-y-2">
+                <Link
+                  to="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center px-4 py-3 text-[#E5E2E1] rounded-lg min-h-[48px]"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center bg-[#E5E2E1] text-[#131313] font-bold px-4 py-3 rounded-lg min-h-[48px]"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };
