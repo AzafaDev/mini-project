@@ -8,8 +8,7 @@
     },
     "backend": {
       "entrypoint": "backend",
-      "routePrefix": "/api",
-      "stripRoutePrefix": false
+      "routePrefix": "/api"
     }
   }
 }
