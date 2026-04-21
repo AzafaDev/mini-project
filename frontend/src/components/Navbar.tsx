@@ -52,17 +52,6 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden lg:flex items-center bg-[#0e0e0e] px-4 py-1.5 rounded-lg border border-[#464555]/15 focus-within:border-[#c0c1ff]/50 transition-all">
-            <span className="material-symbols-outlined text-[#c7c4d8] text-lg">
-              search
-            </span>
-            <input
-              className="bg-transparent border-none focus:ring-0 text-sm w-48 text-[#e5e2e1] outline-none ml-2"
-              placeholder="Search events..."
-              type="text"
-            />
-          </div>
-
           <div className="flex items-center gap-2">
             {/* Dropdown menu with links */}
 
@@ -82,12 +71,6 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <button className="p-2 hover:bg-[#2A2A2A] rounded-full transition-all text-[#C7C4D8] relative">
-                  <span className="material-symbols-outlined">
-                    notifications
-                  </span>
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#131313]"></span>
-                </button>
 
                 <div className="group relative">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#4b4dd8] to-[#c0c1ff] p-[2px] cursor-pointer">

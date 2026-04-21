@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { getErrorMessage } from "../lib/error";
 import {
   eventService,
   reviewsVouchersService,
@@ -136,9 +137,9 @@ export const useEventStore = create<EventStore>((set, get) => ({
           location: params.location,
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({
-        error: error.message || "Failed to fetch events",
+        error: getErrorMessage(error) || "Failed to fetch events",
         loading: false,
       });
     }
