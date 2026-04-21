@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useFormik } from "formik";
 import { useEventStore } from "../stores/useEventStore";
 import { useToastStore } from "../stores/useToastStore";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { updateEventSchema } from "../validation/eventSchemas";
 
 const CATEGORIES = [
   "Conference",
@@ -22,15 +24,24 @@ export default function EditEventPage() {
   const { updateEvent, loadingEventAction, error, clearError } = useEventStore();
   const { addToast } = useToastStore();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    location: "",
-    category: "",
-    startDate: "",
-    endDate: "",
-    totalSeats: 100,
-    price: 0,
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      description: "",
+      location: "",
+      category: "",
+      startDate: "",
+      endDate: "",
+      totalSeats: 100,
+      price: 0,
+    },
+    validationSchema: updateEventSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: async (values) => {
+      setLocalError(null);
+      setIsConfirmDialogOpen(true);
+    },
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -47,7 +58,7 @@ export default function EditEventPage() {
       const event = await fetchEventById(id);
       
       if (event) {
-        setFormData({
+        formik.setValues({
           name: event.name,
           description: event.description,
           location: event.location,
@@ -65,17 +76,9 @@ export default function EditEventPage() {
     };
 
     fetchEvent();
-  }, [id]);
+  }, [id, formik.setValues]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "totalSeats" || name === "price" ? Number(value) : value,
-    }));
-  };
+
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,52 +92,21 @@ export default function EditEventPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Validate before submit
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
     clearError();
 
-    // Validation
-    if (!formData.name.trim()) {
-      setLocalError("Event name is required");
-      return;
-    }
-    if (!formData.description.trim()) {
-      setLocalError("Description is required");
-      return;
-    }
-    if (!formData.location.trim()) {
-      setLocalError("Location is required");
-      return;
-    }
-    if (!formData.category) {
-      setLocalError("Category is required");
-      return;
-    }
-    if (!formData.startDate || !formData.endDate) {
-      setLocalError("Start and end dates are required");
-      return;
-    }
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-      setLocalError("End date must be after start date");
-      return;
-    }
-    if (formData.totalSeats < 1) {
-      setLocalError("Total seats must be at least 1");
-      return;
-    }
-    if (formData.price < 0) {
-      setLocalError("Price cannot be negative");
-      return;
+    // Validate date range
+    if (formik.values.startDate && formik.values.endDate) {
+      if (new Date(formik.values.startDate) >= new Date(formik.values.endDate)) {
+        setLocalError("End date must be after start date");
+        return;
+      }
     }
 
-    if (!id) {
-      setLocalError("Event ID is missing");
-      return;
-    }
-
-    // Show confirmation dialog instead of directly updating
-    setIsConfirmDialogOpen(true);
+    formik.handleSubmit();
   };
 
   const handleConfirmSave = async () => {
@@ -142,7 +114,7 @@ export default function EditEventPage() {
     
     try {
       const result = await updateEvent(id, {
-        ...formData,
+        ...formik.values,
         imageFile: imageFile || undefined,
       });
 
@@ -202,8 +174,8 @@ export default function EditEventPage() {
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+         {/* Form */}
+        <form onSubmit={handleFormSubmit} className="space-y-8">
           {/* Image Upload */}
           <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
             <h3 className="text-lg font-bold mb-4">Event Image</h3>
@@ -250,8 +222,8 @@ export default function EditEventPage() {
                 <input
                   type="text"
                   name="name"
-                  value={formData.name}
-                  onChange={handleChange}
+                  value={formik.values.name}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   placeholder="Enter event name"
                   className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
                 />
@@ -263,8 +235,8 @@ export default function EditEventPage() {
                 </label>
                 <textarea
                   name="description"
-                  value={formData.description}
-                  onChange={handleChange}
+                  value={formik.values.description}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   placeholder="Describe your event..."
                   rows={4}
                   className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors resize-none"
@@ -277,8 +249,8 @@ export default function EditEventPage() {
                 </label>
                 <select
                   name="category"
-                  value={formData.category}
-                  onChange={handleChange}
+                  value={formik.values.category}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
                 >
                   <option value="">Select category</option>
@@ -297,8 +269,8 @@ export default function EditEventPage() {
                 <input
                   type="text"
                   name="location"
-                  value={formData.location}
-                  onChange={handleChange}
+                  value={formik.values.location}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   placeholder="Enter location"
                   className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
                 />
@@ -317,8 +289,8 @@ export default function EditEventPage() {
                 <input
                   type="datetime-local"
                   name="startDate"
-                  value={formData.startDate}
-                  onChange={handleChange}
+                  value={formik.values.startDate}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
                 />
               </div>
@@ -330,8 +302,8 @@ export default function EditEventPage() {
                 <input
                   type="datetime-local"
                   name="endDate"
-                  value={formData.endDate}
-                  onChange={handleChange}
+                  value={formik.values.endDate}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
                 />
               </div>
@@ -349,8 +321,8 @@ export default function EditEventPage() {
                 <input
                   type="number"
                   name="totalSeats"
-                  value={formData.totalSeats}
-                  onChange={handleChange}
+                  value={formik.values.totalSeats}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   min={1}
                   placeholder="100"
                   className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
@@ -364,8 +336,8 @@ export default function EditEventPage() {
                 <input
                   type="number"
                   name="price"
-                  value={formData.price}
-                  onChange={handleChange}
+                  value={formik.values.price}
+                  onChange={formik.handleChange} onBlur={formik.handleBlur}
                   min={0}
                   step={0.01}
                   placeholder="0.00"
@@ -410,7 +382,7 @@ export default function EditEventPage() {
           onClose={() => setIsConfirmDialogOpen(false)}
           onConfirm={handleConfirmSave}
           title="Save Changes"
-          message={`Are you sure you want to save changes to "${formData.name}"? This action cannot be undone.`}
+          message={`Are you sure you want to save changes to "${formik.values.name}"? This action cannot be undone.`}
           confirmText="Save"
           cancelText="Cancel"
         />
