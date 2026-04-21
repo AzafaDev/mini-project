@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TransactionStatus } from "../../../generated/prisma/enums";
 
 export const createTransactionSchema = z.object({
   body: z.object({
@@ -16,14 +17,7 @@ export const createTransactionSchema = z.object({
 
 export const updateTransactionStatusSchema = z.object({
   body: z.object({
-    status: z.enum([
-      "WAITING_PAYMENT",
-      "WAITING_CONFIRMATION",
-      "DONE",
-      "REJECTED",
-      "EXPIRED",
-      "CANCELED",
-    ]),
+    status: z.nativeEnum(TransactionStatus),
   }),
 });
 

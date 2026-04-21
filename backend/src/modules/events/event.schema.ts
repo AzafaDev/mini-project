@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { TicketType } from "../../../generated/prisma/enums";
 
 const ticketSchema = z.object({
-  type: z.enum(["GENERAL", "VIP"]),
+  type: z.nativeEnum(TicketType),
   price: z.coerce.number().min(0, "Price must be non-negative"),
   quantity: z.coerce
     .number()
