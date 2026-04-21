@@ -10,7 +10,10 @@ import {
   restoreCoupon,
 } from "../../utils/transactionHelpers";
 import { AppError } from "../../utils/AppError";
-import { calculateDiscount } from "../../utils/discountEngine";
+import { discountCalculatorService } from "../discount/discount-calculator.service";
+import { voucherService } from "../discount/voucher.service";
+import { couponService } from "../discount/coupon.service";
+import { ticketPricingService } from "./ticket-pricing.service";
 import {
   TRANSACTION_EXPIRATION_HOURS,
   TRANSACTION_AUTO_CANCEL_DAYS,
@@ -152,7 +155,7 @@ export const transactionService = {
 
       if (voucher) {
         voucherId = voucher.id;
-        const calculatedDiscount = calculateDiscount(
+        const calculatedDiscount = discountCalculatorService.calculateDiscount(
           ticket.price,
           quantity,
           voucher.discountType as DiscountType,
@@ -205,7 +208,7 @@ export const transactionService = {
         }
 
         couponId = coupon.id;
-        const calculatedDiscount = calculateDiscount(
+        const calculatedDiscount = discountCalculatorService.calculateDiscount(
           ticket.price,
           quantity,
           coupon.discountType as DiscountType,
@@ -222,8 +225,13 @@ export const transactionService = {
       }
     }
 
-    const totalPrice = ticket.price * quantity;
-    const finalPrice = Math.max(0, totalPrice - discount - pointsUsed);
+    const pricing = ticketPricingService.calculateFinalPrice(
+      ticket.price * quantity,
+      discount,
+      pointsUsed
+    );
+    const totalPrice = pricing.totalPrice;
+    const finalPrice = pricing.finalPrice;
 
     console.log("[DEBUG Transaction Service] pricing:", {
       totalPrice,
@@ -699,8 +707,10 @@ export const transactionService = {
       throw new AppError("Invalid transaction status", 400);
     }
 
-    const earnedPoints = Math.floor(
-      transaction.finalPrice * POINTS_EARNED_MULTIPLIER,
+    const earnedPoints = ticketPricingService.calculateEarnedPoints(
+      transaction.finalPrice,
+      POINTS_EARNED_MULTIPLIER,
+      MAX_POINTS_PER_TRANSACTION
     );
 
     console.log("[DEBUG Transaction Service] earned points calculation:", {

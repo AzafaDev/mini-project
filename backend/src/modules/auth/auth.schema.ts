@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Role } from "../../../generated/prisma/enums";
 
 // Register validation schema
 export const registerSchema = z.object({
@@ -7,10 +8,9 @@ export const registerSchema = z.object({
     password: z.string().min(8, "Password must be at least 8 characters"),
     fullName: z.string().min(1, "Full name is required"),
     phoneNumber: z.string().optional(),
-    role: z.enum(
-      ["CUSTOMER", "ORGANIZER"],
-      "Role must be CUSTOMER or ORGANIZER",
-    ),
+    role: z.nativeEnum(Role, {
+      message: "Role must be CUSTOMER or ORGANIZER",
+    }),
     referrerCode: z.string().optional(),
   }),
 });
