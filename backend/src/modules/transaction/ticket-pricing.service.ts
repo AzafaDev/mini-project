@@ -40,7 +40,8 @@ class TicketPricingService {
     const totalPrice = ticketPrice * quantity;
     const totalDiscount = voucherDiscount + couponDiscount;
 
-    // Pastikan total diskon tidak melebihi total harga
+    // Diskon tidak boleh lebih besar dari total harga
+    // User tidak bisa mendapatkan harga minus meskipun total diskon lebih besar
     return Math.min(totalDiscount, totalPrice);
   }
 
@@ -60,6 +61,8 @@ class TicketPricingService {
     pointsUsed: number;
     finalPrice: number;
   } {
+    // Harga final tidak boleh kurang dari 0 (tidak bisa minus)
+    // Ini adalah batas bawah agar user tidak dibayar untuk membeli tiket
     const finalPrice = Math.max(0, basePrice - totalDiscount - pointsUsed);
 
     return {
@@ -82,6 +85,8 @@ class TicketPricingService {
     maxPoints: number
   ): number {
     const earnedPoints = Math.floor(finalPrice * multiplier);
+    // Batasi maksimal poin yang bisa didapatkan per transaksi
+    // Mencegah user mendapatkan poin berlebihan dari transaksi mahal
     return Math.min(earnedPoints, maxPoints);
   }
 

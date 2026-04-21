@@ -8,13 +8,17 @@ export interface UploadOptions {
   maxSize?: number;
 }
 
+// Tipe file gambar yang diizinkan untuk upload
 const DEFAULT_ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
 ];
+// Batas maksimal ukuran file 25MB
 const DEFAULT_MAX_SIZE = 25 * 1024 * 1024;
+
+// Handle validasi dan upload file ke Cloudinary
 export const handleFileUpload = async (
   file: UploadedFile,
   options: UploadOptions,
@@ -24,6 +28,7 @@ export const handleFileUpload = async (
   const allowedTypes = options.allowedTypes || DEFAULT_ALLOWED_TYPES;
   const maxSize = options.maxSize || DEFAULT_MAX_SIZE;
 
+  // Validasi tipe file yang diizinkan
   if (!allowedTypes.includes(file.mimetype)) {
     console.log("[DEBUG handleFileUpload] invalid file type:", file.mimetype);
     throw new AppError(
@@ -32,6 +37,7 @@ export const handleFileUpload = async (
     );
   }
 
+  // Validasi ukuran file tidak melebihi batas
   if (file.size > maxSize) {
     console.log("[DEBUG handleFileUpload] file too large:", file.size);
     throw new AppError(

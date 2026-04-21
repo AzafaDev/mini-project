@@ -1,10 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 
-/**
- * Wrapper untuk async function di controller
- * SEMUA controller WAJIB menggunakan ini, JANGAN buat try-catch manual di controller
- * Error akan otomatis diteruskan ke error handler middleware
- */
+// Wrapper high order function untuk menangkap error dari async function
+// Mencegah unhandled promise rejection di controller
+// Semua error otomatis diteruskan ke global error handler
 export const catchAsync = <T extends Request = Request>(
   fn: (req: T, res: Response, next: NextFunction) => Promise<void>
 ) => {

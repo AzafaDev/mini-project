@@ -72,6 +72,11 @@ export async function restoreCoupon(tx: any, { couponId }: Pick<RestoreResources
  * is rejected, expired, or canceled.
  */
 export async function restoreAllResources(tx: any, params: RestoreResourcesParams) {
+  // Semua operasi restore dijalankan paralel dengan Promise.all
+  // Alasannya:
+  // 1. Tidak ada dependensi antar operasi restore
+  // 2. Lebih cepat daripada await satu-satu secara sequential
+  // 3. Semua tetap berjalan dalam satu atomic transaction
   await Promise.all([
     restoreTicketAvailability(tx, params),
     restoreUserPoints(tx, params),

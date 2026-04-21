@@ -19,6 +19,7 @@ type TransactionEmail = {
 console.log("[DEBUG sendEmail] Utility loaded");
 
 export const sendEmail = {
+  // Kirim email verifikasi akun
   verificationEmail: async ({ email, token, username }: VerificatonEmail) => {
     console.log("[DEBUG sendEmail] verificationEmail sending to:", email, "username:", username);
 
@@ -39,9 +40,11 @@ export const sendEmail = {
     console.log("[DEBUG sendEmail] verificationEmail success, messageId:", data?.id);
   },
 
+  // Kirim email link reset password
   resetPassword: async ({ email, token, username }: VerificatonEmail) => {
     console.log("[DEBUG sendEmail] resetPassword sending to:", email, "username:", username);
 
+    // Build URL reset password yang akan dikirim ke email user
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     const html = renderTemplate("reset-password", { resetUrl, username });
 
@@ -60,6 +63,7 @@ export const sendEmail = {
     console.log("[DEBUG sendEmail] resetPassword success, messageId:", data?.id);
   },
 
+  // Kirim notifikasi transaksi diterima
   transactionAccepted: async ({ email, username, eventName, finalPrice, quantity }: TransactionEmail) => {
     console.log("[DEBUG sendEmail] transactionAccepted sending to:", email, "event:", eventName);
 
@@ -77,6 +81,7 @@ export const sendEmail = {
       html,
     });
 
+    // Jika gagal kirim email, jangan throw error agar transaksi tetap berhasil
     if (error) {
       console.log("[DEBUG sendEmail] transactionAccepted failed:", error);
     }
@@ -84,6 +89,7 @@ export const sendEmail = {
     console.log("[DEBUG sendEmail] transactionAccepted success, messageId:", data?.id);
   },
 
+  // Kirim notifikasi transaksi ditolak
   transactionRejected: async ({ email, username, eventName, finalPrice, quantity }: TransactionEmail) => {
     console.log("[DEBUG sendEmail] transactionRejected sending to:", email, "event:", eventName);
 
@@ -101,6 +107,7 @@ export const sendEmail = {
       html,
     });
 
+    // Jika gagal kirim email, jangan throw error agar transaksi tetap berhasil
     if (error) {
       console.log("[DEBUG sendEmail] transactionRejected failed:", error);
     }

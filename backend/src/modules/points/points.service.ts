@@ -1,5 +1,7 @@
 import { prisma } from "../../config/prisma";
 
+// Service untuk mengelola sistem poin user
+// Menangani riwayat poin, perhitungan poin aktif, dan pembersihan poin expired
 export const pointsService = {
   getPointsHistory: async ({
     userId,
@@ -34,6 +36,8 @@ export const pointsService = {
 
     const now = new Date();
 
+    // Hitung total poin yang sudah kadaluarsa
+    // Poin yang sudah expired tidak bisa digunakan lagi
     const expiredPoints = await prisma.pointTransaction.aggregate({
       where: {
         userId,
@@ -46,11 +50,15 @@ export const pointsService = {
 
     console.log("[DEBUG Points Service] expired points sum:", expiredPoints._sum.amount);
 
+    // Ambil semua transaksi poin yang masih aktif
+    // Poin dihitung dengan sistem FIFO: poin yang lebih dulu masuk akan lebih dulu expired
     const activeTransactions = await prisma.pointTransaction.findMany({
       where: {
         userId,
         expiresAt: { gt: now },
       },
+      // Diurutkan dari yang paling tua (sudah paling dekat expire)
+      orderBy: { expiresAt: 'asc' }
     });
 
     const activePoints = activeTransactions.reduce((sum, tx) => sum + tx.amount, 0);
@@ -77,6 +85,8 @@ export const pointsService = {
     return result._sum.amount || 0;
   },
 
+  // Menghapus semua poin yang sudah kadaluarsa dari database
+  // Dijalankan otomatis oleh cron job secara berkala
   cleanupExpiredPoints: async () => {
     console.log("[DEBUG Points Service] cleanupExpiredPoints called");
 

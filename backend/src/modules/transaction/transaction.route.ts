@@ -10,12 +10,7 @@ import {
 
 const transactionRouter = Router();
 
-/**
- * Transaction Routes
- * Handles all ticket purchase and payment flows
- */
-
-// Create new transaction - Customer buys tickets
+// Buat transaksi baru - User membeli tiket
 transactionRouter.post(
   "/",
   authMiddleware.verifyAuthToken,
@@ -23,14 +18,14 @@ transactionRouter.post(
   transactionController.createTransaction,
 );
 
-// Get my transactions - Customer views their transaction history
+// Ambil riwayat transaksi milik user yang login
 transactionRouter.get(
   "/me",
   authMiddleware.verifyAuthToken,
   transactionController.getMyTransactions,
 );
 
-// Get event transactions - Organizer views transactions for specific event
+// Ambil semua transaksi untuk event tertentu - Hanya organizer yang boleh
 transactionRouter.get(
   "/event/:eventId",
   authMiddleware.verifyAuthToken,
@@ -39,7 +34,7 @@ transactionRouter.get(
   transactionController.getEventTransactions,
 );
 
-// Get organizer transactions - Organizer views all their transactions
+// Ambil semua transaksi untuk semua event milik organizer
 transactionRouter.get(
   "/organizer",
   authMiddleware.verifyAuthToken,
@@ -47,21 +42,21 @@ transactionRouter.get(
   transactionController.getOrganizerTransactions,
 );
 
-// Get transaction by ID - View specific transaction details
+// Ambil detail transaksi berdasarkan ID
 transactionRouter.get(
   "/:id",
   authMiddleware.verifyAuthToken,
   transactionController.getTransactionById,
 );
 
-// Upload payment proof - Customer submits payment receipt
+// Upload bukti pembayaran
 transactionRouter.put(
   "/:id/payment-proof",
   authMiddleware.verifyAuthToken,
   transactionController.uploadPaymentProof,
 );
 
-// Accept transaction - Organizer confirms payment
+// Terima transaksi - Hanya organizer yang boleh
 transactionRouter.put(
   "/:id/accept",
   authMiddleware.verifyAuthToken,
@@ -69,7 +64,7 @@ transactionRouter.put(
   transactionController.acceptTransaction,
 );
 
-// Reject transaction - Organizer rejects payment
+// Tolak transaksi - Hanya organizer yang boleh
 transactionRouter.put(
   "/:id/reject",
   authMiddleware.verifyAuthToken,
@@ -77,7 +72,7 @@ transactionRouter.put(
   transactionController.rejectTransaction,
 );
 
-// Cancel transaction - Customer cancels before confirmation
+// Batalkan transaksi - User membatalkan sebelum dikonfirmasi
 transactionRouter.put(
   "/:id/cancel",
   authMiddleware.verifyAuthToken,

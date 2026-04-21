@@ -19,21 +19,12 @@ import {
 } from "../../utils/generateToken";
 import { sendEmail } from "../../utils/sendEmail";
 
-/**
- * Sanitizes email by trimming whitespace and converting to lowercase.
- * @param email - Raw email string from user input
- * @returns Sanitized email string
- */
+// Normalisasi email: hapus spasi dan ubah ke lowercase
+// Mencegah duplikasi user karena perbedaan case atau spasi
 const sanitizeEmail = (email: string): string => email.trim().toLowerCase();
 
-/**
- * Sends verification email and sets temporary token cookie for email verification flow.
- * This is used when user registers or tries to login with unverified account.
- * 
- * @param user - User object containing id, email, fullName, and verifyToken
- * @param res - Express response object
- * @returns Response with success message and requiresVerification flag
- */
+// Kirim email verifikasi dan set cookie token sementara
+// Digunakan untuk user yang belum verifikasi email
 const sendVerificationAndSetCookie = async (
   user: {
     id: string;
@@ -57,10 +48,12 @@ const sendVerificationAndSetCookie = async (
     console.error("CRITICAL: JWT_SECRET is undefined in .env");
   }
 
+  // Generate token sementara yang berlaku 30 menit
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
     expiresIn: "30m",
   });
 
+  // Set cookie temp_token dengan security flag
   res.cookie("temp_token", token, {
     maxAge: 30 * 60 * 1000,
     httpOnly: true,
@@ -105,15 +98,19 @@ export const authController = {
       referrerCode,
     }: AuthRegister = req.body;
 
+    // Normalisasi email sebelum dicek ke database
     const sanitizedEmail = sanitizeEmail(email);
 
+    // Upload profile picture jika ada
     const imageUrl = await getUploadUrl(req.files?.profilePicture as UploadedFile, "profile-picture");
 
+    // Cek apakah email sudah pernah terdaftar
     const existingUser = await prisma.user.findUnique({
       where: { email: sanitizedEmail },
     });
 
     if (existingUser) {
+      // Jika user sudah terverifikasi, email tidak bisa dipakai lagi
       if (existingUser.isVerified) {
         return res.status(409).json({
           success: false,
@@ -121,6 +118,7 @@ export const authController = {
         });
       }
 
+      // Jika user ada tapi belum verifikasi, update data dan kirim ulang verifikasi
       const newToken = generateVerificationCode();
       const updatedUser = await authService.rehashAndUpdateUser(
         existingUser.email,
@@ -145,6 +143,7 @@ export const authController = {
       );
     }
 
+    // Jika email baru, buat user baru
     const result = await authService.register({
       email: sanitizedEmail,
       password,
@@ -176,11 +175,14 @@ export const authController = {
    */
   verifyEmail: async (req: Request, res: Response) => {
     const { token }: VerifyEmail = req.body;
+    // Validasi format token minimal 6 digit
     if (!token.trim() || token.trim().length < 6) {
       return res.status(400).json({ success: false, message: "Token is required" });
     }
     const user = await authService.verifyEmail({ token });
+    // Generate token auth permanent
     generateTokenForAuth({ res, userId: user.id, userRole: user.role });
+    // Hapus cookie token sementara
     res.clearCookie("temp_token");
     res.status(200).json({ success: true, message: "Verify email successfully", user });
   },
@@ -357,6 +359,8 @@ export const authController = {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
     await authService.forgotPassword(sanitizeEmail(email));
+    // Selalu return pesan sukses meskipun email tidak ada
+    // Ini untuk keamanan: tidak memberitahu attacker apakah email terdaftar
     res.status(200).json({
       success: true,
       message: "If the email exists, a reset link has been sent",

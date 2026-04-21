@@ -22,10 +22,14 @@ class DiscountCalculatorService {
   ): number {
     const subtotal = basePrice * quantity;
 
+    // Untuk tipe persentase, hitung persentase dari subtotal
+    // Diskon tidak boleh melebihi subtotal total
     if (discountType === DiscountType.PERCENTAGE) {
       return Math.min((subtotal * discountValue) / 100, subtotal);
     }
 
+    // Untuk tipe fixed, langsung pakai nilai diskon
+    // Diskon tidak boleh melebihi subtotal total
     return Math.min(discountValue, subtotal);
   }
 
@@ -44,14 +48,17 @@ class DiscountCalculatorService {
   ): { valid: boolean; error?: string } {
     const now = new Date();
 
+    // Cek apakah diskon sudah mulai berlaku
     if (startDate > now) {
       return { valid: false, error: "Discount not yet active" };
     }
 
+    // Cek apakah diskon sudah kadaluarsa
     if (endDate < now) {
       return { valid: false, error: "Discount expired" };
     }
 
+    // Cek apakah batas penggunaan sudah tercapai
     if (maxUsage && usedCount && usedCount >= maxUsage) {
       return { valid: false, error: "Discount usage limit reached" };
     }

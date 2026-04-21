@@ -14,13 +14,8 @@ import { AppError } from "../../utils/AppError";
 const DISCOUNT_PERCENTAGE = 10;
 const REFERRAL_POINT = 10000;
 
-/**
- * Removes sensitive fields from user object before sending to client.
- * Strips: password, resetPasswordToken, resetPasswordTokenExpiresAt, verifyToken, verifyTokenExpiresAt
- * 
- * @param user - Full user object from database
- * @returns User object with sensitive fields removed
- */
+// Menghapus field sensitif dari object user sebelum dikirim ke client
+// Agar password, token, dan data sensitif tidak pernah keluar dari server
 const sanitizeUser = (user: any) => {
   const {
     password,
@@ -55,7 +50,8 @@ export const authService = {
     referrerCode,
     imageUrl,
   }: AuthRegister) => {
-    let referrer: { id: string } | null;
+    let referrer: { id: string } | null = null;
+    // Jika user memasukkan kode referral, validasi apakah kode tersebut valid
     if (referrerCode) {
       referrer = await prisma.user.findFirst({
         where: { referralCode: { equals: referrerCode, mode: "insensitive" } },
@@ -63,10 +59,15 @@ export const authService = {
       if (!referrer) throw new AppError("Invalid referral code", 409);
     }
 
+    // Generate kode verifikasi 6 digit untuk email
     const verifyToken = generateVerificationCode();
+    // Hash password sebelum disimpan ke database
     const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate kode referral unik untuk user baru
     const referralCode = await generateUniqueReferralCode();
 
+    // Semua operasi create user dan referral berjalan dalam satu atomic transaction
+    // Jika satu operasi gagal, SEMUA perubahan dibatalkan
     const result = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
@@ -79,11 +80,14 @@ export const authService = {
           referredBy: referrerCode || null,
           profilePicture: imageUrl,
           verifyToken: verifyToken,
+          // Token verifikasi berlaku selama 24 jam
           verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
 
+      // Jika ada referrer yang valid, berikan bonus referral
       if (referrer) {
+        // Buat record riwayat poin untuk referrer
         await tx.pointTransaction.create({
           data: {
             userId: referrer.id,
@@ -93,6 +97,7 @@ export const authService = {
           },
         });
 
+        // Buat coupon diskon untuk user baru
         const couponCode = crypto.randomBytes(4).toString("hex").toUpperCase();
         await tx.coupon.create({
           data: {
@@ -105,6 +110,7 @@ export const authService = {
           },
         });
 
+        // Tambahkan poin ke saldo referrer
         await tx.user.update({
           where: { id: referrer.id },
           data: {
@@ -165,12 +171,14 @@ export const authService = {
    * @returns Sanitized user object (without sensitive fields)
    */
   verifyEmail: async ({ token }: VerifyEmail) => {
+    // Cari user dengan token yang valid dan belum expired
     const userWithValidToken = await prisma.user.findFirst({
       where: { verifyToken: token, verifyTokenExpiresAt: { gt: new Date() } },
     });
     if (!userWithValidToken) {
       throw new AppError("Invalid or expired token", 400);
     }
+    // Tandai user sebagai terverifikasi dan hapus token verifikasi
     const updatedUser = await prisma.user.update({
       where: { id: userWithValidToken.id },
       data: {
@@ -219,6 +227,7 @@ export const authService = {
    * @returns Object with user data and requiresVerification flag
    */
   login: async ({ email, password }: Login) => {
+    // Cari user berdasarkan email
     const user = await prisma.user.findUnique({ 
       where: { email },
       include: { ownedCoupons: true }
@@ -226,10 +235,12 @@ export const authService = {
 
     if (!user) throw new AppError("Invalid email or password", 401);
 
+    // Bandingkan password input dengan hash yang tersimpan di database
     const isCorrectPassword = await bcrypt.compare(password, user.password);
     if (!isCorrectPassword)
       throw new AppError("Invalid email or password", 401);
 
+    // Jika user belum verifikasi email, generate token baru dan minta verifikasi
     if (!user.isVerified) {
       const newVerifyToken = generateVerificationCode();
       await prisma.user.update({
@@ -352,12 +363,17 @@ export const authService = {
    */
   forgotPassword: async (email: string) => {
     const user = await prisma.user.findUnique({ where: { email } });
+    // Jika email tidak ditemukan, return diam-diam
+    // Ini untuk keamanan: tidak memberitahu attacker apakah email terdaftar atau tidak
     if (!user) return;
+    
+    // Generate token reset password yang unik
     const resetToken = crypto.randomBytes(32).toString("hex");
     await prisma.user.update({
       where: { id: user.id },
       data: {
         resetPasswordToken: resetToken,
+        // Token reset password hanya berlaku 15 menit demi keamanan
         resetPasswordTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
@@ -382,6 +398,7 @@ export const authService = {
     token: string;
     newPassword: string;
   }) => {
+    // Cari user dengan token reset password yang valid dan belum expired
     const user = await prisma.user.findFirst({
       where: {
         resetPasswordToken: token,
@@ -389,10 +406,13 @@ export const authService = {
       },
     });
     if (!user) throw new AppError("Invalid or expired token", 400);
+    
+    // Hash password baru sebelum disimpan
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
+        // Hapus token reset password agar tidak bisa dipakai lagi
         resetPasswordToken: null,
         resetPasswordTokenExpiresAt: null,
         password: hashedPassword,

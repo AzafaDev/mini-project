@@ -22,6 +22,9 @@ import {
 } from "../../config/constants";
 import { pointsService } from "../points/points.service";
 
+// Service utama untuk mengelola seluruh alur transaksi
+// Menggunakan atomic transaction untuk menjaga integritas data
+// Semua operasi database berjalan sebagai satu kesatuan: semua berhasil atau semua gagal
 export const transactionService = {
   createTransaction: async ({
     userId,
@@ -64,7 +67,8 @@ export const transactionService = {
       throw new AppError("Points used cannot be negative", 400);
     }
 
-    // Check for existing PENDING transaction within last 5 minutes (idempotency)
+    // Cek apakah ada transaksi pending yang sama dalam 5 menit terakhir
+    // Ini mencegah user yang double klik create transaksi berkali-kali
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const existingPending = await prisma.transaction.findFirst({
       where: {
@@ -94,7 +98,8 @@ export const transactionService = {
       throw new AppError("Event not found", 404);
     }
 
-    // Prevent organizer from buying their own event
+    // Organizer tidak diperbolehkan membeli tiket event mereka sendiri
+    // Mencegah manipulasi statistik dan penjualan palsu
     if (event.organizerId === userId) {
       console.log("[DEBUG Transaction Service] Organizer attempted to buy their own event:", {
         userId,
@@ -253,20 +258,22 @@ export const transactionService = {
       autoCancelAt,
     );
 
+    // Atomic transaction: semua operasi di dalam ini berjalan sebagai satu kesatuan
+    // Jika ada satu operasi gagal, SEMUA perubahan otomatis di-rollback
+    // Mencegah race condition dan memastikan integritas data selalu terjaga
     return prisma.$transaction(async (tx) => {
       console.log("[DEBUG Transaction Service] creating transaction in DB");
 
-      // ==================== POINT DEDUCTION LOGIC ====================
       if (pointsUsed > 0) {
-        // 1. Calculate active points (non-expired)
+        // Hitung total poin yang masih aktif dan belum expired
         const activePoints = await pointsService.getActivePointsTx(tx, userId);
 
-        // 2. Validate sufficient balance
+        // Pastikan user punya poin yang cukup untuk digunakan
         if (pointsUsed > activePoints) {
           throw new AppError("Insufficient points balance", 400);
         }
 
-        // 3. Validate max points per transaction
+        // Batasi maksimal poin yang bisa dipakai per transaksi
         if (pointsUsed > MAX_POINTS_PER_TRANSACTION) {
           throw new AppError(
             `Maximum points per transaction is ${MAX_POINTS_PER_TRANSACTION}`,
@@ -274,8 +281,9 @@ export const transactionService = {
           );
         }
 
-        // 4. Deduct points using conditional update (prevents negative balance)
-        // Using updateMany with condition to ensure atomic check-and-update
+        // Deduct poin dengan operasi atomic di level database
+        // Menggunakan updateMany dengan kondisi untuk mencegah negative balance
+        // Tidak ada celah race condition antara cek dan update
         const updateResult = await tx.user.updateMany({
           where: { 
             id: userId,
@@ -284,13 +292,13 @@ export const transactionService = {
           data: { points: { decrement: pointsUsed } },
         });
 
+        // Jika tidak ada baris yang terupdate, berarti poin tidak cukup
         if (updateResult.count === 0) {
           throw new AppError("Failed to deduct points: insufficient balance or user not found", 400);
         }
 
         console.log("[DEBUG Transaction Service] points deducted:", pointsUsed, "remaining active:", activePoints - pointsUsed);
       }
-      // ================================================================
 
       const transaction = await tx.transaction.create({
         data: {
@@ -330,24 +338,29 @@ export const transactionService = {
         transaction.id,
       );
 
+      // Cek dan update ketersediaan tiket dalam satu operasi atomic
+      // Semua operasi ini berjalan di level database
+      // Tidak ada celah waktu antara cek ketersediaan dan update
+      // Sehingga dua user tidak bisa mendapatkan tiket yang sama secara bersamaan
       try {
         if (ticketId === "default-ticket") {
+          // Untuk tiket default, kurangi availableSeats di event
           await tx.event.update({
             where: { id: eventId },
             data: { availableSeats: { decrement: quantity } },
           });
         } else {
-          // Atomic update with availability check - prevents race condition
+          // Untuk tiket custom, kurangi available di ticket dengan pengecekan di database
           await tx.ticket.update({
             where: { 
               id: ticketId,
-              available: { gte: quantity } // DB only updates if sufficient
+              available: { gte: quantity }
             },
             data: { available: { decrement: quantity } },
           });
         }
       } catch (error: any) {
-        // Prisma P2025 = Record to update not found (not enough tickets)
+        // Error code P2025 = record tidak ditemukan / kondisi tidak terpenuhi
         if (error.code === "P2025") {
           throw new AppError("Not enough tickets available", 400);
         }
@@ -387,6 +400,8 @@ export const transactionService = {
     const txStatus = transaction.status as TransactionStatus;
     const txId = transaction.id as string;
 
+    // Cek apakah transaksi sudah melewati waktu kadaluarsa
+    // Hanya berlaku untuk transaksi yang masih menunggu pembayaran
     const shouldExpire =
       txStatus === TransactionStatus.WAITING_PAYMENT &&
       new Date() > transaction.expiresAt;
@@ -400,6 +415,7 @@ export const transactionService = {
       transaction.expiresAt,
     );
 
+    // Jika sudah expired, otomatis jalankan expire logic dan kembalikan status terbaru
     if (shouldExpire) {
       console.log(
         "[DEBUG Transaction Service] transaction expired, expiring...",
@@ -410,6 +426,8 @@ export const transactionService = {
       return expiredTx;
     }
 
+    // Cek apakah transaksi menunggu konfirmasi terlalu lama
+    // Auto cancel setelah waktu yang ditentukan jika organizer tidak merespon
     const shouldCancel =
       txStatus === TransactionStatus.WAITING_CONFIRMATION &&
       transaction.autoCancelAt != null &&
@@ -422,6 +440,7 @@ export const transactionService = {
       transaction.autoCancelAt,
     );
 
+    // Jika sudah lewat batas waktu, otomatis batalkan transaksi
     if (shouldCancel) {
       console.log("[DEBUG Transaction Service] transaction auto-canceling...");
       const canceledTx = await transactionService.cancelTransaction({
@@ -817,6 +836,9 @@ export const transactionService = {
       throw new AppError("Invalid transaction status", 400);
     }
 
+    // Semua operasi rollback berjalan sebagai satu kesatuan atomic
+    // Jika satu gagal, SEMUA perubahan rollback otomatis
+    // Tidak ada kondisi setengah selesai: semua resource dikembalikan atau tidak sama sekali
     const result = await prisma.$transaction(async (tx) => {
       console.log("[DEBUG Transaction Service] rejecting transaction in DB");
       const result = await tx.transaction.update({
@@ -826,22 +848,25 @@ export const transactionService = {
         },
       });
 
-      // Restore all resources
+      // Kembalikan ketersediaan tiket
       await restoreTicketAvailability(tx, {
         ticketId: transaction.ticketId,
         eventId: transaction.eventId,
         quantity: transaction.quantity,
       });
 
+      // Kembalikan poin yang sudah di-deduct
       await restoreUserPoints(tx, {
         userId: transaction.userId,
         pointsUsed: transaction.pointsUsed,
       });
 
+      // Kembalikan status voucher menjadi tersedia kembali
       if (transaction.voucherId) {
         await restoreVoucher(tx, { voucherId: transaction.voucherId });
       }
 
+      // Kembalikan status coupon menjadi tersedia kembali
       if (transaction.couponId) {
         await restoreCoupon(tx, { couponId: transaction.couponId });
       }
