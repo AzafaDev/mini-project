@@ -28,7 +28,7 @@ export const registerSchema = Yup.object().shape({
 export const verifyEmailSchema = Yup.object().shape({
   token: Yup.string()
     .required("Verification code is required")
-    .matches(/^\d{6}$/, "Verification code must be 6 digits"),
+    .length(6, "Verification code must be 6 characters"),
 });
 
 // Forgot Password Schema
@@ -50,8 +50,9 @@ export const resetPasswordSchema = Yup.object().shape({
 
 // Update Profile Schema
 export const updateProfileSchema = Yup.object().shape({
-  fullName: Yup.string(),
+  fullName: Yup.string().min(1),
   phoneNumber: Yup.string(),
+  profilePicture: Yup.mixed().optional(),
 });
 
 // Change Password Schema

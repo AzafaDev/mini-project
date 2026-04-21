@@ -22,16 +22,67 @@ const generateReferralCode = async (): Promise<string> => {
   return generateUniqueReferralCode();
 };
 
+const generateCouponCode = (): string => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
+const createUserCoupons = async (userId: string) => {
+  const now = new Date();
+  
+  const coupons = [
+    {
+      code: `WELCOME-${generateCouponCode()}`,
+      discountType: "PERCENTAGE" as const,
+      discountValue: 15,
+      startDate: now,
+      endDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+    },
+    {
+      code: `SPECIAL-${generateCouponCode()}`,
+      discountType: "FIXED" as const,
+      discountValue: 50000,
+      startDate: now,
+      endDate: new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000),
+    },
+    {
+      code: `VIP-${generateCouponCode()}`,
+      discountType: "PERCENTAGE" as const,
+      discountValue: 25,
+      startDate: now,
+      endDate: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
+    },
+  ];
+
+  return Promise.all(
+    coupons.map(coupon => 
+      prisma.coupon.create({
+        data: {
+          ...coupon,
+          userId,
+          isActive: true,
+        }
+      })
+    )
+  );
+};
+
 const organizerUsers = [
-  { email: "organizer1@eventry.com", fullName: "Organizer Satu" },
-  { email: "organizer2@eventry.com", fullName: "Organizer Dua" },
-  { email: "organizer3@eventry.com", fullName: "Organizer Tiga" },
+  { email: "organizer1@eventry.com", fullName: "Aditya Pratama", phone: "081234567890" },
+  { email: "organizer2@eventry.com", fullName: "Siti Maryam", phone: "081234567891" },
+  { email: "organizer3@eventry.com", fullName: "Budi Santoso", phone: "081234567892" },
 ];
 
 const customerUsers = [
-  { email: "customer1@test.com", fullName: "Customer Satu" },
-  { email: "customer2@test.com", fullName: "Customer Dua" },
-  { email: "customer3@test.com", fullName: "Customer Tiga" },
+  { email: "customer1@test.com", fullName: "Andi Supriyadi", phone: "082111111111", points: 2500 },
+  { email: "customer2@test.com", fullName: "Dewi Lestari", phone: "082111111112", points: 1800 },
+  { email: "customer3@test.com", fullName: "Agus Setiawan", phone: "082111111113", points: 3200 },
+  { email: "customer4@test.com", fullName: "Sri Handayani", phone: "082111111114", points: 950 },
+  { email: "customer5@test.com", fullName: "Hendra Kusuma", phone: "082111111115", points: 4100 },
 ];
 
 // PAST EVENTS - events that already ended (before April 11, 2026)
@@ -505,7 +556,7 @@ async function main() {
   const hashedPassword = await hashPassword("12345678");
 
   const organizers = await Promise.all(
-    organizerUsers.map(async (org) => {
+    organizerUsers.map(async (org, idx) => {
       const referralCode = await generateReferralCode();
       return prisma.user.upsert({
         where: { email: org.email },
@@ -514,6 +565,8 @@ async function main() {
           email: org.email,
           password: hashedPassword,
           fullName: org.fullName,
+          phoneNumber: org.phone,
+          profilePicture: `https://picsum.photos/seed/organizer${idx}/200/200`,
           role: "ORGANIZER",
           isVerified: true,
           referralCode,
@@ -523,23 +576,35 @@ async function main() {
   );
   console.log(`✅ Created ${organizers.length} organizer users`);
 
-  const customers = await Promise.all(
-    customerUsers.map(async (cust) => {
-      const referralCode = await generateReferralCode();
-      return prisma.user.upsert({
-        where: { email: cust.email },
-        update: {},
-        create: {
-          email: cust.email,
-          password: hashedPassword,
-          fullName: cust.fullName,
-          role: "CUSTOMER",
-          isVerified: true,
-          referralCode,
-        },
-      });
-    }),
-  );
+  // Buat customer users terlebih dahulu
+  const customers: any[] = [];
+  for (let idx = 0; idx < customerUsers.length; idx++) {
+    const cust = customerUsers[idx];
+    const referralCode = await generateReferralCode();
+    const referredBy = idx > 0 ? customers[idx - 1]?.referralCode : null;
+    
+    const user = await prisma.user.upsert({
+      where: { email: cust.email },
+      update: {},
+      create: {
+        email: cust.email,
+        password: hashedPassword,
+        fullName: cust.fullName,
+        phoneNumber: cust.phone,
+        profilePicture: `https://picsum.photos/seed/customer${idx}/200/200`,
+        points: cust.points,
+        role: "CUSTOMER",
+        isVerified: true,
+        referralCode,
+        referredBy,
+      },
+    });
+    
+    customers.push(user);
+    
+    // Buat kupon untuk setiap customer
+    await createUserCoupons(user.id);
+  }
   console.log(`✅ Created ${customers.length} customer users`);
 
   // Clear existing events to avoid duplicates
@@ -767,16 +832,33 @@ async function main() {
 
   console.log("\n🎉 Seeding completed!");
   console.log(`\n📊 Summary:`);
+  console.log(`   - ${organizers.length} Organizer users`);
+  console.log(`   - ${customers.length} Customer users`);
+  console.log(`   - ${customers.length * 3} Coupons created`);
   console.log(`   - ${pastEvents.length} PAST events (can write reviews)`);
   console.log(`   - ${upcomingEvents.length} UPCOMING events`);
   console.log(`   - Sample reviews created for past events`);
-  console.log(`\n📊 Login credentials:`);
-  console.log(`   Organizers: organizer1/2/3@eventry.com / 12345678`);
-  console.log(`   Customers: customer1/2/3@test.com / 12345678`);
+  
+  console.log(`\n📊 Organizer Login credentials:`);
+  organizers.forEach((org, idx) => {
+    console.log(`   ${idx + 1}. ${org.fullName} | ${org.email} | Password: 12345678`);
+  });
+  
+  console.log(`\n📊 Customer Login credentials:`);
+  customers.forEach((cust, idx) => {
+    console.log(`   ${idx + 1}. ${cust.fullName} | ${cust.email} | Password: 12345678 | Poin: ${cust.points}`);
+    if (cust.referredBy) {
+      const referrer = customers.find(c => c.referralCode === cust.referredBy);
+      if (referrer) {
+        console.log(`      ↳ Direferensikan oleh: ${referrer.fullName}`);
+      }
+    }
+  });
+  
   console.log(`\n💡 To test reviews:`);
-  console.log(`   1. Login as customer1@test.com`);
-  console.log(`   2. Go to past event (e.g., Jakarta Music Festival 2025)`);
-  console.log(`   3. See "Write a Review" button (already has transaction)`);
+  console.log(`   1. Login sebagai Andi Supriyadi (customer1@test.com)`);
+  console.log(`   2. Buka event lampau (misal: Jakarta Music Festival 2025)`);
+  console.log(`   3. Lihat tombol "Write a Review" (sudah memiliki transaksi)`);
 }
 
 main()

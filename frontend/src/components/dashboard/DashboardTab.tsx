@@ -201,7 +201,7 @@ export function DashboardTab({
 
   // Data sudah dari props, tidak perlu ambil dari store
   const totalRevenue = stats?.totalRevenue || 0;
-  const ticketsSold = stats?.ticketsSold || 0;
+  const ticketsSold = stats?.totalTicketsSold || 0;
   const totalEvents = stats?.totalEvents || 0;
   const totalAttendees = stats?.totalAttendees || 0;
 
@@ -433,7 +433,7 @@ export function DashboardTab({
                       event.endDate,
                     )}`}
                     location={event.location}
-                    sold={event.totalSeats - event.availableSeats}
+                    sold={event.sold ?? (event.totalSeats - event.availableSeats)}
                     capacity={event.totalSeats}
                     status={getEventStatus(event)}
                     image={event.imageUrl || ""}

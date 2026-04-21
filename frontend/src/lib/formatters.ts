@@ -7,10 +7,13 @@ export const formatIDR = (amount: number): string => {
 };
 
 export const formatDate = (
-  dateString: string,
+  dateString: string | undefined | null,
   type: "short" | "long" | "full" | "time" | "numeric" = "long"
 ): string => {
+  if (!dateString) return "-";
+  
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
 
   switch (type) {
     case "short":
@@ -48,8 +51,12 @@ export const formatDate = (
   }
 };
 
-export const formatDateRelative = (dateString: string): string => {
+export const formatDateRelative = (dateString: string | undefined | null): string => {
+  if (!dateString) return "-";
+  
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  
   const now = new Date();
   const diffMs = date.getTime() - now.getTime();
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));

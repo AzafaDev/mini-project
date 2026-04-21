@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Login failed",
+        error: error.message || "Login failed",
         isLoading: false,
       });
       return { success: false };
@@ -78,7 +78,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Registration failed",
+        error: error.message || "Registration failed",
         isLoading: false,
       });
       return false;
@@ -92,6 +92,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      // Cleanup verification timer from localStorage
+      localStorage.removeItem("emailVerificationTimer");
+      localStorage.removeItem("emailVerificationTimerSetAt");
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
@@ -135,7 +138,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Verification failed",
+        error: error.message || "Verification failed",
         isLoading: false,
       });
       return false;
@@ -159,7 +162,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to resend verification code",
+        error: error.message || "Failed to resend verification code",
         isResendingVerification: false,
       });
       return false;
@@ -179,7 +182,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to send reset email",
+        error: error.message || "Failed to send reset email",
         isLoading: false,
       });
     }
@@ -198,7 +201,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || "Failed to reset password",
+        error: error.message || "Failed to reset password",
         isLoading: false,
       });
       return false;

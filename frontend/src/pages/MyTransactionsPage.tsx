@@ -205,14 +205,14 @@ const MyTransactionsPage: React.FC = () => {
                   {/* Event Details */}
                   <div className="flex-grow min-w-0">
                     <div className="flex items-start justify-between gap-4 mb-2">
-                      <div>
-                        <h3 className="text-lg font-bold text-[#e5e2e1] truncate">
-                          {transaction.event?.name}
-                        </h3>
-                        <p className="text-sm text-[#c7c4d8]">
-                          {transaction.ticket?.name}
-                        </p>
-                      </div>
+                       <div>
+                         <h3 className="text-lg font-bold text-[#e5e2e1] truncate">
+                           {transaction.event?.name}
+                         </h3>
+                         <p className="text-sm text-[#c7c4d8]">
+                           {transaction.quantity} ticket{transaction.quantity > 1 ? "s" : ""}
+                         </p>
+                       </div>
                       <div className="flex items-center gap-2">
                         <div
                           className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusConfig(transaction.status).bgColor} ${getStatusConfig(transaction.status).color} flex justify-center items-center`}
