@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
 import { useEventStore } from "../stores/useEventStore";
 import { useToastStore } from "../stores/useToastStore";
+import { createEventSchema } from "../validation/eventSchemas";
 
 const CATEGORIES = [
   "Conference",
@@ -20,15 +22,39 @@ export default function CreateEventPage() {
   const { createEvent, loadingEventAction, error } = useEventStore();
   const { addToast } = useToastStore();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    location: "",
-    category: "",
-    startDate: "",
-    endDate: "",
-    totalSeats: 100,
-    price: 0,
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      description: "",
+      location: "",
+      category: "",
+      startDate: "",
+      endDate: "",
+      totalSeats: 100,
+      price: 0,
+    },
+    validationSchema: createEventSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: async (values) => {
+      setLocalError(null);
+      try {
+        const result = await createEvent({
+          ...values,
+          imageFile: imageFile || undefined,
+          tickets: useCustomTickets && tickets.length > 0 ? tickets : undefined,
+        });
+
+        if (result) {
+          addToast("success", "Event created successfully!");
+          navigate("/dashboard?tab=events");
+        } else {
+          setLocalError(error || "Failed to create event");
+        }
+      } catch (err: any) {
+        setLocalError(err.response?.data?.message || "Failed to create event");
+      }
+    },
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -43,17 +69,7 @@ export default function CreateEventPage() {
     }[]
   >([]);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "totalSeats" || name === "price" ? Number(value) : value,
-    }));
-  };
+
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,44 +83,11 @@ export default function CreateEventPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Validate custom tickets before submit
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-
-    // Validation
-    if (!formData.name.trim()) {
-      setLocalError("Event name is required");
-      return;
-    }
-    if (!formData.description.trim()) {
-      setLocalError("Description is required");
-      return;
-    }
-    if (!formData.location.trim()) {
-      setLocalError("Location is required");
-      return;
-    }
-    if (!formData.category) {
-      setLocalError("Category is required");
-      return;
-    }
-    if (!formData.startDate || !formData.endDate) {
-      setLocalError("Start and end dates are required");
-      return;
-    }
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-      setLocalError("End date must be after start date");
-      return;
-    }
-    if (formData.totalSeats < 1) {
-      setLocalError("Total seats must be at least 1");
-      return;
-    }
-    if (formData.price < 0) {
-      setLocalError("Price cannot be negative");
-      return;
-    }
-
+    
     // Validate custom tickets if enabled
     if (useCustomTickets) {
       if (tickets.length === 0) {
@@ -123,22 +106,15 @@ export default function CreateEventPage() {
       }
     }
 
-    try {
-      const result = await createEvent({
-        ...formData,
-        imageFile: imageFile || undefined,
-        tickets: useCustomTickets && tickets.length > 0 ? tickets : undefined,
-      });
-
-      if (result) {
-        addToast("success", "Event created successfully!");
-        navigate("/dashboard?tab=events");
-      } else {
-        setLocalError(error || "Failed to create event");
+    // Validate date range
+    if (formik.values.startDate && formik.values.endDate) {
+      if (new Date(formik.values.startDate) >= new Date(formik.values.endDate)) {
+        setLocalError("End date must be after start date");
+        return;
       }
-    } catch (err: any) {
-      setLocalError(err.response?.data?.message || "Failed to create event");
     }
+
+    formik.handleSubmit();
   };
 
   return (
@@ -174,7 +150,7 @@ export default function CreateEventPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleFormSubmit} className="space-y-8">
           {/* Image Upload */}
           <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
             <h3 className="text-lg font-bold mb-4">Event Image</h3>
@@ -226,12 +202,20 @@ export default function CreateEventPage() {
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter event name"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
-                />
+                   name="name"
+                   value={formik.values.name}
+                   onChange={formik.handleChange}
+                   onBlur={formik.handleBlur}
+                   placeholder="Enter event name"
+                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                     formik.touched.name && formik.errors.name
+                       ? "border-red-500/50 focus:border-red-500/50"
+                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                   }`}
+                 />
+                 {formik.touched.name && formik.errors.name && (
+                   <p className="text-red-400 text-xs mt-1">{formik.errors.name}</p>
+                 )}
               </div>
 
               <div className="md:col-span-2">
@@ -239,13 +223,21 @@ export default function CreateEventPage() {
                   Description *
                 </label>
                 <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Describe your event..."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors resize-none"
-                />
+                   name="description"
+                   value={formik.values.description}
+                   onChange={formik.handleChange}
+                   onBlur={formik.handleBlur}
+                   placeholder="Describe your event..."
+                   rows={4}
+                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors resize-none ${
+                     formik.touched.description && formik.errors.description
+                       ? "border-red-500/50 focus:border-red-500/50"
+                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                   }`}
+                 />
+                 {formik.touched.description && formik.errors.description && (
+                   <p className="text-red-400 text-xs mt-1">{formik.errors.description}</p>
+                 )}
               </div>
 
               <div>
@@ -253,18 +245,26 @@ export default function CreateEventPage() {
                   Category *
                 </label>
                 <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                   name="category"
+                   value={formik.values.category}
+                   onChange={formik.handleChange}
+                   onBlur={formik.handleBlur}
+                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                     formik.touched.category && formik.errors.category
+                       ? "border-red-500/50 focus:border-red-500/50"
+                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                   }`}
                 >
                   <option value="">Select category</option>
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                   {CATEGORIES.map((cat) => (
+                     <option key={cat} value={cat}>
+                       {cat}
+                     </option>
+                   ))}
+                 </select>
+                 {formik.touched.category && formik.errors.category && (
+                   <p className="text-red-400 text-xs mt-1">{formik.errors.category}</p>
+                 )}
               </div>
 
               <div>
@@ -273,12 +273,20 @@ export default function CreateEventPage() {
                 </label>
                 <input
                   type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  placeholder="Enter location"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
-                />
+                   name="location"
+                   value={formik.values.location}
+                   onChange={formik.handleChange}
+                   onBlur={formik.handleBlur}
+                   placeholder="Enter location"
+                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                     formik.touched.location && formik.errors.location
+                       ? "border-red-500/50 focus:border-red-500/50"
+                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                   }`}
+                 />
+                 {formik.touched.location && formik.errors.location && (
+                   <p className="text-red-400 text-xs mt-1">{formik.errors.location}</p>
+                 )}
               </div>
             </div>
           </div>
@@ -293,25 +301,41 @@ export default function CreateEventPage() {
                 </label>
                 <input
                   type="datetime-local"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
-                />
-              </div>
+                   name="startDate"
+                   value={formik.values.startDate}
+                   onChange={formik.handleChange}
+                   onBlur={formik.handleBlur}
+                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                     formik.touched.startDate && formik.errors.startDate
+                       ? "border-red-500/50 focus:border-red-500/50"
+                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                   }`}
+                 />
+                 {formik.touched.startDate && formik.errors.startDate && (
+                   <p className="text-red-400 text-xs mt-1">{formik.errors.startDate}</p>
+                 )}
+               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
-                  End Date & Time *
-                </label>
-                <input
-                  type="datetime-local"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
-                />
-              </div>
+               <div>
+                 <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                   End Date & Time *
+                 </label>
+                 <input
+                   type="datetime-local"
+                   name="endDate"
+                   value={formik.values.endDate}
+                   onChange={formik.handleChange}
+                   onBlur={formik.handleBlur}
+                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                     formik.touched.endDate && formik.errors.endDate
+                       ? "border-red-500/50 focus:border-red-500/50"
+                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                   }`}
+                 />
+                 {formik.touched.endDate && formik.errors.endDate && (
+                   <p className="text-red-400 text-xs mt-1">{formik.errors.endDate}</p>
+                 )}
+               </div>
             </div>
           </div>
 
@@ -319,39 +343,55 @@ export default function CreateEventPage() {
           <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
             <h3 className="text-lg font-bold mb-4">Tickets & Pricing</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
-                  Total Seats *
-                </label>
-                <input
-                  type="number"
-                  name="totalSeats"
-                  value={formData.totalSeats}
-                  onChange={handleChange}
-                  min={1}
-                  placeholder="100"
-                  disabled={useCustomTickets}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors disabled:opacity-50"
-                />
-              </div>
+               <div>
+                 <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                   Total Seats *
+                 </label>
+                 <input
+                   type="number"
+                   name="totalSeats"
+                   value={formik.values.totalSeats}
+                   onChange={formik.handleChange}
+                   onBlur={formik.handleBlur}
+                   min={1}
+                   placeholder="100"
+                   disabled={useCustomTickets}
+                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors disabled:opacity-50 ${
+                     formik.touched.totalSeats && formik.errors.totalSeats
+                       ? "border-red-500/50 focus:border-red-500/50"
+                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                   }`}
+                 />
+                 {formik.touched.totalSeats && formik.errors.totalSeats && (
+                   <p className="text-red-400 text-xs mt-1">{formik.errors.totalSeats}</p>
+                 )}
+               </div>
 
-              {!useCustomTickets && (
-                <div>
-                  <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
-                    Price per Ticket ($) *
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleChange}
-                    min={0}
-                    step={0.01}
-                    placeholder="0.00"
-                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
-                  />
-                </div>
-              )}
+               {!useCustomTickets && (
+                 <div>
+                   <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                     Price per Ticket ($) *
+                   </label>
+                   <input
+                     type="number"
+                     name="price"
+                     value={formik.values.price}
+                     onChange={formik.handleChange}
+                     onBlur={formik.handleBlur}
+                     min={0}
+                     step={0.01}
+                     placeholder="0.00"
+                     className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                       formik.touched.price && formik.errors.price
+                         ? "border-red-500/50 focus:border-red-500/50"
+                         : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                     }`}
+                   />
+                   {formik.touched.price && formik.errors.price && (
+                     <p className="text-red-400 text-xs mt-1">{formik.errors.price}</p>
+                   )}
+                 </div>
+               )}
             </div>
 
             {/* Custom Ticket Types Toggle */}
