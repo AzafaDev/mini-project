@@ -7,8 +7,9 @@ const axiosInstance = axios.create({
 });
 
 // Request interceptor - attach auth token
+// Request interceptor - attach auth token
 axiosInstance.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config) => {
     const token = localStorage.getItem("token");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -19,7 +20,7 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor - centralized error handling
@@ -68,7 +69,7 @@ axiosInstance.interceptors.response.use(
 
     // Return formatted error
     return Promise.reject(new Error(errorMessage));
-  }
+  },
 );
 
 export default axiosInstance;
