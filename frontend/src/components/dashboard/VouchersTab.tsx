@@ -204,7 +204,8 @@ export function VouchersTab() {
       {/* Vouchers List */}
       {myVouchers.length > 0 ? (
         <div className="bg-[#1C1B1B] rounded-lg border border-[#464555]/10 overflow-hidden">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-[#464555]/10">
                 <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
@@ -289,7 +290,8 @@ export function VouchersTab() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="bg-[#1C1B1B] rounded-lg p-12 text-center border border-[#464555]/10">

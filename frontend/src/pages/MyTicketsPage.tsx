@@ -192,7 +192,7 @@ const TicketCard = ({
 // --- Komponen Utama ---
 export const MyTickets = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user } = useAuthStore();
   const {
     transactions,
     fetchMyTransactions,
@@ -202,13 +202,6 @@ export const MyTickets = () => {
   } = useTransactionStore();
 
   const [activeTab, setActiveTab] = useState<"upcoming" | "pending" | "past">("upcoming");
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated && !user) {
-      navigate("/login");
-    }
-  }, [isAuthenticated, user, navigate]);
 
   // Fetch transactions on mount
   useEffect(() => {

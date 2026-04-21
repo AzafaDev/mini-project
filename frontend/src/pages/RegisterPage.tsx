@@ -8,7 +8,7 @@ const RegistrationPage: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = React.useState(false);
-  const { register, isLoading, error, clearError, isRegistered, clearRegistered, user, isAuthenticated } = useAuthStore();
+  const { register, isLoading, error, clearError, isRegistered, clearRegistered } = useAuthStore();
 
   const formik = useFormik({
     initialValues: {
@@ -51,11 +51,7 @@ const RegistrationPage: React.FC = () => {
     }
   }, [isRegistered, clearRegistered, navigate]);
 
-   useEffect(() => {
-      if (isAuthenticated && user) {
-        navigate("/");
-      }
-    }, [isAuthenticated, user, navigate]);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;

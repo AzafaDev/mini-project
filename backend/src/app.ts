@@ -65,9 +65,11 @@ app.use("/api/transactions", transactionRouter);
 app.use(errorHandler);
 
 // Menjalankan semua cron job otomatis (pembersihan poin expired, dll)
-startCronJobs();
+// startCronJobs();
 
 // Menjalankan server pada port yang ditentukan
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
 });
+
+export default app;

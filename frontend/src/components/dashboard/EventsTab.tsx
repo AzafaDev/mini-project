@@ -53,7 +53,7 @@ const EventItem = ({
 
   return (
     <div
-      className="bg-[#1C1B1B] hover:bg-[#2A2A2A] transition-colors p-4 flex items-center gap-4 group cursor-pointer"
+      className="bg-[#1C1B1B] hover:bg-[#2A2A2A] transition-colors p-4 flex flex-wrap sm:flex-nowrap items-center gap-4 group cursor-pointer"
       onClick={handleClick}
     >
       <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
@@ -63,29 +63,37 @@ const EventItem = ({
           src={image || "https://via.placeholder.com/64"}
         />
       </div>
-      <div className="flex-1">
-        <h5 className="font-bold text-on-surface">{title}</h5>
-        <p className="text-xs text-on-surface-variant mt-1 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[14px]">
-            calendar_today
-          </span>{" "}
-          {date}
-          <span className="mx-2">•</span>
-          <span className="material-symbols-outlined text-[14px]">
-            location_on
-          </span>{" "}
-          {location}
+      <div className="flex-1 min-w-[150px]">
+        <h5 className="font-bold text-sm md:text-base text-on-surface">{title}</h5>
+        <p className="text-[10px] md:text-xs text-on-surface-variant mt-1 flex flex-wrap gap-1">
+          <span className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px] md:text-[14px]">
+              calendar_today
+            </span>{" "}
+            {date}
+          </span>
+          <span className="hidden sm:inline">•</span>
+          <span className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px] md:text-[14px]">
+              location_on
+            </span>{" "}
+            {location}
+          </span>
         </p>
       </div>
-      <div className="text-right hidden sm:block">
-        <p className="text-sm font-bold text-on-surface">
-          {sold.toLocaleString()} Sold
-        </p>
-        <div className="w-24 bg-[#353534] h-1 rounded-full mt-2 overflow-hidden">
-          <div
-            className="bg-[#C0C1FF] h-full"
-            style={{ width: `${percentage}%` }}
-          ></div>
+      <div className="w-full sm:w-auto sm:ml-auto">
+        <div className="flex items-center justify-between sm:justify-end gap-4">
+          <div className="w-full sm:w-24">
+            <p className="text-sm font-bold text-on-surface sm:text-right">
+              {sold.toLocaleString()} Sold
+            </p>
+            <div className="w-full bg-[#353534] h-1 rounded-full mt-2 overflow-hidden">
+              <div
+                className="bg-[#C0C1FF] h-full"
+                style={{ width: `${percentage}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
       <div className="px-3 py-1 bg-[#C3C0FF]/10 text-[#C3C0FF] text-[10px] font-black uppercase rounded border border-[#C3C0FF]/20">
@@ -94,14 +102,14 @@ const EventItem = ({
       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={handleEdit}
-          className="p-2 text-[#999] hover:text-on-surface hover:bg-[#353534] rounded transition-colors"
+          className="h-10 w-10 p-2 text-[#999] hover:text-on-surface hover:bg-[#353534] rounded transition-colors flex items-center justify-center"
           title="Edit event"
         >
           <span className="material-symbols-outlined text-[18px]">edit</span>
         </button>
         <button
           onClick={handleDelete}
-          className="p-2 text-[#999] hover:text-red-500 hover:bg-[#353534] rounded transition-colors"
+          className="h-10 w-10 p-2 text-[#999] hover:text-red-500 hover:bg-[#353534] rounded transition-colors flex items-center justify-center"
           title="Delete event"
         >
           <span className="material-symbols-outlined text-[18px]">delete</span>

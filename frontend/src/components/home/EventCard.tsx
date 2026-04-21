@@ -41,7 +41,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
       className="group relative bg-[#1c1b1b] rounded-xl overflow-hidden border border-white/5 shadow-2xl cursor-pointer"
       onClick={handleClick}
     >
-      <div className="h-64 relative overflow-hidden">
+      <div className="h-48 sm:h-56 md:h-64 relative overflow-hidden">
         <motion.img
           whileHover={{ scale: 1.1 }}
           transition={{ duration: 0.6 }}
@@ -53,21 +53,21 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
           {formattedDate}
         </div>
       </div>
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-2 md:mb-3">
+          <span className="bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-0.5 rounded text-[10px] md:text-xs font-bold uppercase tracking-wider">
             {event.category}
           </span>
         </div>
-        <h3 className="text-xl font-bold mb-2 group-hover:text-[#c0c1ff] transition-colors text-[#e5e2e1] line-clamp-1">
+        <h3 className="text-lg sm:text-xl font-bold mb-2 group-hover:text-[#c0c1ff] transition-colors text-[#e5e2e1] line-clamp-1">
           {event.name}
         </h3>
-        <div className="flex flex-col gap-2 text-sm text-[#c7c4d8]">
+        <div className="flex flex-col gap-1.5 md:gap-2 text-xs md:text-sm text-[#c7c4d8]">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-lg text-[#c0c1ff]">
               location_on
             </span>{" "}
-            {event.location}
+            <span className="truncate">{event.location}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-lg text-[#c0c1ff]">

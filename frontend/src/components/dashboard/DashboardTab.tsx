@@ -162,8 +162,8 @@ export function DashboardTab({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="md:col-span-2 p-6 bg-[#1C1B1B] rounded-lg flex flex-col justify-between border border-[#464555]/10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="sm:col-span-2 p-4 md:p-6 bg-[#1C1B1B] rounded-lg flex flex-col justify-between border border-[#464555]/10">
           <div>
             <span className="uppercase tracking-widest text-[#C7C4D8] font-medium text-xs">
               {revenueLabel}
@@ -220,8 +220,8 @@ export function DashboardTab({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {chartData && chartData.data.length > 0 ? (
-            <div className="bg-[#1C1B1B] rounded-lg p-8 h-[400px] flex flex-col border border-[#464555]/10">
+           {chartData && chartData.data.length > 0 ? (
+            <div className="bg-[#1C1B1B] rounded-lg p-4 md:p-8 h-[350px] md:h-[400px] flex flex-col border border-[#464555]/10">
               <div className="flex items-center justify-between mb-8">
                 <h4 className="text-lg font-bold tracking-tight">
                   {chartData.label}
@@ -244,7 +244,8 @@ export function DashboardTab({
                   )}
                 </div>
               </div>
-              <div className="flex-1 flex items-end gap-3 px-4 pb-8">
+              <div className="flex-1 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div className="flex items-end gap-2 md:gap-3 h-full min-w-[550px] pb-8">
                 {chartData.data
                   .slice(
                     -(timeRange === "ALL" ? 5 : timeRange === "7D" ? 7 : 12),
@@ -270,8 +271,9 @@ export function DashboardTab({
                       </div>
                     );
                   })}
+                </div>
               </div>
-              <div className="flex justify-between px-4 pt-4 border-t border-[#464555]/10 text-[10px] text-[#C7C4D8] font-medium uppercase tracking-widest">
+              <div className="flex justify-between pt-4 border-t border-[#464555]/10 text-[10px] text-[#C7C4D8] font-medium uppercase tracking-widest">
                 {chartData.data
                   .slice(
                     -(timeRange === "ALL" ? 5 : timeRange === "7D" ? 7 : 12),
