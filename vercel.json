@@ -9,7 +9,7 @@
     "backend": {
       "entrypoint": "backend",
       "routePrefix": "/api",
-      "preservePath": true
+      "stripRoutePrefix": false
     }
   }
 }
