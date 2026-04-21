@@ -6,6 +6,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isCheckingAuth: boolean;
   error: string | null;
   isRegistered: boolean;
   isResendingVerification: boolean;
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  isCheckingAuth: true,
   error: null,
   isRegistered: false,
   isResendingVerification: false,
@@ -101,7 +103,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   fetchCurrentUser: async () => {
     console.log("[AuthStore] fetchCurrentUser called");
-    set({ isLoading: true });
+    set({ isCheckingAuth: true, isLoading: true });
     try {
       const response = await axiosInstance.get("/auth/me");
       console.log("[AuthStore] /auth/me response:", response.data.success);
@@ -110,14 +112,15 @@ export const useAuthStore = create<AuthState>((set) => ({
           user: response.data.user || null,
           isAuthenticated: true,
           isLoading: false,
+          isCheckingAuth: false,
         });
         console.log("[AuthStore] user set:", response.data.user?.email);
       } else {
-        set({ user: null, isAuthenticated: false, isLoading: false });
+        set({ user: null, isAuthenticated: false, isLoading: false, isCheckingAuth: false });
       }
     } catch (error) {
       console.log("[AuthStore] fetchCurrentUser error:", error);
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, isLoading: false, isCheckingAuth: false });
     }
   },
 
