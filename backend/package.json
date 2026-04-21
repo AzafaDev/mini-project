@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/app.ts",
+    "start": "tsx src/app.ts",
     "seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest"
