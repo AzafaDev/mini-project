@@ -53,38 +53,38 @@ const MyTransactionsPage: React.FC = () => {
     > = {
       WAITING_PAYMENT: {
         label: "Waiting Payment",
-        color: "text-[#a44100]",
-        bgColor: "bg-[#ffdbcc]/10",
+        color: "text-warning-dark",
+        bgColor: "bg-warning-light/10",
         icon: "schedule",
       },
       WAITING_CONFIRMATION: {
         label: "Waiting Confirmation",
-        color: "text-[#ffb695]",
-        bgColor: "bg-[#ffdbcc]/20",
+        color: "text-warning",
+        bgColor: "bg-warning-light/20",
         icon: "hourglass_top",
       },
       DONE: {
         label: "Confirmed",
-        color: "text-[#c0c1ff]",
-        bgColor: "bg-[#c0c1ff]/10",
+        color: "text-primary",
+        bgColor: "bg-primary/10",
         icon: "check_circle",
       },
       REJECTED: {
         label: "Rejected",
-        color: "text-[#ffb4ab]",
-        bgColor: "bg-[#ffb4ab]/10",
+        color: "text-error-light",
+        bgColor: "bg-error-light/10",
         icon: "cancel",
       },
       EXPIRED: {
         label: "Expired",
-        color: "text-[#666]",
-        bgColor: "bg-[#666]/10",
+        color: "text-text-secondary",
+        bgColor: "bg-text-secondary/10",
         icon: "timer_off",
       },
       CANCELED: {
         label: "Canceled",
-        color: "text-[#666]",
-        bgColor: "bg-[#666]/10",
+        color: "text-text-secondary",
+        bgColor: "bg-text-secondary/10",
         icon: "not_interested",
       },
     };
@@ -99,30 +99,30 @@ const MyTransactionsPage: React.FC = () => {
 
   if (loading && transactions.length === 0) {
     return (
-      <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center">
+      <div className="bg-dark text-text-light min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[#c7c4d8]">Loading your transactions...</p>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-text-muted">Loading your transactions...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
+    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
       <main className="pt-24 pb-32 px-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <div className="flex items-center gap-2 text-[#c7c4d8] text-xs mb-4">
-            <Link to="/" className="hover:text-[#c0c1ff]">
+          <div className="flex items-center gap-2 text-text-muted text-xs mb-4">
+            <Link to="/" className="hover:text-primary">
               Home
             </Link>
             <span className="material-symbols-outlined text-xs">
               chevron_right
             </span>
-            <span className="text-[#c0c1ff]">My Transactions</span>
+            <span className="text-primary">My Transactions</span>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tighter text-[#e5e2e1]">
+          <h1 className="text-4xl font-extrabold tracking-tighter text-text-light">
             My Transactions
           </h1>
         </div>
@@ -135,8 +135,8 @@ const MyTransactionsPage: React.FC = () => {
               onClick={() => setFilter(status)}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 filter === status
-                  ? "bg-[#c0c1ff] text-[#07006c]"
-                  : "bg-[#1c1b1b] text-[#c7c4d8] hover:text-[#e5e2e1] hover:bg-[#2a2a2a]"
+                  ? "bg-primary text-primary-dark"
+                  : "bg-dark-surface text-text-muted hover:text-text-light hover:bg-dark-elevated"
               }`}
             >
               {status === "ALL" ? "All" : getStatusConfig(status).label}
@@ -146,27 +146,27 @@ const MyTransactionsPage: React.FC = () => {
 
         {/* Transactions List */}
         {error && (
-          <div className="bg-[#93000a]/10 border border-[#93000a]/30 rounded-xl p-6 mb-6">
-            <p className="text-[#ffb4ab]">{error}</p>
+          <div className="bg-error/10 border border-error/30 rounded-xl p-6 mb-6">
+            <p className="text-error-light">{error}</p>
           </div>
         )}
 
         {filteredTransactions.length === 0 ? (
-          <div className="bg-[#1c1b1b] rounded-xl p-12 text-center">
-            <span className="material-symbols-outlined text-6xl text-[#666] mb-4">
+          <div className="bg-dark-surface rounded-xl p-12 text-center">
+            <span className="material-symbols-outlined text-6xl text-text-secondary mb-4">
               receipt_long
             </span>
-            <h2 className="text-2xl font-bold text-[#e5e2e1] mb-2">
+            <h2 className="text-2xl font-bold text-text-light mb-2">
               No transactions found
             </h2>
-            <p className="text-[#c7c4d8] mb-6">
+            <p className="text-text-muted mb-6">
               {filter === "ALL"
                 ? "You haven't made any transactions yet."
                 : `You don't have any transactions with status "${getStatusConfig(filter).label}".`}
             </p>
             <Link
               to="/"
-              className="inline-block px-6 py-3 bg-[#c0c1ff] text-[#07006c] font-bold rounded-lg hover:opacity-90"
+              className="inline-block px-6 py-3 bg-primary text-primary-dark font-bold rounded-lg hover:opacity-90"
             >
               Browse Events
             </Link>
@@ -177,11 +177,11 @@ const MyTransactionsPage: React.FC = () => {
               <div
                 key={transaction.id}
                 onClick={() => navigate(`/transactions/${transaction.id}`)}
-                className="bg-[#1c1b1b] rounded-xl p-6 cursor-pointer hover:bg-[#2a2a2a] transition-colors"
+                className="bg-dark-surface rounded-xl p-6 cursor-pointer hover:bg-dark-elevated transition-colors"
               >
                 <div className="flex items-start gap-6">
                   {/* Event Image */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-[#2a2a2a] flex-shrink-0">
+                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-dark-elevated flex-shrink-0">
                     {transaction.event?.imageUrl ? (
                       <img
                         src={transaction.event.imageUrl}
@@ -190,7 +190,7 @@ const MyTransactionsPage: React.FC = () => {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-2xl text-[#666]">
+                        <span className="material-symbols-outlined text-2xl text-text-secondary">
                           event
                         </span>
                       </div>
@@ -201,10 +201,10 @@ const MyTransactionsPage: React.FC = () => {
                   <div className="flex-grow min-w-0">
                     <div className="flex items-start justify-between gap-4 mb-2">
                        <div>
-                         <h3 className="text-lg font-bold text-[#e5e2e1] truncate">
+                         <h3 className="text-lg font-bold text-text-light truncate">
                            {transaction.event?.name}
                          </h3>
-                         <p className="text-sm text-[#c7c4d8]">
+                         <p className="text-sm text-text-muted">
                            {transaction.quantity} ticket{transaction.quantity > 1 ? "s" : ""}
                          </p>
                        </div>
@@ -218,29 +218,29 @@ const MyTransactionsPage: React.FC = () => {
                           {getStatusConfig(transaction.status).label}
                         </div>
                         {needsPaymentProof(transaction) && (
-                          <span className="text-xs bg-[#ffb695] text-[#07006c] px-2 py-1 rounded-full font-bold animate-pulse">
+                          <span className="text-xs bg-warning text-primary-dark px-2 py-1 rounded-full font-bold animate-pulse">
                             Upload Required
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-4 text-sm text-[#c7c4d8]">
+                    <div className="flex flex-wrap gap-4 text-sm text-text-muted">
                       <span>
                         {transaction.quantity} ticket
                         {transaction.quantity > 1 ? "s" : ""}
                       </span>
-                      <span className="text-[#666]">•</span>
+                      <span className="text-text-secondary">•</span>
                       <span>{formatDate(transaction.createdAt)}</span>
-                      <span className="text-[#666]">•</span>
-                      <span className="text-[#e5e2e1] font-medium">
+                      <span className="text-text-secondary">•</span>
+                      <span className="text-text-light font-medium">
                         {formatIDR(transaction.finalPrice)}
                       </span>
                     </div>
                   </div>
 
                   {/* Arrow */}
-                  <span className="material-symbols-outlined text-[#666]">
+                  <span className="material-symbols-outlined text-text-secondary">
                     chevron_right
                   </span>
                 </div>
@@ -255,7 +255,7 @@ const MyTransactionsPage: React.FC = () => {
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
@@ -270,8 +270,8 @@ const MyTransactionsPage: React.FC = () => {
                     onClick={() => handlePageChange(pageNum)}
                     className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium ${
                       pagination.page === pageNum
-                        ? "bg-[#c0c1ff] text-[#07006c]"
-                        : "bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1]"
+                        ? "bg-primary text-primary-dark"
+                        : "bg-dark-elevated text-text-muted hover:text-text-light"
                     }`}
                   >
                     {pageNum}
@@ -281,7 +281,7 @@ const MyTransactionsPage: React.FC = () => {
             )}
 
             {pagination.totalPages > 5 && (
-              <span className="text-[#666] px-2">...</span>
+              <span className="text-text-secondary px-2">...</span>
             )}
 
             {pagination.totalPages > 5 && (
@@ -289,8 +289,8 @@ const MyTransactionsPage: React.FC = () => {
                 onClick={() => handlePageChange(pagination.totalPages)}
                 className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium ${
                   pagination.page === pagination.totalPages
-                    ? "bg-[#c0c1ff] text-[#07006c]"
-                    : "bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1]"
+                    ? "bg-primary text-primary-dark"
+                    : "bg-dark-elevated text-text-muted hover:text-text-light"
                 }`}
               >
                 {pagination.totalPages}
@@ -300,7 +300,7 @@ const MyTransactionsPage: React.FC = () => {
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page === pagination.totalPages}
-              className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined">chevron_right</span>
             </button>

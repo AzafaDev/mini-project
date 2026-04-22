@@ -138,10 +138,10 @@ const EmailVerification: React.FC = () => {
   const canSubmit = formik.values.token.length === 6 && !isLoading;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#131313] text-[#e5e2e1] font-['Inter',sans-serif]">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-dark text-text-light font-['Inter',sans-serif]">
       {/* Subtle Ambient Background Accents */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-[#4b4dd8]/10 blur-[120px] rounded-full"></div>
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-accent/10 blur-[120px] rounded-full"></div>
         <div className="absolute top-[60%] -right-[5%] w-[30%] h-[30%] bg-[#413f82]/10 blur-[100px] rounded-full"></div>
       </div>
 
@@ -149,21 +149,21 @@ const EmailVerification: React.FC = () => {
       <main className="relative z-10 w-full max-w-[440px] px-6">
         {/* Brand Identity */}
         <div className="flex flex-col items-center mb-8 text-center">
-          <div className="mb-4 p-3 rounded-lg bg-[#2a2a2a]">
-            <span className="material-symbols-outlined text-[#c0c1ff] text-4xl">
+          <div className="mb-4 p-3 rounded-lg bg-dark-elevated">
+            <span className="material-symbols-outlined text-primary text-4xl">
               mark_email_read
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2">
             Verify Your Email
           </h1>
-          <p className="text-[#c7c4d8] font-medium tracking-tight text-sm">
+          <p className="text-text-muted font-medium tracking-tight text-sm">
             Enter the 6-digit code sent to your email.
           </p>
         </div>
 
         {/* Verification Card */}
-        <div className="bg-[#1c1b1b] rounded-lg p-8 shadow-2xl ring-1 ring-white/5">
+        <div className="bg-dark-surface rounded-lg p-8 shadow-2xl ring-1 ring-white/5">
           {error && (
             <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
               {error}
@@ -198,10 +198,10 @@ const EmailVerification: React.FC = () => {
                     onKeyDown={(e) => handleKeyDown(e, index)}
                     onPaste={handlePaste}
                     placeholder="0"
-                    className={`w-full h-12 text-center text-xl font-bold bg-[#0e0e0e] border-none ring-1 rounded-lg text-[#e5e2e1] transition-all placeholder:text-[#c7c4d8]/40 outline-none ${
+                    className={`w-full h-12 text-center text-xl font-bold bg-dark-darker border-none ring-1 rounded-lg text-text-light transition-all placeholder:text-text-muted/40 outline-none ${
                       formik.touched.token && formik.errors.token && formik.values.token.length > 0
                         ? "ring-red-500/50 focus:ring-red-500/50"
-                        : "ring-[#464555]/30 focus:ring-[#c0c1ff]/50"
+                        : "ring-border-muted/30 focus:ring-primary/50"
                     }`}
                     disabled={isLoading || isVerified}
                   />
@@ -216,7 +216,7 @@ const EmailVerification: React.FC = () => {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="h-12 rounded-lg font-bold text-[#07006c] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#4b4dd8]/20 mt-2 bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-12 rounded-lg font-bold text-primary-dark hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 mt-2 bg-gradient-to-br from-primary to-accent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -236,7 +236,7 @@ const EmailVerification: React.FC = () => {
             {/* Resend Section */}
             <div className="text-center pt-2">
               <div className="flex flex-col items-center gap-2">
-                <span className="text-[#c7c4d8] text-sm">
+                <span className="text-text-muted text-sm">
                   Didn't receive the code?
                 </span>
                 <div className="flex items-center gap-3">
@@ -246,17 +246,17 @@ const EmailVerification: React.FC = () => {
                     onClick={handleResend}
                     className={`font-bold text-sm transition-colors ${
                       timer > 0 || resendLoading
-                        ? "text-[#c7c4d8] opacity-50 cursor-not-allowed"
-                        : "text-[#c0c1ff] hover:underline decoration-2 underline-offset-4"
+                        ? "text-text-muted opacity-50 cursor-not-allowed"
+                        : "text-primary hover:underline decoration-2 underline-offset-4"
                     }`}
                   >
                     {resendLoading ? "Sending..." : "Resend Code"}
                   </button>
                   {timer > 0 && (
-                    <span className="text-[#464555] h-4 w-[1px] bg-[#464555]/30"></span>
+                    <span className="text-border-muted h-4 w-[1px] bg-border-muted/30"></span>
                   )}
                   {timer > 0 && (
-                    <span className="text-[#c0c1ff] font-mono text-sm font-medium">
+                    <span className="text-primary font-mono text-sm font-medium">
                       0:{timer.toString().padStart(2, "0")}
                     </span>
                   )}
@@ -268,10 +268,10 @@ const EmailVerification: React.FC = () => {
 
         {/* Footer / Back Link */}
         <div className="mt-8 text-center">
-          <p className="text-[#c7c4d8] text-sm font-medium">
+          <p className="text-text-muted text-sm font-medium">
             Having trouble?{" "}
             <a
-              className="text-[#c0c1ff] font-bold hover:underline decoration-2 underline-offset-4"
+              className="text-primary font-bold hover:underline decoration-2 underline-offset-4"
               href="/login"
             >
               Back to Login
@@ -281,7 +281,7 @@ const EmailVerification: React.FC = () => {
       </main>
 
       {/* Decorative Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#c0c1ff] to-[#4b4dd8] opacity-30"></div>
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent opacity-30"></div>
     </div>
   );
 };

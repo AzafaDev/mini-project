@@ -22,29 +22,29 @@ export const TicketSelector: React.FC<TicketSelectorProps> = ({
     <div className="space-y-4">
       {/* General */}
       <div
-        className={`p-5 bg-[#1c1b1b] rounded-lg border transition-all ${tickets.general > 0 ? "border-[#c0c1ff]" : "border-transparent"}`}
+        className={`p-5 bg-dark-surface rounded-lg border transition-all ${tickets.general > 0 ? "border-primary" : "border-transparent"}`}
       >
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h4 className="font-bold text-[#e5e2e1]">
+            <h4 className="font-bold text-text-light">
               General Admission
             </h4>
-            <p className="text-xs text-[#c7c4d8]">
+            <p className="text-xs text-text-muted">
               Standard floor access
             </p>
           </div>
-          <span className="text-[#c0c1ff] font-black">
+          <span className="text-primary font-black">
             {formatIDR(prices.general)}
           </span>
         </div>
         <div className="flex items-center justify-between mt-4">
-          <span className="text-xs text-[#ffdad6] bg-[#93000a]/30 px-2 py-0.5 rounded">
+          <span className="text-xs text-[#ffdad6] bg-error/30 px-2 py-0.5 rounded">
             Low Stock
           </span>
-          <div className="flex items-center gap-4 bg-[#353534] px-3 py-1 rounded-full">
+          <div className="flex items-center gap-4 bg-dark-card px-3 py-1 rounded-full">
             <button
               onClick={() => onUpdateTicket("general", -1)}
-              className="text-[#c7c4d8] hover:text-[#c0c1ff]"
+              className="text-text-muted hover:text-primary"
             >
               <span className="material-symbols-outlined text-lg">
                 remove
@@ -55,7 +55,7 @@ export const TicketSelector: React.FC<TicketSelectorProps> = ({
             </span>
             <button
               onClick={() => onUpdateTicket("general", 1)}
-              className="text-[#c7c4d8] hover:text-[#c0c1ff]"
+              className="text-text-muted hover:text-primary"
             >
               <span className="material-symbols-outlined text-lg">
                 add
@@ -67,34 +67,34 @@ export const TicketSelector: React.FC<TicketSelectorProps> = ({
 
       {/* VIP */}
       <div
-        className={`p-5 bg-[#1c1b1b] rounded-lg border transition-all ${tickets.architect > 0 ? "border-[#c0c1ff] shadow-[0_0_20px_rgba(192,193,255,0.1)]" : "border-transparent"}`}
+        className={`p-5 bg-dark-surface rounded-lg border transition-all ${tickets.architect > 0 ? "border-primary shadow-[0_0_20px_rgba(192,193,255,0.1)]" : "border-transparent"}`}
       >
         <div className="flex justify-between items-start mb-2">
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-bold text-[#e5e2e1]">
+              <h4 className="font-bold text-text-light">
                 Architect Tier (VIP)
               </h4>
-              <span className="material-symbols-outlined text-[#c0c1ff] text-sm">
+              <span className="material-symbols-outlined text-primary text-sm">
                 stars
               </span>
             </div>
-            <p className="text-xs text-[#c7c4d8]">
+            <p className="text-xs text-text-muted">
               Lounge, open bar, artist meet
             </p>
           </div>
-          <span className="text-[#c0c1ff] font-black">
+          <span className="text-primary font-black">
             {formatIDR(prices.architect)}
           </span>
         </div>
         <div className="flex items-center justify-between mt-4">
-          <span className="text-xs text-[#c0c1ff] bg-[#c0c1ff]/10 px-2 py-0.5 rounded">
+          <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded">
             Most Popular
           </span>
-          <div className="flex items-center gap-4 bg-[#353534] px-3 py-1 rounded-full">
+          <div className="flex items-center gap-4 bg-dark-card px-3 py-1 rounded-full">
             <button
               onClick={() => onUpdateTicket("architect", -1)}
-              className="text-[#c7c4d8] hover:text-[#c0c1ff]"
+              className="text-text-muted hover:text-primary"
             >
               <span className="material-symbols-outlined text-lg">
                 remove
@@ -105,7 +105,7 @@ export const TicketSelector: React.FC<TicketSelectorProps> = ({
             </span>
             <button
               onClick={() => onUpdateTicket("architect", 1)}
-              className="text-[#c7c4d8] hover:text-[#c0c1ff]"
+              className="text-text-muted hover:text-primary"
             >
               <span className="material-symbols-outlined text-lg">
                 add

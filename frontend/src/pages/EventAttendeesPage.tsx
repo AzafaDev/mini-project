@@ -49,14 +49,14 @@ export default function EventAttendeesPage() {
 
   if (loading || loadingEventAttendees) {
     return (
-      <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter']">
+      <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter']">
         <div className="max-w-6xl mx-auto px-8 py-12">
           <div className="animate-pulse">
-            <div className="h-8 bg-[#1C1B1B] rounded w-48 mb-8"></div>
-            <div className="h-12 bg-[#1C1B1B] rounded mb-8"></div>
+            <div className="h-8 bg-dark-surface rounded w-48 mb-8"></div>
+            <div className="h-12 bg-dark-surface rounded mb-8"></div>
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-16 bg-[#1C1B1B] rounded-lg"></div>
+                <div key={i} className="h-16 bg-dark-surface rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -66,26 +66,26 @@ export default function EventAttendeesPage() {
   }
 
   return (
-    <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter'] selection:bg-[#4B4DD8] selection:text-[#D9D8FF]">
+    <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter'] selection:bg-accent selection:text-[#D9D8FF]">
       <div className="max-w-6xl mx-auto px-8 py-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-lg bg-[#1C1B1B] flex items-center justify-center hover:bg-[#2A2A2A] transition-colors"
+              className="w-10 h-10 rounded-lg bg-dark-surface flex items-center justify-center hover:bg-dark-elevated transition-colors"
             >
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
             <div>
               <h1 className="text-2xl font-bold">Attendees</h1>
-              <p className="text-sm text-[#C7C4D8]">
+              <p className="text-sm text-text-muted">
                 {currentEvent?.name || "Loading..."}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="bg-[#4B4DD8]/10 text-[#C0C1FF] px-3 py-1 rounded-full text-sm font-medium">
+            <span className="bg-accent/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
               {eventAttendees.length} total
             </span>
           </div>
@@ -94,7 +94,7 @@ export default function EventAttendeesPage() {
         {/* Search */}
         <div className="mb-6">
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#666]">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">
               search
             </span>
             <input
@@ -105,27 +105,27 @@ export default function EventAttendeesPage() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-12 pr-4 py-3 bg-[#1C1B1B] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+              className="w-full pl-12 pr-4 py-3 bg-dark-surface border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
             />
           </div>
         </div>
 
         {/* Attendees Table */}
         {filteredAttendees.length > 0 ? (
-          <div className="bg-[#1C1B1B] rounded-lg border border-[#464555]/10 overflow-hidden">
+          <div className="bg-dark-surface rounded-lg border border-border-muted/10 overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#464555]/10">
-                  <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                <tr className="border-b border-border-muted/10">
+                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                     Attendee
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                     Ticket
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                     Quantity
                   </th>
-                  <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                     Purchase Date
                   </th>
                 </tr>
@@ -134,11 +134,11 @@ export default function EventAttendeesPage() {
                 {paginatedAttendees.map((attendee, index) => (
                   <tr
                     key={`${attendee.userId}-${attendee.ticketId}-${index}`}
-                    className="border-b border-[#464555]/10 hover:bg-[#2A2A2A] transition-colors"
+                    className="border-b border-border-muted/10 hover:bg-dark-elevated transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#353534] flex items-center justify-center overflow-hidden">
+                        <div className="w-10 h-10 rounded-full bg-dark-card flex items-center justify-center overflow-hidden">
                           {attendee.profilePicture ? (
                             <img
                               src={attendee.profilePicture}
@@ -146,19 +146,19 @@ export default function EventAttendeesPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="material-symbols-outlined text-[#666]">
+                            <span className="material-symbols-outlined text-text-secondary">
                               person
                             </span>
                           )}
                         </div>
                         <div>
                           <p className="font-medium">{attendee.fullName}</p>
-                          <p className="text-sm text-[#666]">{attendee.email}</p>
+                          <p className="text-sm text-text-secondary">{attendee.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[#C0C1FF] font-medium">
+                      <span className="text-primary font-medium">
                         {attendee.ticketName}
                       </span>
                     </td>
@@ -166,7 +166,7 @@ export default function EventAttendeesPage() {
                       <span className="font-bold">{attendee.quantity}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-[#C7C4D8]">
+                      <span className="text-sm text-text-muted">
                         {formatDate(attendee.purchaseDate)}
                       </span>
                     </td>
@@ -176,12 +176,12 @@ export default function EventAttendeesPage() {
             </table>
           </div>
         ) : (
-          <div className="bg-[#1C1B1B] rounded-lg p-12 text-center border border-[#464555]/10">
-            <span className="material-symbols-outlined text-8xl text-[#353534] mb-4">
+          <div className="bg-dark-surface rounded-lg p-12 text-center border border-border-muted/10">
+            <span className="material-symbols-outlined text-8xl text-dark-card mb-4">
               group
             </span>
-            <p className="text-xl text-[#C7C4D8] mb-2">No attendees yet</p>
-            <p className="text-[#666]">
+            <p className="text-xl text-text-muted mb-2">No attendees yet</p>
+            <p className="text-text-secondary">
               {searchTerm
                 ? "No attendees match your search"
                 : "No one has purchased tickets for this event yet"}
@@ -192,7 +192,7 @@ export default function EventAttendeesPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6">
-            <p className="text-sm text-[#C7C4D8]">
+            <p className="text-sm text-text-muted">
               Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
               {Math.min(currentPage * itemsPerPage, filteredAttendees.length)} of{" "}
               {filteredAttendees.length} results
@@ -201,7 +201,7 @@ export default function EventAttendeesPage() {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 bg-[#1C1B1B] rounded-lg hover:bg-[#2A2A2A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-2 bg-dark-surface rounded-lg hover:bg-dark-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <span className="material-symbols-outlined">chevron_left</span>
               </button>
@@ -211,8 +211,8 @@ export default function EventAttendeesPage() {
                   onClick={() => setCurrentPage(page)}
                   className={`px-3 py-2 rounded-lg transition-colors ${
                     page === currentPage
-                      ? "bg-[#4B4DD8] text-white"
-                      : "bg-[#1C1B1B] hover:bg-[#2A2A2A]"
+                      ? "bg-accent text-white"
+                      : "bg-dark-surface hover:bg-dark-elevated"
                   }`}
                 >
                   {page}
@@ -221,7 +221,7 @@ export default function EventAttendeesPage() {
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 bg-[#1C1B1B] rounded-lg hover:bg-[#2A2A2A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-2 bg-dark-surface rounded-lg hover:bg-dark-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <span className="material-symbols-outlined">chevron_right</span>
               </button>

@@ -17,7 +17,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   ];
 
   return (
-    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex-col py-6 px-4 gap-2 z-40 pt-20">
+    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-dark-surface flex-col py-6 px-4 gap-2 z-40 pt-20">
       <div className="mb-8 px-4">
         <div className="flex items-center gap-3 mb-2">
           <img
@@ -26,15 +26,15 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             alt="Organizer"
           />
           <div>
-            <div className="text-sm font-black text-[#E5E2E1]">
+            <div className="text-sm font-black text-text-light">
               {userName}
             </div>
-            <div className="text-[10px] text-[#C7C4D8] uppercase tracking-widest">
+            <div className="text-[10px] text-text-muted uppercase tracking-widest">
               {userTier}
             </div>
           </div>
         </div>
-        <button className="w-full mt-4 bg-[#353534] text-[#C0C1FF] text-xs py-2 rounded-lg font-bold hover:bg-[#393939] transition-all">
+        <button className="w-full mt-4 bg-dark-card text-primary text-xs py-2 rounded-lg font-bold hover:bg-dark-card-hover transition-all">
           Upgrade Plan
         </button>
       </div>
@@ -44,8 +44,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             key={item.name}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               item.active
-                ? "bg-[#2A2A2A] text-[#C0C1FF] font-semibold border-r-4 border-[#C0C1FF]"
-                : "text-[#C7C4D8] hover:bg-[#2A2A2A] hover:text-[#E5E2E1]"
+                ? "bg-dark-elevated text-primary font-semibold border-r-4 border-primary"
+                : "text-text-muted hover:bg-dark-elevated hover:text-text-light"
             }`}
             href="#"
           >
@@ -56,14 +56,14 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       </nav>
       <div className="mt-auto flex flex-col gap-1">
         <a
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#C7C4D8] hover:bg-[#2A2A2A] transition-all"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-dark-elevated transition-all"
           href="#"
         >
           <span className="material-symbols-outlined">help</span>
           <span className="text-sm">Help Center</span>
         </a>
         <a
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#C7C4D8] hover:bg-[#2A2A2A] transition-all"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-dark-elevated transition-all"
           href="#"
         >
           <span className="material-symbols-outlined">logout</span>

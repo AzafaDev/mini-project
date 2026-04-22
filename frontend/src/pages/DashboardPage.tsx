@@ -1,3 +1,4 @@
+import { FALLBACK_IMAGES } from "../lib/constants";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEventStore } from "../stores/useEventStore";
@@ -36,7 +37,7 @@ const StatCard = ({
   icon: string;
   iconColor: string;
 }) => (
-  <div className="p-6 bg-[#1C1B1B] rounded-lg">
+  <div className="p-6 bg-dark-surface rounded-lg">
     <div
       className={`w-10 h-10 rounded flex items-center justify-center mb-4`}
       style={{ backgroundColor: `${iconColor}1A` }}
@@ -106,7 +107,7 @@ const EventItem = ({
 
   return (
     <div
-      className="bg-[#1C1B1B] hover:bg-[#2A2A2A] transition-colors p-4 flex items-center gap-4 group cursor-pointer relative"
+      className="bg-dark-surface hover:bg-dark-elevated transition-colors p-4 flex items-center gap-4 group cursor-pointer relative"
       onClick={handleClick}
       onMouseEnter={() => setShowMenu(true)}
       onMouseLeave={() => setShowMenu(false)}
@@ -115,7 +116,7 @@ const EventItem = ({
         <img
           alt={title}
           className="w-full h-full object-cover"
-          src={image || "https://via.placeholder.com/64"}
+          src={image || FALLBACK_IMAGES.EVENT_SMALL}
         />
       </div>
       <div className="flex-1">
@@ -136,9 +137,9 @@ const EventItem = ({
         <p className="text-sm font-bold text-on-surface">
           {sold.toLocaleString()} Sold
         </p>
-        <div className="w-24 bg-[#353534] h-1 rounded-full mt-2 overflow-hidden">
+        <div className="w-24 bg-dark-card h-1 rounded-full mt-2 overflow-hidden">
           <div
-            className="bg-[#C0C1FF] h-full"
+            className="bg-primary h-full"
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
@@ -149,10 +150,10 @@ const EventItem = ({
 
       {/* Dropdown Menu */}
       {showMenu && (
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg shadow-xl py-2 min-w-[160px]">
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-dark-elevated border border-border-muted/10 rounded-lg shadow-xl py-2 min-w-[160px]">
           <button
             onClick={handleViewEvent}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-[#353534] flex items-center gap-2 transition-colors"
+            className="w-full px-4 py-2 text-left text-sm hover:bg-dark-card flex items-center gap-2 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">
               visibility
@@ -161,7 +162,7 @@ const EventItem = ({
           </button>
           <button
             onClick={handleViewStats}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-[#353534] flex items-center gap-2 transition-colors"
+            className="w-full px-4 py-2 text-left text-sm hover:bg-dark-card flex items-center gap-2 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">
               analytics
@@ -170,7 +171,7 @@ const EventItem = ({
           </button>
           <button
             onClick={handleViewAttendees}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-[#353534] flex items-center gap-2 transition-colors"
+            className="w-full px-4 py-2 text-left text-sm hover:bg-dark-card flex items-center gap-2 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">group</span>
             View Attendees
@@ -272,17 +273,17 @@ export default function OrganizerDashboard() {
 
   if (isInitialLoading) {
     return (
-      <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter']">
+      <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter']">
         <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
         <main className="md:ml-64 min-h-screen">
           <div className="pt-24 pb-12 px-8">
             <div className="animate-pulse">
-              <div className="h-8 bg-[#1C1B1B] rounded w-48 mb-8"></div>
+              <div className="h-8 bg-dark-surface rounded w-48 mb-8"></div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="h-32 bg-[#1C1B1B] rounded-lg"></div>
-                <div className="h-32 bg-[#1C1B1B] rounded-lg"></div>
-                <div className="h-32 bg-[#1C1B1B] rounded-lg"></div>
-                <div className="h-32 bg-[#1C1B1B] rounded-lg"></div>
+                <div className="h-32 bg-dark-surface rounded-lg"></div>
+                <div className="h-32 bg-dark-surface rounded-lg"></div>
+                <div className="h-32 bg-dark-surface rounded-lg"></div>
+                <div className="h-32 bg-dark-surface rounded-lg"></div>
               </div>
             </div>
           </div>
@@ -292,7 +293,7 @@ export default function OrganizerDashboard() {
   }
 
   return (
-    <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter'] selection:bg-[#4B4DD8] selection:text-[#D9D8FF]">
+    <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter'] selection:bg-accent selection:text-[#D9D8FF]">
       <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Main Area */}
@@ -306,7 +307,7 @@ export default function OrganizerDashboard() {
                 {activeTab === "events" && "My Events"}
                 {activeTab === "vouchers" && "Vouchers"}
               </h1>
-              <p className="text-sm text-[#C7C4D8] mt-1">
+              <p className="text-sm text-text-muted mt-1">
                 Welcome back, {user?.fullName || "Organizer"}
               </p>
             </div>

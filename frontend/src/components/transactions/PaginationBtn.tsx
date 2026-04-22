@@ -18,7 +18,7 @@ export const PaginationBtn: React.FC<PaginationBtnProps> = ({
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`w-8 h-8 flex items-center justify-center rounded text-xs font-bold transition-all ${disabled ? "opacity-30 cursor-not-allowed" : ""} ${active ? "bg-[#c0c1ff] text-[#07006c]" : "bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1]"}`}
+    className={`w-8 h-8 flex items-center justify-center rounded text-xs font-bold transition-all ${disabled ? "opacity-30 cursor-not-allowed" : ""} ${active ? "bg-primary text-primary-dark" : "bg-dark-elevated text-text-muted hover:text-text-light"}`}
   >
     {icon ? (
       <span className="material-symbols-outlined text-sm">{icon}</span>

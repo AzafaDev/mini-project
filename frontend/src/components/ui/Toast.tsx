@@ -31,12 +31,12 @@ export function Toast() {
           <span className="material-symbols-outlined text-xl">
             {toastIcons[toast.type]}
           </span>
-          <span className="text-sm font-medium flex-1 text-[#e5e2e1]">
+          <span className="text-sm font-medium flex-1 text-text-light">
             {toast.message}
           </span>
           <button
             onClick={() => removeToast(toast.id)}
-            className="text-[#c7c4d8] hover:text-[#e5e2e1] transition-colors p-1"
+            className="text-text-muted hover:text-text-light transition-colors p-1"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>

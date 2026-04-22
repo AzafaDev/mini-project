@@ -50,7 +50,7 @@ const Sidebar = ({ role, onNavigate }: SidebarProps) => {
   };
 
   return (
-    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex-col py-6 px-4 gap-2 z-40 pt-20">
+    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-dark-surface flex-col py-6 px-4 gap-2 z-40 pt-20">
       <div className="mb-8 px-4">
         <div className="flex items-center gap-3 mb-2">
           <img
@@ -62,10 +62,10 @@ const Sidebar = ({ role, onNavigate }: SidebarProps) => {
             alt="Profile"
           />
           <div>
-            <div className="text-sm font-black text-[#E5E2E1] truncate max-w-32">
+            <div className="text-sm font-black text-text-light truncate max-w-32">
               {user?.fullName || "User"}
             </div>
-            <div className="text-[10px] text-[#C7C4D8] uppercase tracking-widest">
+            <div className="text-[10px] text-text-muted uppercase tracking-widest">
               {role === "ORGANIZER" ? "Organizer" : "Customer"}
             </div>
           </div>
@@ -78,8 +78,8 @@ const Sidebar = ({ role, onNavigate }: SidebarProps) => {
             onClick={() => item.name !== "Settings" && onNavigate(item.name)}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
               item.active
-                ? "bg-[#2A2A2A] text-[#C0C1FF] font-semibold border-r-4 border-[#C0C1FF]"
-                : "text-[#C7C4D8] hover:bg-[#2A2A2A] hover:text-[#E5E2E1]"
+                ? "bg-dark-elevated text-primary font-semibold border-r-4 border-primary"
+                : "text-text-muted hover:bg-dark-elevated hover:text-text-light"
             }`}
           >
             <span className="material-symbols-outlined">{item.icon}</span>
@@ -88,13 +88,13 @@ const Sidebar = ({ role, onNavigate }: SidebarProps) => {
         ))}
       </nav>
       <div className="mt-auto flex flex-col gap-1">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#C7C4D8] hover:bg-[#2A2A2A] transition-all">
+        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-dark-elevated transition-all">
           <span className="material-symbols-outlined">help</span>
           <span className="text-sm">Help Center</span>
         </button>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#C7C4D8] hover:bg-[#2A2A2A] transition-all"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-dark-elevated transition-all"
         >
           <span className="material-symbols-outlined">logout</span>
           <span className="text-sm">Logout</span>
@@ -107,20 +107,20 @@ const Sidebar = ({ role, onNavigate }: SidebarProps) => {
 // --- Loading Skeleton Components ---
 
 const ProfileSkeleton = () => (
-  <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans">
-    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex-col py-6 px-4 gap-2 z-40 pt-20">
+  <div className="bg-dark text-text-light min-h-screen font-sans">
+    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-dark-surface flex-col py-6 px-4 gap-2 z-40 pt-20">
       <div className="mb-8 px-4">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-full bg-[#2A2A2A] animate-pulse" />
+          <div className="w-10 h-10 rounded-full bg-dark-elevated animate-pulse" />
           <div>
-            <div className="h-4 w-24 bg-[#2A2A2A] rounded animate-pulse mb-1" />
-            <div className="h-2 w-16 bg-[#2A2A2A] rounded animate-pulse" />
+            <div className="h-4 w-24 bg-dark-elevated rounded animate-pulse mb-1" />
+            <div className="h-2 w-16 bg-dark-elevated rounded animate-pulse" />
           </div>
         </div>
       </div>
       <div className="space-y-2 px-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-10 bg-[#2A2A2A] rounded-lg animate-pulse" />
+          <div key={i} className="h-10 bg-dark-elevated rounded-lg animate-pulse" />
         ))}
       </div>
     </aside>
@@ -128,71 +128,71 @@ const ProfileSkeleton = () => (
     <main className="lg:ml-64 pt-24 pb-12 px-6 md:px-12">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
-          <div className="h-10 w-48 bg-[#2A2A2A] rounded animate-pulse mb-2" />
-          <div className="h-5 w-72 bg-[#2A2A2A] rounded animate-pulse" />
+          <div className="h-10 w-48 bg-dark-elevated rounded animate-pulse mb-2" />
+          <div className="h-5 w-72 bg-dark-elevated rounded animate-pulse" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Profile Card Skeleton */}
-          <section className="md:col-span-8 bg-[#1c1b1b] rounded-xl p-8">
+          <section className="md:col-span-8 bg-dark-surface rounded-xl p-8">
             <div className="flex flex-col md:flex-row gap-8">
-              <div className="w-32 h-32 rounded-full bg-[#2A2A2A] animate-pulse" />
+              <div className="w-32 h-32 rounded-full bg-dark-elevated animate-pulse" />
               <div className="flex-1 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <div className="h-3 w-20 bg-[#2A2A2A] rounded animate-pulse" />
-                    <div className="h-12 bg-[#2A2A2A] rounded-lg animate-pulse" />
+                    <div className="h-3 w-20 bg-dark-elevated rounded animate-pulse" />
+                    <div className="h-12 bg-dark-elevated rounded-lg animate-pulse" />
                   </div>
                   <div className="space-y-2">
-                    <div className="h-3 w-28 bg-[#2A2A2A] rounded animate-pulse" />
-                    <div className="h-12 bg-[#2A2A2A] rounded-lg animate-pulse" />
+                    <div className="h-3 w-28 bg-dark-elevated rounded animate-pulse" />
+                    <div className="h-12 bg-dark-elevated rounded-lg animate-pulse" />
                   </div>
                   <div className="md:col-span-2 space-y-2">
-                    <div className="h-3 w-32 bg-[#2A2A2A] rounded animate-pulse" />
-                    <div className="h-12 bg-[#2A2A2A] rounded-lg animate-pulse" />
+                    <div className="h-3 w-32 bg-dark-elevated rounded animate-pulse" />
+                    <div className="h-12 bg-dark-elevated rounded-lg animate-pulse" />
                   </div>
                 </div>
-                <div className="h-10 w-28 bg-[#2A2A2A] rounded-lg animate-pulse" />
+                <div className="h-10 w-28 bg-dark-elevated rounded-lg animate-pulse" />
               </div>
             </div>
           </section>
 
           {/* Points Card Skeleton */}
-          <section className="md:col-span-4 bg-[#1c1b1b] rounded-xl p-8">
+          <section className="md:col-span-4 bg-dark-surface rounded-xl p-8">
             <div className="space-y-4">
-              <div className="h-3 w-24 bg-[#2A2A2A] rounded animate-pulse" />
-              <div className="h-14 w-32 bg-[#2A2A2A] rounded animate-pulse" />
-              <div className="h-4 w-48 bg-[#2A2A2A] rounded animate-pulse" />
+              <div className="h-3 w-24 bg-dark-elevated rounded animate-pulse" />
+              <div className="h-14 w-32 bg-dark-elevated rounded animate-pulse" />
+              <div className="h-4 w-48 bg-dark-elevated rounded animate-pulse" />
             </div>
           </section>
 
           {/* Security Section Skeleton */}
-          <section className="md:col-span-12 bg-[#1c1b1b] rounded-xl p-8">
+          <section className="md:col-span-12 bg-dark-surface rounded-xl p-8">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-6 h-6 bg-[#2A2A2A] rounded animate-pulse" />
-              <div className="h-6 w-36 bg-[#2A2A2A] rounded animate-pulse" />
+              <div className="w-6 h-6 bg-dark-elevated rounded animate-pulse" />
+              <div className="h-6 w-36 bg-dark-elevated rounded animate-pulse" />
             </div>
             <div className="space-y-6 max-w-lg">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="space-y-2">
-                  <div className="h-3 w-32 bg-[#2A2A2A] rounded animate-pulse" />
-                  <div className="h-12 bg-[#2A2A2A] rounded-lg animate-pulse" />
+                  <div className="h-3 w-32 bg-dark-elevated rounded animate-pulse" />
+                  <div className="h-12 bg-dark-elevated rounded-lg animate-pulse" />
                 </div>
               ))}
             </div>
           </section>
 
           {/* Coupons Section Skeleton */}
-          <section className="md:col-span-12 bg-[#1c1b1b] rounded-xl p-8">
+          <section className="md:col-span-12 bg-dark-surface rounded-xl p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-6 h-6 bg-[#2A2A2A] rounded animate-pulse" />
-              <div className="h-6 w-28 bg-[#2A2A2A] rounded animate-pulse" />
+              <div className="w-6 h-6 bg-dark-elevated rounded animate-pulse" />
+              <div className="h-6 w-28 bg-dark-elevated rounded animate-pulse" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-[#0e0e0e] rounded-lg p-4">
-                  <div className="h-4 w-20 bg-[#2A2A2A] rounded animate-pulse mb-2" />
-                  <div className="h-3 w-16 bg-[#2A2A2A] rounded animate-pulse" />
+                <div key={i} className="bg-dark-darker rounded-lg p-4">
+                  <div className="h-4 w-20 bg-dark-elevated rounded animate-pulse mb-2" />
+                  <div className="h-3 w-16 bg-dark-elevated rounded animate-pulse" />
                 </div>
               ))}
             </div>
@@ -370,17 +370,17 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
   }
 
   return (
-    <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
+    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
       <Sidebar role={user?.role} onNavigate={handleNavigate} />
 
       <main className="lg:ml-64 pt-24 pb-12 px-6 md:px-12">
         <div className="max-w-6xl mx-auto">
           {/* Header Section */}
           <div className="mb-12">
-            <h1 className="text-4xl font-bold tracking-tight text-[#e5e2e1] mb-2">
+            <h1 className="text-4xl font-bold tracking-tight text-text-light mb-2">
               Account Settings
             </h1>
-            <p className="text-[#c7c4d8] text-base">
+            <p className="text-text-muted text-base">
               Manage your personal information and security settings.
             </p>
           </div>
@@ -388,13 +388,13 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
           {/* Bento Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Profile Identity Card */}
-            <section className="md:col-span-8 bg-[#1c1b1b] rounded-xl p-8 flex flex-col md:flex-row gap-8 items-center md:items-start relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[#c0c1ff]/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+            <section className="md:col-span-8 bg-dark-surface rounded-xl p-8 flex flex-col md:flex-row gap-8 items-center md:items-start relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
 
               {/* Profile Picture Section */}
               <div className="relative group">
                 <div
-                  className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-[#2a2a2a] relative cursor-pointer transition-transform duration-300 hover:scale-105"
+                  className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-dark-elevated relative cursor-pointer transition-transform duration-300 hover:scale-105"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <img
@@ -427,10 +427,10 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                 {selectedFile && (
                   <div className="mt-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#c7c4d8] truncate max-w-32">
+                      <span className="text-xs text-text-muted truncate max-w-32">
                         {selectedFile.name}
                       </span>
-                      <span className="text-xs text-[#c7c4d8]">
+                      <span className="text-xs text-text-muted">
                         ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
                       </span>
                     </div>
@@ -439,7 +439,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                         type="button"
                         onClick={handleProfilePictureUpload}
                         disabled={uploading}
-                        className="bg-[#c0c1ff] text-[#07006c] px-3 py-1.5 rounded-lg text-xs font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                        className="bg-primary text-primary-dark px-3 py-1.5 rounded-lg text-xs font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                       >
                         {uploading ? "Uploading..." : "Upload"}
                       </button>
@@ -447,7 +447,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                         type="button"
                         onClick={cancelUpload}
                         disabled={uploading}
-                        className="bg-[#2a2a2a] text-[#c7c4d8] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#3a3a3a] active:scale-95 transition-all disabled:opacity-50"
+                        className="bg-dark-elevated text-text-muted px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#3a3a3a] active:scale-95 transition-all disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -462,7 +462,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
+                    <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
                       Full Name
                     </label>
                     <input
@@ -471,11 +471,11 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                       value={profileFormik.values.fullName}
                       onChange={profileFormik.handleChange}
                       onBlur={profileFormik.handleBlur}
-                      className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
+                      className={`w-full bg-dark-darker text-text-light py-3 px-4 rounded-lg outline-none transition-all ${
                         profileFormik.touched.fullName &&
                         profileFormik.errors.fullName
                           ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                          : "focus:ring-2 focus:ring-[#c0c1ff]"
+                          : "focus:ring-2 focus:ring-primary"
                       }`}
                     />
                     {profileFormik.touched.fullName &&
@@ -486,19 +486,19 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                       )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
+                    <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
                       Email Address
                     </label>
                     <input
                       name="email"
                       value={user?.email || ""}
                       readOnly
-                      className="w-full bg-[#0e0e0e]/50 border-none text-[#c7c4d8] py-3 px-4 rounded-lg cursor-not-allowed"
+                      className="w-full bg-dark-darker/50 border-none text-text-muted py-3 px-4 rounded-lg cursor-not-allowed"
                       type="email"
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
+                    <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
                       Phone Number (Optional)
                     </label>
                     <input
@@ -507,11 +507,11 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                       value={profileFormik.values.phoneNumber}
                       onChange={profileFormik.handleChange}
                       onBlur={profileFormik.handleBlur}
-                      className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
+                      className={`w-full bg-dark-darker text-text-light py-3 px-4 rounded-lg outline-none transition-all ${
                         profileFormik.touched.phoneNumber &&
                         profileFormik.errors.phoneNumber
                           ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                          : "focus:ring-2 focus:ring-[#c0c1ff]"
+                          : "focus:ring-2 focus:ring-primary"
                       }`}
                       placeholder="+62 xxx xxxx xxxx"
                     />
@@ -526,7 +526,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                 <button
                   type="submit"
                   disabled={profileFormik.isSubmitting}
-                  className="bg-[#c0c1ff] text-[#07006c] px-6 py-2.5 rounded-lg font-bold text-sm hover:brightness-110 hover:shadow-lg hover:shadow-[#c0c1ff]/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="bg-primary text-primary-dark px-6 py-2.5 rounded-lg font-bold text-sm hover:brightness-110 hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {profileFormik.isSubmitting && (
                     <span className="material-symbols-outlined animate-spin text-sm">
@@ -539,7 +539,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
             </section>
 
             {/* Points Balance Card */}
-            <section className="md:col-span-4 bg-gradient-to-br from-[#4b4dd8] to-[#494bd6] rounded-xl p-8 flex flex-col justify-between text-[#d9d8ff] relative overflow-hidden group">
+            <section className="md:col-span-4 bg-gradient-to-br from-accent to-[#494bd6] rounded-xl p-8 flex flex-col justify-between text-[#d9d8ff] relative overflow-hidden group">
               <span className="material-symbols-outlined absolute top-4 right-4 opacity-20 text-6xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
                 token
               </span>
@@ -565,9 +565,9 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
             </section>
 
             {/* Security Section */}
-            <section className="md:col-span-12 bg-[#1c1b1b] rounded-xl p-8">
+            <section className="md:col-span-12 bg-dark-surface rounded-xl p-8">
               <div className="flex items-center gap-3 mb-8">
-                <span className="material-symbols-outlined text-[#c0c1ff]">
+                <span className="material-symbols-outlined text-primary">
                   security
                 </span>
                 <h2 className="text-xl font-bold">Change Password</h2>
@@ -577,7 +577,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                 onSubmit={passwordFormik.handleSubmit}
               >
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
+                  <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
                     Current Password
                   </label>
                   <input
@@ -586,11 +586,11 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                     value={passwordFormik.values.currentPassword}
                     onChange={passwordFormik.handleChange}
                     onBlur={passwordFormik.handleBlur}
-                    className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
+                    className={`w-full bg-dark-darker text-text-light py-3 px-4 rounded-lg outline-none transition-all ${
                       passwordFormik.touched.currentPassword &&
                       passwordFormik.errors.currentPassword
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                        : "focus:ring-2 focus:ring-[#c0c1ff]"
+                        : "focus:ring-2 focus:ring-primary"
                     }`}
                     placeholder="Enter current password"
                   />
@@ -602,7 +602,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                     )}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
+                  <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
                     New Password
                   </label>
                   <input
@@ -611,11 +611,11 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                     value={passwordFormik.values.newPassword}
                     onChange={passwordFormik.handleChange}
                     onBlur={passwordFormik.handleBlur}
-                    className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
+                    className={`w-full bg-dark-darker text-text-light py-3 px-4 rounded-lg outline-none transition-all ${
                       passwordFormik.touched.newPassword &&
                       passwordFormik.errors.newPassword
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                        : "focus:ring-2 focus:ring-[#c0c1ff]"
+                        : "focus:ring-2 focus:ring-primary"
                     }`}
                     placeholder="Min. 8 characters"
                   />
@@ -627,7 +627,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                     )}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-[#c7c4d8]">
+                  <label className="text-xs font-bold uppercase tracking-widest text-text-muted">
                     Confirm New Password
                   </label>
                   <input
@@ -636,11 +636,11 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                     value={passwordFormik.values.confirmPassword}
                     onChange={passwordFormik.handleChange}
                     onBlur={passwordFormik.handleBlur}
-                    className={`w-full bg-[#0e0e0e] text-[#e5e2e1] py-3 px-4 rounded-lg outline-none transition-all ${
+                    className={`w-full bg-dark-darker text-text-light py-3 px-4 rounded-lg outline-none transition-all ${
                       passwordFormik.touched.confirmPassword &&
                       passwordFormik.errors.confirmPassword
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                        : "focus:ring-2 focus:ring-[#c0c1ff]"
+                        : "focus:ring-2 focus:ring-primary"
                     }`}
                     placeholder="Confirm new password"
                   />
@@ -655,7 +655,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                   <button
                     type="submit"
                     disabled={passwordFormik.isSubmitting}
-                    className="bg-[#c0c1ff] text-[#07006c] px-6 py-2.5 rounded-lg font-bold text-sm hover:brightness-110 hover:shadow-lg hover:shadow-[#c0c1ff]/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="bg-primary text-primary-dark px-6 py-2.5 rounded-lg font-bold text-sm hover:brightness-110 hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {passwordFormik.isSubmitting && (
                       <span className="material-symbols-outlined animate-spin text-sm">
@@ -671,34 +671,34 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
             </section>
 
             {/* Coupons Section */}
-            <section className="md:col-span-12 bg-[#1c1b1b] rounded-xl p-8">
+            <section className="md:col-span-12 bg-dark-surface rounded-xl p-8">
               <div className="flex items-center gap-3 mb-6">
-                <span className="material-symbols-outlined text-[#c0c1ff]">
+                <span className="material-symbols-outlined text-primary">
                   local_activity
                 </span>
                 <h2 className="text-xl font-bold">My Coupons</h2>
               </div>
 
               {coupons.length === 0 ? (
-                <p className="text-[#c7c4d8]">No active coupons</p>
+                <p className="text-text-muted">No active coupons</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {coupons.map((coupon) => (
                     <div
                       key={coupon.id}
-                      className="bg-[#0e0e0e] rounded-lg p-4"
+                      className="bg-dark-darker rounded-lg p-4"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <span className="text-[#c0c1ff] font-mono font-bold">
+                        <span className="text-primary font-mono font-bold">
                           {coupon.code}
                         </span>
-                        <span className="text-xs text-[#c7c4d8]">
+                        <span className="text-xs text-text-muted">
                           {coupon.discountType === "PERCENTAGE"
                             ? `${coupon.discountValue}% OFF`
                             : `Rp ${coupon.discountValue.toLocaleString()} OFF`}
                         </span>
                       </div>
-                      <div className="text-xs text-[#c7c4d8]">
+                      <div className="text-xs text-text-muted">
                         Exp: {new Date(coupon.endDate).toLocaleDateString()}
                       </div>
                     </div>
@@ -711,7 +711,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
       </main>
 
       {/* Mobile Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full bg-[#1C1B1B] h-16 flex items-center justify-around z-50 border-t border-[#464555]/10">
+      <div className="md:hidden fixed bottom-0 left-0 w-full bg-dark-surface h-16 flex items-center justify-around z-50 border-t border-border-muted/10">
         <button
           onClick={() =>
             handleNavigate(
@@ -720,7 +720,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
           }
           className="flex flex-col items-center gap-1"
         >
-          <span className="material-symbols-outlined text-[#C7C4D8]">
+          <span className="material-symbols-outlined text-text-muted">
             {user?.role === "ORGANIZER" ? "dashboard" : "confirmation_number"}
           </span>
         </button>
@@ -728,17 +728,17 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
           onClick={() => handleNavigate("Transactions")}
           className="flex flex-col items-center gap-1"
         >
-          <span className="material-symbols-outlined text-[#C7C4D8]">
+          <span className="material-symbols-outlined text-text-muted">
             receipt_long
           </span>
         </button>
         <button className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-[#C0C1FF]">
+          <span className="material-symbols-outlined text-primary">
             account_circle
           </span>
         </button>
         <button className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-[#C7C4D8]">
+          <span className="material-symbols-outlined text-text-muted">
             settings
           </span>
         </button>

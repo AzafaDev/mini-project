@@ -1,3 +1,4 @@
+import { EVENT_CATEGORIES, FALLBACK_IMAGES } from "../lib/constants";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useFormik } from "formik";
@@ -132,14 +133,14 @@ export default function EditEventPage() {
 
   if (loadingEvent) {
     return (
-      <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter']">
+      <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter']">
         <div className="max-w-4xl mx-auto px-8 py-12">
           <div className="animate-pulse">
-            <div className="h-8 bg-[#1C1B1B] rounded w-48 mb-8"></div>
+            <div className="h-8 bg-dark-surface rounded w-48 mb-8"></div>
             <div className="space-y-4">
-              <div className="h-40 bg-[#1C1B1B] rounded-lg"></div>
-              <div className="h-40 bg-[#1C1B1B] rounded-lg"></div>
-              <div className="h-40 bg-[#1C1B1B] rounded-lg"></div>
+              <div className="h-40 bg-dark-surface rounded-lg"></div>
+              <div className="h-40 bg-dark-surface rounded-lg"></div>
+              <div className="h-40 bg-dark-surface rounded-lg"></div>
             </div>
           </div>
         </div>
@@ -148,19 +149,19 @@ export default function EditEventPage() {
   }
 
   return (
-    <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter'] selection:bg-[#4B4DD8] selection:text-[#D9D8FF]">
+    <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter'] selection:bg-accent selection:text-[#D9D8FF]">
       <div className="max-w-4xl mx-auto px-8 py-12">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-lg bg-[#1C1B1B] flex items-center justify-center hover:bg-[#2A2A2A] transition-colors"
+            className="w-10 h-10 rounded-lg bg-dark-surface flex items-center justify-center hover:bg-dark-elevated transition-colors"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <div>
             <h1 className="text-2xl font-bold">Edit Event</h1>
-            <p className="text-sm text-[#C7C4D8]">Update your event details</p>
+            <p className="text-sm text-text-muted">Update your event details</p>
           </div>
         </div>
 
@@ -177,14 +178,14 @@ export default function EditEventPage() {
          {/* Form */}
         <form onSubmit={handleFormSubmit} className="space-y-8">
           {/* Image Upload */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Event Image</h3>
             <div className="flex items-start gap-6">
-              <div className="w-48 h-32 rounded-lg bg-[#2A2A2A] flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-48 h-32 rounded-lg bg-dark-elevated flex items-center justify-center overflow-hidden flex-shrink-0">
                 {imagePreview ? (
                   <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="material-symbols-outlined text-4xl text-[#353534]">
+                  <span className="material-symbols-outlined text-4xl text-dark-card">
                     image
                   </span>
                 )}
@@ -199,12 +200,12 @@ export default function EditEventPage() {
                 />
                 <label
                   htmlFor="event-image"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#353534] hover:bg-[#393939] rounded-lg cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg cursor-pointer transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px]">upload</span>
                   {imageFile ? "Change Image" : "Upload Image"}
                 </label>
-                <p className="text-xs text-[#666] mt-2">
+                <p className="text-xs text-text-secondary mt-2">
                   Recommended: 1200x800px or similar ratio. Max 5MB.
                 </p>
               </div>
@@ -212,11 +213,11 @@ export default function EditEventPage() {
           </div>
 
           {/* Basic Info */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Event Name *
                 </label>
                 <input
@@ -225,12 +226,12 @@ export default function EditEventPage() {
                   value={formik.values.name}
                   onChange={formik.handleChange} onBlur={formik.handleBlur}
                   placeholder="Enter event name"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Description *
                 </label>
                 <textarea
@@ -239,19 +240,19 @@ export default function EditEventPage() {
                   onChange={formik.handleChange} onBlur={formik.handleBlur}
                   placeholder="Describe your event..."
                   rows={4}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors resize-none"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Category *
                 </label>
                 <select
                   name="category"
                   value={formik.values.category}
                   onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                 >
                   <option value="">Select category</option>
                   {CATEGORIES.map((cat) => (
@@ -263,7 +264,7 @@ export default function EditEventPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Location *
                 </label>
                 <input
@@ -272,18 +273,18 @@ export default function EditEventPage() {
                   value={formik.values.location}
                   onChange={formik.handleChange} onBlur={formik.handleBlur}
                   placeholder="Enter location"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
             </div>
           </div>
 
           {/* Date & Time */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Date & Time</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Start Date & Time *
                 </label>
                 <input
@@ -291,12 +292,12 @@ export default function EditEventPage() {
                   name="startDate"
                   value={formik.values.startDate}
                   onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   End Date & Time *
                 </label>
                 <input
@@ -304,18 +305,18 @@ export default function EditEventPage() {
                   name="endDate"
                   value={formik.values.endDate}
                   onChange={formik.handleChange} onBlur={formik.handleBlur}
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
             </div>
           </div>
 
           {/* Tickets & Pricing */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Tickets & Pricing</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Total Seats *
                 </label>
                 <input
@@ -325,12 +326,12 @@ export default function EditEventPage() {
                   onChange={formik.handleChange} onBlur={formik.handleBlur}
                   min={1}
                   placeholder="100"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Price per Ticket ($) *
                 </label>
                 <input
@@ -341,7 +342,7 @@ export default function EditEventPage() {
                   min={0}
                   step={0.01}
                   placeholder="0.00"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
             </div>
@@ -352,14 +353,14 @@ export default function EditEventPage() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-6 py-3 bg-[#353534] hover:bg-[#393939] rounded-lg font-medium transition-colors"
+              className="px-6 py-3 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loadingEventAction}
-              className="px-6 py-3 bg-[#4B4DD8] hover:bg-[#3a3cb3] disabled:bg-[#4B4DD8]/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+              className="px-6 py-3 bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
             >
               {loadingEventAction ? (
                 <>
