@@ -11,6 +11,12 @@ const loadTemplate = (templateName: string): HandlebarsTemplateDelegate => {
     return templateCache[templateName];
   }
   const templatePath = path.join(TEMPLATES_DIR, `${templateName}.hbs`);
+  
+  // Tambahkan log debugging untuk Vercel
+  if (!fs.existsSync(templatePath)) {
+    console.error("❌ TEMPLATE NOT FOUND AT:", templatePath);
+  }
+
   const templateContent = fs.readFileSync(templatePath, "utf-8");
   templateCache[templateName] = handlebars.compile(templateContent);
   return templateCache[templateName];

@@ -23,7 +23,6 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-const __dirname = path.resolve();
 
 // Urutan middleware sangat penting! Diurutkan dari yang paling umum ke spesifik
 // CORS harus paling awal agar semua request melewati pengecekan CORS terlebih dahulu
@@ -43,7 +42,8 @@ app.use(cookieParser());
 app.use(
   fileUpload({
     useTempFiles: true,
-    tempFileDir: path.join(__dirname, "temp"),
+    // Gunakan process.cwd() untuk mendapatkan root project di Vercel
+    tempFileDir: path.join(process.cwd(), "backend", "temp"),
   }),
 );
 
