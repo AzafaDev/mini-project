@@ -30,6 +30,7 @@ interface EventStore {
   currentEventVouchers: Voucher[];
   organizerProfile: OrganizerProfile | null;
   loading: boolean;
+  loadingEvent: boolean;
   error: string | null;
   pagination: {
     page: number;
@@ -59,6 +60,11 @@ interface EventStore {
     organizerId: string,
   ) => Promise<OrganizerProfile | null>;
   createReview: (
+    eventId: string,
+    rating: number,
+    comment: string,
+  ) => Promise<boolean>;
+  submitReview: (
     eventId: string,
     rating: number,
     comment: string,
@@ -106,6 +112,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
   currentEventVouchers: [],
   organizerProfile: null,
   loading: false,
+  loadingEvent: false,
   error: null,
   pagination: { page: 1, totalPages: 1, total: 0 },
   filters: { search: undefined, category: undefined, location: undefined },
@@ -173,16 +180,17 @@ export const useEventStore = create<EventStore>((set, get) => ({
   clearError: () => set({ error: null }),
 
   fetchEventById: async (id: string) => {
-    set({ loading: true, error: null });
+    set({ loadingEvent: true, loading: true, error: null });
     try {
       const response = await eventService.getEventById(id);
-      set({ currentEvent: response.data, loading: false });
+      set({ currentEvent: response.data, loadingEvent: false, loading: false });
       return response.data;
     } catch (error: any) {
       set({
         error:
           error.message ||
           `Failed to fetch event with id ${id}`,
+        loadingEvent: false,
         loading: false,
       });
       return null;
@@ -249,6 +257,10 @@ export const useEventStore = create<EventStore>((set, get) => ({
       );
       return false;
     }
+  },
+
+  submitReview: async (eventId: string, rating: number, comment: string) => {
+    return get().createReview(eventId, rating, comment);
   },
 
   updateReview: async (

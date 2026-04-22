@@ -87,38 +87,38 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
     const configs: Record<TransactionStatus, { label: string; color: string; bgColor: string; icon: string }> = {
       WAITING_PAYMENT: {
         label: "Waiting Payment",
-        color: "text-[#a44100]",
-        bgColor: "bg-[#ffdbcc]/10 border-[#a44100]/20",
+        color: "text-warning-dark",
+        bgColor: "bg-warning-light/10 border-warning-dark/20",
         icon: "schedule",
       },
       WAITING_CONFIRMATION: {
         label: "Proof Uploaded",
-        color: "text-[#ffb695]",
-        bgColor: "bg-[#ffdbcc]/20 border-none",
+        color: "text-warning",
+        bgColor: "bg-warning-light/20 border-none",
         icon: "receipt_long",
       },
       DONE: {
         label: "Confirmed",
-        color: "text-[#c0c1ff]",
-        bgColor: "bg-[#c0c1ff]/10 border-[#4b4dd8]/20",
+        color: "text-primary",
+        bgColor: "bg-primary/10 border-accent/20",
         icon: "check_circle",
       },
       REJECTED: {
         label: "Rejected",
-        color: "text-[#ffb4ab]",
-        bgColor: "bg-[#ffb4ab]/10 border-[#93000a]/20",
+        color: "text-error-light",
+        bgColor: "bg-error-light/10 border-error/20",
         icon: "cancel",
       },
       EXPIRED: {
         label: "Expired",
-        color: "text-[#666]",
-        bgColor: "bg-[#666]/10 border-[#666]/20",
+        color: "text-text-secondary",
+        bgColor: "bg-text-secondary/10 border-text-secondary/20",
         icon: "timer_off",
       },
       CANCELED: {
         label: "Canceled",
-        color: "text-[#666]",
-        bgColor: "bg-[#666]/10 border-[#666]/20",
+        color: "text-text-secondary",
+        bgColor: "bg-text-secondary/10 border-text-secondary/20",
         icon: "not_interested",
       },
     };
@@ -178,19 +178,19 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
   };
 
   return (
-    <div className="bg-[#131313] text-[#e5e2e1] font-sans min-h-screen selection:bg-[#c0c1ff]/30">
+    <div className="bg-dark text-text-light font-sans min-h-screen selection:bg-primary/30">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content */}
       <main className="md:ml-64 pt-24 pb-12 px-6 md:px-12">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tighter text-[#e5e2e1] mb-2">
+            <h1 className="text-4xl font-extrabold tracking-tighter text-text-light mb-2">
               Manage Transactions
             </h1>
-            <p className="text-[#c7c4d8] text-lg">
+            <p className="text-text-muted text-lg">
               Verify payments for{" "}
-              <span className="text-[#c0c1ff] font-semibold">
+              <span className="text-primary font-semibold">
                 {eventId ? "selected event" : "all events"}
               </span>
               .
@@ -198,7 +198,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
           </div>
           <div className="flex gap-3">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#666]">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
                 search
               </span>
               <input
@@ -206,7 +206,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                 placeholder="Search transactions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-[#2a2a2a] pl-10 pr-4 py-2.5 rounded-lg text-[#e5e2e1] placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-[#c0c1ff]"
+                className="bg-dark-elevated pl-10 pr-4 py-2.5 rounded-lg text-text-light placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
@@ -214,35 +214,35 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
 
         {/* Stats Bento */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
-          <div className="bg-[#1C1B1B] p-6 rounded-xl border border-white/5 shadow-lg">
-            <p className="text-[#c7c4d8] text-xs uppercase tracking-widest mb-2">
+          <div className="bg-dark-surface p-6 rounded-xl border border-white/5 shadow-lg">
+            <p className="text-text-muted text-xs uppercase tracking-widest mb-2">
               Total Revenue
             </p>
-            <h3 className="text-2xl font-bold text-[#e5e2e1]">
+            <h3 className="text-2xl font-bold text-text-light">
               {formatIDR(stats.totalRevenue)}
             </h3>
           </div>
-          <div className="bg-[#1C1B1B] p-6 rounded-xl border border-white/5 shadow-lg">
-            <p className="text-[#c7c4d8] text-xs uppercase tracking-widest mb-2">
+          <div className="bg-dark-surface p-6 rounded-xl border border-white/5 shadow-lg">
+            <p className="text-text-muted text-xs uppercase tracking-widest mb-2">
               Waiting Payment
             </p>
-            <h3 className="text-2xl font-bold text-[#ffb695]">
+            <h3 className="text-2xl font-bold text-warning">
               {stats.waitingPayment}
             </h3>
           </div>
-          <div className="bg-[#1C1B1B] p-6 rounded-xl border border-white/5 shadow-lg">
-            <p className="text-[#c7c4d8] text-xs uppercase tracking-widest mb-2">
+          <div className="bg-dark-surface p-6 rounded-xl border border-white/5 shadow-lg">
+            <p className="text-text-muted text-xs uppercase tracking-widest mb-2">
               Pending Confirmation
             </p>
-            <h3 className="text-2xl font-bold text-[#c0c1ff]">
+            <h3 className="text-2xl font-bold text-primary">
               {stats.waitingConfirmation}
             </h3>
           </div>
-          <div className="bg-[#1C1B1B] p-6 rounded-xl border border-white/5 shadow-lg">
-            <p className="text-[#c7c4d8] text-xs uppercase tracking-widest mb-2">
+          <div className="bg-dark-surface p-6 rounded-xl border border-white/5 shadow-lg">
+            <p className="text-text-muted text-xs uppercase tracking-widest mb-2">
               Confirmed
             </p>
-            <h3 className="text-2xl font-bold text-[#c0c1ff]">
+            <h3 className="text-2xl font-bold text-primary">
               {stats.done}
             </h3>
           </div>
@@ -254,8 +254,8 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
             onClick={() => setFilter("ALL")}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
               filter === "ALL"
-                ? "bg-[#c0c1ff] text-[#07006c]"
-                : "bg-[#1c1b1b] text-[#c7c4d8] hover:text-[#e5e2e1] hover:bg-[#2a2a2a]"
+                ? "bg-primary text-primary-dark"
+                : "bg-dark-surface text-text-muted hover:text-text-light hover:bg-dark-elevated"
             }`}
           >
             All ({stats.total})
@@ -264,8 +264,8 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
             onClick={() => setFilter("WAITING_PAYMENT")}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
               filter === "WAITING_PAYMENT"
-                ? "bg-[#ffb695] text-[#a44100]"
-                : "bg-[#1c1b1b] text-[#c7c4d8] hover:text-[#e5e2e1] hover:bg-[#2a2a2a]"
+                ? "bg-warning text-warning-dark"
+                : "bg-dark-surface text-text-muted hover:text-text-light hover:bg-dark-elevated"
             }`}
           >
             Waiting Payment ({stats.waitingPayment})
@@ -274,8 +274,8 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
             onClick={() => setFilter("WAITING_CONFIRMATION")}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
               filter === "WAITING_CONFIRMATION"
-                ? "bg-[#ffb695] text-[#a44100]"
-                : "bg-[#1c1b1b] text-[#c7c4d8] hover:text-[#e5e2e1] hover:bg-[#2a2a2a]"
+                ? "bg-warning text-warning-dark"
+                : "bg-dark-surface text-text-muted hover:text-text-light hover:bg-dark-elevated"
             }`}
           >
             Waiting Confirmation ({stats.waitingConfirmation})
@@ -284,8 +284,8 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
             onClick={() => setFilter("DONE")}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
               filter === "DONE"
-                ? "bg-[#c0c1ff] text-[#07006c]"
-                : "bg-[#1c1b1b] text-[#c7c4d8] hover:text-[#e5e2e1] hover:bg-[#2a2a2a]"
+                ? "bg-primary text-primary-dark"
+                : "bg-dark-surface text-text-muted hover:text-text-light hover:bg-dark-elevated"
             }`}
           >
             Confirmed ({stats.done})
@@ -293,22 +293,22 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
         </div>
 
         {/* Table Area */}
-        <div className="bg-[#1C1B1B] rounded-xl overflow-hidden shadow-xl">
+        <div className="bg-dark-surface rounded-xl overflow-hidden shadow-xl">
           {error && (
-            <div className="p-6 bg-[#93000a]/10 border border-[#93000a]/30">
-              <p className="text-[#ffb4ab]">{error}</p>
+            <div className="p-6 bg-error/10 border border-error/30">
+              <p className="text-error-light">{error}</p>
             </div>
           )}
           
           {filteredTransactions.length === 0 && !loading ? (
             <div className="p-12 text-center">
-              <span className="material-symbols-outlined text-6xl text-[#666] mb-4">
+              <span className="material-symbols-outlined text-6xl text-text-secondary mb-4">
                 receipt_long
               </span>
-              <h2 className="text-2xl font-bold text-[#e5e2e1] mb-2">
+              <h2 className="text-2xl font-bold text-text-light mb-2">
                 No transactions found
               </h2>
-              <p className="text-[#c7c4d8]">
+              <p className="text-text-muted">
                 {searchQuery || filter !== "ALL"
                   ? "Try adjusting your filters"
                   : "No transactions yet"}
@@ -318,7 +318,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead className="bg-[#2a2a2a]/50 text-[#c7c4d8] text-xs uppercase tracking-widest">
+                  <thead className="bg-dark-elevated/50 text-text-muted text-xs uppercase tracking-widest">
                     <tr>
                       <th className="px-6 py-4 font-semibold">Transaction ID</th>
                       <th className="px-6 py-4 font-semibold">Customer</th>
@@ -336,32 +336,32 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                       return (
                         <tr
                           key={txn.id}
-                          className={`hover:bg-[#2a2a2a] transition-colors ${
-                            txn.status === "WAITING_CONFIRMATION" ? "border-l-4 border-[#ffb695]" : ""
+                          className={`hover:bg-dark-elevated transition-colors ${
+                            txn.status === "WAITING_CONFIRMATION" ? "border-l-4 border-warning" : ""
                           }`}
                         >
-                          <td className="px-6 py-5 font-mono text-xs text-[#c0c1ff]">
+                          <td className="px-6 py-5 font-mono text-xs text-primary">
                             {txn.id}
                           </td>
                            <td className="px-6 py-5">
                              <div>
-                               <p className="text-sm font-semibold text-[#e5e2e1]">
+                               <p className="text-sm font-semibold text-text-light">
                                  {txn.user?.fullName || "Unknown"}
                                </p>
-                               <p className="text-xs text-[#c7c4d8]">
+                               <p className="text-xs text-text-muted">
                                  {txn.user?.email || ""}
                                </p>
                              </div>
                            </td>
                           <td className="px-6 py-5">
-                            <p className="text-sm text-[#c7c4d8]">
+                            <p className="text-sm text-text-muted">
                               {txn.event?.name}
                             </p>
-                             <p className="text-xs text-[#666]">
+                             <p className="text-xs text-text-secondary">
                                Qty: {txn.quantity}
                              </p>
                           </td>
-                          <td className="px-6 py-5 text-sm font-bold text-[#e5e2e1]">
+                          <td className="px-6 py-5 text-sm font-bold text-text-light">
                             {formatIDR(txn.finalPrice)}
                           </td>
                           <td className="px-6 py-5">
@@ -369,7 +369,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusConfig.bgColor} ${statusConfig.color}`}
                             >
                               {statusConfig.icon === "schedule" && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#ffb695] animate-pulse"></span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
                               )}
                               {statusConfig.icon === "receipt_long" && (
                                 <span className="material-symbols-outlined text-[12px]">
@@ -377,10 +377,10 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                                 </span>
                               )}
                               {statusConfig.icon === "check_circle" && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#c0c1ff]"></span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                               )}
                               {statusConfig.icon === "cancel" && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#ffb4ab]"></span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-error-light"></span>
                               )}
                               {statusConfig.label}
                             </div>
@@ -398,13 +398,13 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                                 <button
                                   onClick={() => openAcceptDialog(txn.id)}
                                   disabled={isSubmitting}
-                                  className="bg-[#c0c1ff] text-[#07006c] px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:brightness-110 disabled:opacity-50"
+                                  className="bg-primary text-primary-dark px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:brightness-110 disabled:opacity-50"
                                 >
                                   Approve
                                 </button>
                                 <button
                                   onClick={() => openProofModal(txn.id)}
-                                  className="bg-[#2a2a2a] text-[#c7c4d8] px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-[#393939]"
+                                  className="bg-dark-elevated text-text-muted px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:bg-dark-card-hover"
                                 >
                                   View Proof
                                 </button>
@@ -420,15 +420,15 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="px-6 py-4 flex items-center justify-between bg-[#0e0e0e]/50 border-t border-white/5">
-                  <p className="text-xs text-[#c7c4d8] uppercase tracking-wider">
+                <div className="px-6 py-4 flex items-center justify-between bg-dark-darker/50 border-t border-white/5">
+                  <p className="text-xs text-text-muted uppercase tracking-wider">
                     Showing {(pagination.page - 1) * 20 + 1}-{Math.min(pagination.page * 20, pagination.total)} of {pagination.total} transactions
                   </p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handlePageChange(pagination.page - 1)}
                       disabled={pagination.page === 1}
-                      className="w-8 h-8 flex items-center justify-center rounded text-xs font-bold bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1] disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="w-8 h-8 flex items-center justify-center rounded text-xs font-bold bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <span className="material-symbols-outlined text-sm">chevron_left</span>
                     </button>
@@ -441,8 +441,8 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                           onClick={() => handlePageChange(pageNum)}
                           className={`w-8 h-8 flex items-center justify-center rounded text-xs font-bold ${
                             pagination.page === pageNum
-                              ? "bg-[#c0c1ff] text-[#07006c]"
-                              : "bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1]"
+                              ? "bg-primary text-primary-dark"
+                              : "bg-dark-elevated text-text-muted hover:text-text-light"
                           }`}
                         >
                           {pageNum}
@@ -453,7 +453,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={pagination.page === pagination.totalPages}
-                      className="w-8 h-8 flex items-center justify-center rounded text-xs font-bold bg-[#2a2a2a] text-[#c7c4d8] hover:text-[#e5e2e1] disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="w-8 h-8 flex items-center justify-center rounded text-xs font-bold bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <span className="material-symbols-outlined text-sm">chevron_right</span>
                     </button>
@@ -472,17 +472,17 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsProofModalOpen(false)}
           />
-          <div className="relative bg-[#1c1b1b] p-6 rounded-xl border border-white/10 w-full max-w-2xl">
+          <div className="relative bg-dark-surface p-6 rounded-xl border border-white/10 w-full max-w-2xl">
             <button
               onClick={() => setIsProofModalOpen(false)}
-              className="absolute top-4 right-4 text-[#c7c4d8] hover:text-[#e5e2e1]"
+              className="absolute top-4 right-4 text-text-muted hover:text-text-light"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
-            <h3 className="text-xl font-bold text-[#e5e2e1] mb-6">
+            <h3 className="text-xl font-bold text-text-light mb-6">
               Payment Proof
             </h3>
-            <div className="bg-[#0e0e0e] rounded-lg p-4 min-h-[300px] flex items-center justify-center">
+            <div className="bg-dark-darker rounded-lg p-4 min-h-[300px] flex items-center justify-center">
               {transactions.find(t => t.id === selectedTransactionId)?.paymentProof ? (
                 <img 
                   src={transactions.find(t => t.id === selectedTransactionId)?.paymentProof} 
@@ -490,7 +490,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
                   className="max-w-full max-h-[500px] rounded-lg"
                 />
               ) : (
-                <p className="text-[#666]">No payment proof uploaded</p>
+                <p className="text-text-secondary">No payment proof uploaded</p>
               )}
             </div>
           </div>
@@ -522,30 +522,30 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
              onClick={() => setIsRejectModalOpen(false)}
            />
-           <div className="relative bg-[#1c1b1b] p-6 rounded-xl border border-white/10 w-full max-w-md">
+           <div className="relative bg-dark-surface p-6 rounded-xl border border-white/10 w-full max-w-md">
              <button
                onClick={() => setIsRejectModalOpen(false)}
-               className="absolute top-4 right-4 text-[#c7c4d8] hover:text-[#e5e2e1]"
+               className="absolute top-4 right-4 text-text-muted hover:text-text-light"
              >
                <span className="material-symbols-outlined">close</span>
              </button>
-             <h3 className="text-xl font-bold text-[#e5e2e1] mb-4">
+             <h3 className="text-xl font-bold text-text-light mb-4">
                Reject Transaction?
              </h3>
-             <p className="text-[#c7c4d8] mb-6">
+             <p className="text-text-muted mb-6">
                Are you sure you want to reject this transaction? This action cannot be undone.
              </p>
              <div className="flex gap-4">
                <button
                  onClick={() => setIsRejectModalOpen(false)}
-                 className="flex-1 py-3 bg-[#353534] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#4a4a4a]"
+                 className="flex-1 py-3 bg-dark-card text-text-light font-bold rounded-lg hover:bg-[#4a4a4a]"
                >
                  Cancel
                </button>
                <button
                  onClick={handleReject}
                  disabled={isSubmitting}
-                 className="flex-1 py-3 bg-[#93000a] text-[#e5e2e1] font-bold rounded-lg hover:bg-[#b30000] disabled:opacity-50 disabled:cursor-not-allowed"
+                 className="flex-1 py-3 bg-error text-text-light font-bold rounded-lg hover:bg-error-hover disabled:opacity-50 disabled:cursor-not-allowed"
                >
                  {isSubmitting ? (
                    <span className="material-symbols-outlined animate-spin">sync</span>

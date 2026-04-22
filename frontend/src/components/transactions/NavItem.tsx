@@ -12,7 +12,7 @@ export const NavItem: React.FC<NavItemProps> = ({
   active = false,
 }) => (
   <a
-    className={`flex items-center gap-3 py-3 px-4 rounded-lg transition-all active:translate-x-1 duration-150 ${active ? "bg-[#2A2A2A] text-[#C0C1FF] font-semibold border-r-4 border-[#C0C1FF]" : "text-[#C7C4D8] hover:bg-[#2A2A2A] hover:text-[#E5E2E1]"}`}
+    className={`flex items-center gap-3 py-3 px-4 rounded-lg transition-all active:translate-x-1 duration-150 ${active ? "bg-dark-elevated text-primary font-semibold border-r-4 border-primary" : "text-text-muted hover:bg-dark-elevated hover:text-text-light"}`}
     href="#"
   >
     <span className="material-symbols-outlined">{icon}</span>

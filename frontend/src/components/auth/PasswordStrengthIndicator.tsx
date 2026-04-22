@@ -26,17 +26,17 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
         return (
           <div
             key={idx}
-            className="flex items-center gap-2 px-2 py-1.5 bg-[#353534] rounded-lg border border-transparent"
+            className="flex items-center gap-2 px-2 py-1.5 bg-dark-card rounded-lg border border-transparent"
           >
             <span
-              className={`material-symbols-outlined text-sm ${isActive ? "text-[#ffb4ab]" : "text-[#c7c4d8]"}`}
+              className={`material-symbols-outlined text-sm ${isActive ? "text-error-light" : "text-text-muted"}`}
               style={{
                 fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
               }}
             >
               {isActive ? "error" : "circle"}
             </span>
-            <span className="text-[10px] uppercase tracking-tighter text-[#c7c4d8]">
+            <span className="text-[10px] uppercase tracking-tighter text-text-muted">
               {item.label}
             </span>
           </div>

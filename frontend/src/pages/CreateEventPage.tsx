@@ -1,3 +1,4 @@
+import { EVENT_CATEGORIES, FALLBACK_IMAGES } from "../lib/constants";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
@@ -118,19 +119,19 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter'] selection:bg-[#4B4DD8] selection:text-[#D9D8FF]">
+    <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter'] selection:bg-accent selection:text-[#D9D8FF]">
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-lg bg-[#1C1B1B] flex items-center justify-center hover:bg-[#2A2A2A] transition-colors"
+            className="w-10 h-10 rounded-lg bg-dark-surface flex items-center justify-center hover:bg-dark-elevated transition-colors"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <div>
             <h1 className="text-2xl font-bold">Create New Event</h1>
-            <p className="text-sm text-[#C7C4D8]">
+            <p className="text-sm text-text-muted">
               Fill in the details to create your event
             </p>
           </div>
@@ -152,10 +153,10 @@ export default function CreateEventPage() {
         {/* Form */}
         <form onSubmit={handleFormSubmit} className="space-y-8">
           {/* Image Upload */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Event Image</h3>
             <div className="flex items-start gap-6">
-              <div className="w-48 h-32 rounded-lg bg-[#2A2A2A] flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-48 h-32 rounded-lg bg-dark-elevated flex items-center justify-center overflow-hidden flex-shrink-0">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -163,7 +164,7 @@ export default function CreateEventPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="material-symbols-outlined text-4xl text-[#353534]">
+                  <span className="material-symbols-outlined text-4xl text-dark-card">
                     image
                   </span>
                 )}
@@ -178,14 +179,14 @@ export default function CreateEventPage() {
                 />
                 <label
                   htmlFor="event-image"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#353534] hover:bg-[#393939] rounded-lg cursor-pointer transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg cursor-pointer transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     upload
                   </span>
                   {imageFile ? "Change Image" : "Upload Image"}
                 </label>
-                <p className="text-xs text-[#666] mt-2">
+                <p className="text-xs text-text-secondary mt-2">
                   Recommended: 1200x800px or similar ratio. Max 5MB.
                 </p>
               </div>
@@ -193,11 +194,11 @@ export default function CreateEventPage() {
           </div>
 
           {/* Basic Info */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Event Name *
                 </label>
                 <input
@@ -207,10 +208,10 @@ export default function CreateEventPage() {
                    onChange={formik.handleChange}
                    onBlur={formik.handleBlur}
                    placeholder="Enter event name"
-                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
                      formik.touched.name && formik.errors.name
                        ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                       : "border-border-muted/10 focus:border-accent"
                    }`}
                  />
                  {formik.touched.name && formik.errors.name && (
@@ -219,7 +220,7 @@ export default function CreateEventPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Description *
                 </label>
                 <textarea
@@ -229,10 +230,10 @@ export default function CreateEventPage() {
                    onBlur={formik.handleBlur}
                    placeholder="Describe your event..."
                    rows={4}
-                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors resize-none ${
+                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors resize-none ${
                      formik.touched.description && formik.errors.description
                        ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                       : "border-border-muted/10 focus:border-accent"
                    }`}
                  />
                  {formik.touched.description && formik.errors.description && (
@@ -241,7 +242,7 @@ export default function CreateEventPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Category *
                 </label>
                 <select
@@ -249,10 +250,10 @@ export default function CreateEventPage() {
                    value={formik.values.category}
                    onChange={formik.handleChange}
                    onBlur={formik.handleBlur}
-                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
                      formik.touched.category && formik.errors.category
                        ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                       : "border-border-muted/10 focus:border-accent"
                    }`}
                 >
                   <option value="">Select category</option>
@@ -268,7 +269,7 @@ export default function CreateEventPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Location *
                 </label>
                 <input
@@ -278,10 +279,10 @@ export default function CreateEventPage() {
                    onChange={formik.handleChange}
                    onBlur={formik.handleBlur}
                    placeholder="Enter location"
-                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
                      formik.touched.location && formik.errors.location
                        ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                       : "border-border-muted/10 focus:border-accent"
                    }`}
                  />
                  {formik.touched.location && formik.errors.location && (
@@ -292,11 +293,11 @@ export default function CreateEventPage() {
           </div>
 
           {/* Date & Time */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Date & Time</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Start Date & Time *
                 </label>
                 <input
@@ -305,10 +306,10 @@ export default function CreateEventPage() {
                    value={formik.values.startDate}
                    onChange={formik.handleChange}
                    onBlur={formik.handleBlur}
-                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
                      formik.touched.startDate && formik.errors.startDate
                        ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                       : "border-border-muted/10 focus:border-accent"
                    }`}
                  />
                  {formik.touched.startDate && formik.errors.startDate && (
@@ -317,7 +318,7 @@ export default function CreateEventPage() {
                </div>
 
                <div>
-                 <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                 <label className="block text-sm font-medium text-text-muted mb-2">
                    End Date & Time *
                  </label>
                  <input
@@ -326,10 +327,10 @@ export default function CreateEventPage() {
                    value={formik.values.endDate}
                    onChange={formik.handleChange}
                    onBlur={formik.handleBlur}
-                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
                      formik.touched.endDate && formik.errors.endDate
                        ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                       : "border-border-muted/10 focus:border-accent"
                    }`}
                  />
                  {formik.touched.endDate && formik.errors.endDate && (
@@ -340,11 +341,11 @@ export default function CreateEventPage() {
           </div>
 
           {/* Tickets & Pricing */}
-          <div className="bg-[#1C1B1B] rounded-lg p-6 border border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Tickets & Pricing</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div>
-                 <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                 <label className="block text-sm font-medium text-text-muted mb-2">
                    Total Seats *
                  </label>
                  <input
@@ -356,10 +357,10 @@ export default function CreateEventPage() {
                    min={1}
                    placeholder="100"
                    disabled={useCustomTickets}
-                   className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors disabled:opacity-50 ${
+                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors disabled:opacity-50 ${
                      formik.touched.totalSeats && formik.errors.totalSeats
                        ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                       : "border-border-muted/10 focus:border-accent"
                    }`}
                  />
                  {formik.touched.totalSeats && formik.errors.totalSeats && (
@@ -369,7 +370,7 @@ export default function CreateEventPage() {
 
                {!useCustomTickets && (
                  <div>
-                   <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                   <label className="block text-sm font-medium text-text-muted mb-2">
                      Price per Ticket ($) *
                    </label>
                    <input
@@ -381,10 +382,10 @@ export default function CreateEventPage() {
                      min={0}
                      step={0.01}
                      placeholder="0.00"
-                     className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg focus:outline-none transition-colors ${
+                     className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
                        formik.touched.price && formik.errors.price
                          ? "border-red-500/50 focus:border-red-500/50"
-                         : "border-[#464555]/10 focus:border-[#4B4DD8]"
+                         : "border-border-muted/10 focus:border-accent"
                      }`}
                    />
                    {formik.touched.price && formik.errors.price && (
@@ -395,7 +396,7 @@ export default function CreateEventPage() {
             </div>
 
             {/* Custom Ticket Types Toggle */}
-            <div className="mt-6 pt-6 border-t border-[#464555]/10">
+            <div className="mt-6 pt-6 border-t border-border-muted/10">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -406,9 +407,9 @@ export default function CreateEventPage() {
                       setTickets([]);
                     }
                   }}
-                  className="w-5 h-5 rounded border-[#464555] bg-[#2A2A2A] text-[#4B4DD8] focus:ring-[#4B4DD8] focus:ring-offset-0"
+                  className="w-5 h-5 rounded border-border-muted bg-dark-elevated text-accent focus:ring-accent focus:ring-offset-0"
                 />
-                <span className="text-sm font-medium text-[#C7C4D8]">
+                <span className="text-sm font-medium text-text-muted">
                   Create custom ticket types (e.g., VIP, General)
                 </span>
               </label>
@@ -420,10 +421,10 @@ export default function CreateEventPage() {
                 {tickets.map((ticket, index) => (
                   <div
                     key={index}
-                    className="flex flex-wrap items-end gap-3 p-4 bg-[#2A2A2A] rounded-lg"
+                    className="flex flex-wrap items-end gap-3 p-4 bg-dark-elevated rounded-lg"
                   >
                     <div className="flex-1 min-w-[120px]">
-                      <label className="block text-xs text-[#C7C4D8] mb-1">
+                      <label className="block text-xs text-text-muted mb-1">
                         Type
                       </label>
                       <select
@@ -435,14 +436,14 @@ export default function CreateEventPage() {
                             | "VIP";
                           setTickets(newTickets);
                         }}
-                        className="w-full px-3 py-2 bg-[#353534] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8]"
+                        className="w-full px-3 py-2 bg-dark-card border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent"
                       >
                         <option value="GENERAL">GENERAL</option>
                         <option value="VIP">VIP</option>
                       </select>
                     </div>
                     <div className="flex-1 min-w-[120px]">
-                      <label className="block text-xs text-[#C7C4D8] mb-1">
+                      <label className="block text-xs text-text-muted mb-1">
                         Price (IDR)
                       </label>
                       <input
@@ -455,11 +456,11 @@ export default function CreateEventPage() {
                         }}
                         min={0}
                         placeholder="50000"
-                        className="w-full px-3 py-2 bg-[#353534] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8]"
+                        className="w-full px-3 py-2 bg-dark-card border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent"
                       />
                     </div>
                     <div className="flex-1 min-w-[120px]">
-                      <label className="block text-xs text-[#C7C4D8] mb-1">
+                      <label className="block text-xs text-text-muted mb-1">
                         Quantity
                       </label>
                       <input
@@ -472,7 +473,7 @@ export default function CreateEventPage() {
                         }}
                         min={1}
                         placeholder="100"
-                        className="w-full px-3 py-2 bg-[#353534] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8]"
+                        className="w-full px-3 py-2 bg-dark-card border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent"
                       />
                     </div>
                     <button
@@ -496,7 +497,7 @@ export default function CreateEventPage() {
                     ])
                   }
                   disabled={tickets.length >= 2}
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-[#4B4DD8] hover:bg-[#4B4DD8]/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-accent hover:bg-accent/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined">add</span>
                   Add Ticket Type
@@ -510,14 +511,14 @@ export default function CreateEventPage() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-6 py-3 bg-[#353534] hover:bg-[#393939] rounded-lg font-medium transition-colors"
+              className="px-6 py-3 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loadingEventAction}
-              className="px-6 py-3 bg-[#4B4DD8] hover:bg-[#3a3cb3] disabled:bg-[#4B4DD8]/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+              className="px-6 py-3 bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
             >
               {loadingEventAction ? (
                 <>

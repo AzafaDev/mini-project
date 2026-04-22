@@ -17,18 +17,18 @@ export const TicketStats: React.FC<TicketStatsProps> = ({
   colorClass = "text-primary",
   border = "",
 }) => (
-  <div className={`bg-[#1c1b1b] p-6 rounded-xl flex flex-col justify-between ${border}`}>
+  <div className={`bg-dark-surface p-6 rounded-xl flex flex-col justify-between ${border}`}>
     <div>
       <span className={`material-symbols-outlined ${colorClass} mb-4`}>
         {icon}
       </span>
-      <h3 className="text-[10px] uppercase tracking-widest text-[#c7c4d8] mb-1">
+      <h3 className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
         {label}
       </h3>
       <p className="text-3xl font-bold">{value}</p>
     </div>
     <p
-      className={`text-xs mt-4 ${colorClass === "text-tertiary" ? "text-tertiary" : "text-[#c7c4d8]"}`}
+      className={`text-xs mt-4 ${colorClass === "text-tertiary" ? "text-tertiary" : "text-text-muted"}`}
     >
       {subtext}
     </p>

@@ -166,10 +166,10 @@ export function VouchersTab() {
   if (loadingMyEvents || loadingMyVouchers) {
     return (
       <div className="animate-pulse">
-        <div className="h-8 bg-[#1C1B1B] rounded w-48 mb-8"></div>
+        <div className="h-8 bg-dark-surface rounded w-48 mb-8"></div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-[#1C1B1B] rounded-lg"></div>
+            <div key={i} className="h-24 bg-dark-surface rounded-lg"></div>
           ))}
         </div>
       </div>
@@ -184,7 +184,7 @@ export function VouchersTab() {
         <button
           onClick={openCreateModal}
           disabled={myEvents.length === 0}
-          className="bg-[#4B4DD8] hover:bg-[#3a3cb3] disabled:bg-[#4B4DD8]/50 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+          className="bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
         >
           <span className="material-symbols-outlined">add</span>
           Create Voucher
@@ -203,27 +203,27 @@ export function VouchersTab() {
 
       {/* Vouchers List */}
       {myVouchers.length > 0 ? (
-        <div className="bg-[#1C1B1B] rounded-lg border border-[#464555]/10 overflow-hidden">
+        <div className="bg-dark-surface rounded-lg border border-border-muted/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px]">
             <thead>
-              <tr className="border-b border-[#464555]/10">
-                <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+              <tr className="border-b border-border-muted/10">
+                <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                   Code
                 </th>
-                <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                   Event
                 </th>
-                <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                   Discount
                 </th>
-                <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                   Valid Period
                 </th>
-                <th className="text-left px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                   Status
                 </th>
-                <th className="text-right px-6 py-4 text-xs font-medium text-[#C7C4D8] uppercase tracking-widest">
+                <th className="text-right px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
                   Actions
                 </th>
               </tr>
@@ -232,10 +232,10 @@ export function VouchersTab() {
               {myVouchers.map((voucher) => (
                 <tr
                   key={voucher.id}
-                  className="border-b border-[#464555]/10 hover:bg-[#2A2A2A] transition-colors"
+                  className="border-b border-border-muted/10 hover:bg-dark-elevated transition-colors"
                 >
                   <td className="px-6 py-4">
-                    <span className="font-mono font-bold text-[#C0C1FF]">
+                    <span className="font-mono font-bold text-primary">
                       {voucher.code}
                     </span>
                   </td>
@@ -245,11 +245,11 @@ export function VouchersTab() {
                   <td className="px-6 py-4">
                     <span className="font-bold">{formatDiscount(voucher)}</span>
                     {voucher.discountType === "PERCENTAGE" && (
-                      <span className="text-xs text-[#666] ml-1">off</span>
+                      <span className="text-xs text-text-secondary ml-1">off</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-[#C7C4D8]">
+                    <span className="text-sm text-text-muted">
                       {formatDate(voucher.startDate)} - {formatDate(voucher.endDate)}
                     </span>
                   </td>
@@ -269,7 +269,7 @@ export function VouchersTab() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => openEditModal(voucher)}
-                        className="p-2 text-[#C7C4D8] hover:text-white hover:bg-[#353534] rounded-lg transition-colors"
+                        className="p-2 text-text-muted hover:text-white hover:bg-dark-card rounded-lg transition-colors"
                         title="Edit"
                       >
                         <span className="material-symbols-outlined text-[18px]">
@@ -278,7 +278,7 @@ export function VouchersTab() {
                       </button>
                       <button
                         onClick={() => handleDelete(voucher)}
-                        className="p-2 text-[#C7C4D8] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        className="p-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <span className="material-symbols-outlined text-[18px]">
@@ -294,12 +294,12 @@ export function VouchersTab() {
           </div>
         </div>
       ) : (
-        <div className="bg-[#1C1B1B] rounded-lg p-12 text-center border border-[#464555]/10">
-          <span className="material-symbols-outlined text-8xl text-[#353534] mb-4">
+        <div className="bg-dark-surface rounded-lg p-12 text-center border border-border-muted/10">
+          <span className="material-symbols-outlined text-8xl text-dark-card mb-4">
             local_offer
           </span>
-          <p className="text-xl text-[#C7C4D8] mb-2">No vouchers yet</p>
-          <p className="text-[#666] mb-6">
+          <p className="text-xl text-text-muted mb-2">No vouchers yet</p>
+          <p className="text-text-secondary mb-6">
             {myEvents.length === 0
               ? "Create an event first, then add vouchers"
               : "Create vouchers to offer discounts to your customers"}
@@ -307,7 +307,7 @@ export function VouchersTab() {
           {myEvents.length > 0 && (
             <button
               onClick={openCreateModal}
-              className="bg-[#4B4DD8] hover:bg-[#3a3cb3] text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
+              className="bg-accent hover:bg-accent-hover text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
             >
               <span className="material-symbols-outlined">add</span>
               Create Voucher
@@ -319,14 +319,14 @@ export function VouchersTab() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1C1B1B] rounded-lg w-full max-w-md border border-[#464555]/10">
-            <div className="flex items-center justify-between p-6 border-b border-[#464555]/10">
+          <div className="bg-dark-surface rounded-lg w-full max-w-md border border-border-muted/10">
+            <div className="flex items-center justify-between p-6 border-b border-border-muted/10">
               <h2 className="text-lg font-bold">
                 {editingVoucher ? "Edit Voucher" : "Create Voucher"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-[#C7C4D8] hover:text-white"
+                className="text-text-muted hover:text-white"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -341,14 +341,14 @@ export function VouchersTab() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {!editingVoucher && (
                 <div>
-                  <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                  <label className="block text-sm font-medium text-text-muted mb-2">
                     Event *
                   </label>
                   <select
                     name="eventId"
                     value={formData.eventId}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                    className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                   >
                     <option value="">Select event</option>
                     {myEvents.map((event) => (
@@ -361,7 +361,7 @@ export function VouchersTab() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                <label className="block text-sm font-medium text-text-muted mb-2">
                   Voucher Code *
                 </label>
                 <input
@@ -370,20 +370,20 @@ export function VouchersTab() {
                   value={formData.code}
                   onChange={handleChange}
                   placeholder="e.g., SUMMER20"
-                  className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors font-mono uppercase"
+                  className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors font-mono uppercase"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                  <label className="block text-sm font-medium text-text-muted mb-2">
                     Discount Type
                   </label>
                   <select
                     name="discountType"
                     value={formData.discountType}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                    className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                   >
                     <option value="PERCENTAGE">Percentage (%)</option>
                     <option value="FIXED">Fixed Amount ($)</option>
@@ -391,7 +391,7 @@ export function VouchersTab() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                  <label className="block text-sm font-medium text-text-muted mb-2">
                     Discount Value *
                   </label>
                   <input
@@ -401,14 +401,14 @@ export function VouchersTab() {
                     onChange={handleChange}
                     min={1}
                     max={formData.discountType === "PERCENTAGE" ? 100 : undefined}
-                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                    className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                  <label className="block text-sm font-medium text-text-muted mb-2">
                     Start Date *
                   </label>
                   <input
@@ -416,12 +416,12 @@ export function VouchersTab() {
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                    className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#C7C4D8] mb-2">
+                  <label className="block text-sm font-medium text-text-muted mb-2">
                     End Date *
                   </label>
                   <input
@@ -429,7 +429,7 @@ export function VouchersTab() {
                     name="endDate"
                     value={formData.endDate}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#464555]/10 rounded-lg focus:outline-none focus:border-[#4B4DD8] transition-colors"
+                    className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
               </div>
@@ -438,14 +438,14 @@ export function VouchersTab() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-[#353534] hover:bg-[#393939] rounded-lg font-medium transition-colors"
+                  className="px-4 py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loadingEventAction}
-                  className="px-4 py-2 bg-[#4B4DD8] hover:bg-[#3a3cb3] disabled:bg-[#4B4DD8]/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+                  className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
                 >
                   {loadingEventAction ? (
                     <>

@@ -56,7 +56,7 @@ export function ConfirmDialog({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative bg-[#1a1a2e] border border-[#2d2d44] rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl"
           >
-            <h2 className="text-xl font-semibold text-[#e5e2e1] mb-3">{title}</h2>
+            <h2 className="text-xl font-semibold text-text-light mb-3">{title}</h2>
             <p className="text-[#a09bb3] mb-6">{message}</p>
             <div className="flex gap-3 justify-end">
               <button
