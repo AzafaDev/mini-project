@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { prisma } from "../../config/prisma";
 import { authMiddleware } from "../auth/auth.middleware";
-import { voucherService, couponService } from "./voucher.service";
+import { voucherService, couponService } from "../discount";
 
 const voucherRouter = Router();
 

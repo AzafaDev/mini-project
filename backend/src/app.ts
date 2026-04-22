@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
 import path from "node:path";
+import os from "node:os";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -42,8 +43,10 @@ app.use(cookieParser());
 app.use(
   fileUpload({
     useTempFiles: true,
-    // Gunakan process.cwd() untuk mendapatkan root project di Vercel
-    tempFileDir: path.join(process.cwd(), "backend", "temp"),
+    // Gunakan folder /tmp bawaan OS saat di Vercel, dan folder temp lokal saat development
+    tempFileDir: process.env.NODE_ENV === "production" 
+      ? os.tmpdir() 
+      : path.join(process.cwd(), "backend", "temp"),
   }),
 );
 

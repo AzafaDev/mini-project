@@ -2,6 +2,12 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 import { prisma } from "../../config/prisma";
+import {
+  VERIFICATION_TOKEN_EXPIRY_HOURS,
+  RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
+  POINTS_EXPIRATION_MONTHS,
+  COUPON_EXPIRATION_MONTHS,
+} from "../../config/constants";
 import { Role } from "@prisma/client";
 import { AuthRegister, Login, VerifyEmail } from "./auth.type";
 import {
@@ -81,7 +87,7 @@ export const authService = {
           profilePicture: imageUrl,
           verifyToken: verifyToken,
           // Token verifikasi berlaku selama 24 jam
-          verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          verifyTokenExpiresAt: new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000),
         },
       });
 
@@ -93,7 +99,7 @@ export const authService = {
             userId: referrer.id,
             amount: REFERRAL_POINT,
             reason: `Referral bonus: ${newUser.fullName} registered`,
-            expiresAt: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
+            expiresAt: new Date(Date.now() + POINTS_EXPIRATION_MONTHS * 30 * 24 * 60 * 60 * 1000),
           },
         });
 
@@ -105,7 +111,7 @@ export const authService = {
             discountType: "PERCENTAGE",
             discountValue: DISCOUNT_PERCENTAGE,
             startDate: new Date(Date.now()),
-            endDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now() + COUPON_EXPIRATION_MONTHS * 30 * 24 * 60 * 60 * 1000),
             userId: newUser.id,
           },
         });
@@ -247,7 +253,7 @@ export const authService = {
         where: { id: user.id },
         data: {
           verifyToken: newVerifyToken,
-          verifyTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          verifyTokenExpiresAt: new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000),
         },
       });
       return {
@@ -378,7 +384,7 @@ export const authService = {
       data: {
         resetPasswordToken: resetToken,
         // Token reset password hanya berlaku 15 menit demi keamanan
-        resetPasswordTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        resetPasswordTokenExpiresAt: new Date(Date.now() + RESET_PASSWORD_TOKEN_EXPIRY_MINUTES * 60 * 1000),
       },
     });
     await sendEmail.resetPassword({
