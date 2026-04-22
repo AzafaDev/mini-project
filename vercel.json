@@ -1,12 +1,10 @@
 {
   "version": 2,
   "functions": {
-    "api/index.ts": {
-      "runtime": "vercel-node@latest"
-    }
+    "backend/src/app.ts": {}
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.ts" },
+    { "source": "/api/(.*)", "destination": "backend/src/app.ts" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ]
 }
