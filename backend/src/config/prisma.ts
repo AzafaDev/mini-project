@@ -1,17 +1,8 @@
 import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
-// Ambil connection string dari environment variable
-const connectionString = `${process.env.DATABASE_URL}`;
-
-// Gunakan adapter postgres native untuk performa lebih baik
-const adapter = new PrismaPg({ connectionString });
-
-// Inisialisasi Prisma Client dengan extension soft delete untuk model Event
-// Semua operasi delete tidak menghapus data secara permanent
-// Tetapi hanya menandai isDeleted = true
-const prisma = new PrismaClient({ adapter }).$extends({
+// Inisialisasi standar Prisma Client untuk stabilitas di Vercel
+const prisma = new PrismaClient().$extends({
   query: {
     event: {
       // Otomatis filter event yang sudah dihapus pada findFirst
