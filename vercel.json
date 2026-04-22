@@ -3,7 +3,10 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.ts": {
-      "includeFiles": "backend/src/templates/emails/**"
+      "includeFiles": [
+        "backend/prisma/schema.prisma",
+        "backend/src/templates/emails/**"
+      ]
     }
   },
   "rewrites": [
