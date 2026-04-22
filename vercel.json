@@ -1,11 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "backend/src/app.ts": {}
-  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "backend/src/app.ts" },
-    { "source": "/(.*)", "destination": "/frontend/$1" }
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
+    { "source": "/(.*)", "destination": "/frontend/dist/$1" },
+    { "source": "/(.*)", "destination": "/frontend/dist/index.html" }
   ]
 }
 
