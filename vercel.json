@@ -1,18 +1,13 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    },
-    {
-      "src": "backend/src/app.ts",
-      "use": "@vercel/node"
+  "functions": {
+    "api/index.ts": {
+      "runtime": "vercel-node@latest"
     }
-  ],
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "backend/src/app.ts" },
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ]
 }
+
