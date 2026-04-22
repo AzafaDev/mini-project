@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 import { prisma } from "../../config/prisma";
-import { Role } from "../../../generated/prisma/enums";
+import { Role } from "@prisma/client";
 import { AuthRegister, Login, VerifyEmail } from "./auth.type";
 import {
   generateUniqueReferralCode,
@@ -31,13 +31,13 @@ const sanitizeUser = (user: any) => {
 export const authService = {
   /**
    * Registers a new user with email verification flow.
-   * 
+   *
    * Process:
    * 1. Validate referral code if provided
    * 2. Generate verification token and hash password
    * 3. Create user in database with Prisma transaction
    * 4. If referral code exists, award referrer with points and create coupon for new user
-   * 
+   *
    * @param userData - User registration data (email, password, fullName, phoneNumber, role, referrerCode, imageUrl)
    * @returns Object containing the newly created user
    */
@@ -128,7 +128,7 @@ export const authService = {
   /**
    * Updates an existing unverified user's password when they re-register.
    * This handles the case where user started registration but didn't verify email.
-   * 
+   *
    * @param email - User's email address
    * @param password - New plain text password to be hashed
    * @param updateData - Updated user data (phoneNumber, profilePicture, fullName, role)
@@ -166,7 +166,7 @@ export const authService = {
   /**
    * Verifies user's email using the token from the verification email.
    * Clears verification tokens and marks user as verified.
-   * 
+   *
    * @param token - Verification token from email
    * @returns Sanitized user object (without sensitive fields)
    */
@@ -193,7 +193,7 @@ export const authService = {
   /**
    * Resends verification email to unverified user.
    * Generates new verification token with 24-hour expiry.
-   * 
+   *
    * @param userId - ID of user to resend verification for
    */
   resendVerification: async (userId?: string) => {
@@ -216,21 +216,21 @@ export const authService = {
 
   /**
    * Authenticates user with email and password.
-   * 
+   *
    * Flow:
    * 1. Find user by email
    * 2. Compare password with hashed password in database
    * 3. If not verified, generate new verification token and return requiresVerification=true
    * 4. If verified, return user data with requiresVerification=false
-   * 
+   *
    * @param credentials - Login credentials (email, password)
    * @returns Object with user data and requiresVerification flag
    */
   login: async ({ email, password }: Login) => {
     // Cari user berdasarkan email
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.user.findUnique({
       where: { email },
-      include: { ownedCoupons: true }
+      include: { ownedCoupons: true },
     });
 
     if (!user) throw new AppError("Invalid email or password", 401);
@@ -261,7 +261,7 @@ export const authService = {
 
   /**
    * Retrieves current user's profile data including their coupons.
-   * 
+   *
    * @param userId - ID of user to fetch
    * @returns Sanitized user object with ownedCoupons
    */
@@ -279,7 +279,7 @@ export const authService = {
   /**
    * Updates user's profile fields.
    * Only updates fields that are provided (not undefined).
-   * 
+   *
    * @param data - Profile update data (userId required, others optional)
    * @returns Updated user object with ownedCoupons
    */
@@ -312,7 +312,7 @@ export const authService = {
   /**
    * Changes user's password after verifying current password.
    * Ensures new password is different from current password.
-   * 
+   *
    * @param passwordData - Object with currentPassword, newPassword, and userId
    * @returns Updated user object (without password field)
    */
@@ -333,7 +333,11 @@ export const authService = {
     );
     if (!isCorrectPassword) throw new AppError("Invalid current password", 400);
     const isSameAsOld = await bcrypt.compare(newPassword, user.password);
-    if (isSameAsOld) throw new AppError("New password cannot be the same as current password", 400);
+    if (isSameAsOld)
+      throw new AppError(
+        "New password cannot be the same as current password",
+        400,
+      );
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
@@ -358,7 +362,7 @@ export const authService = {
    * Initiates password reset flow.
    * Generates reset token and sends reset email.
    * Note: Returns void if email doesn't exist (doesn't reveal to attackers).
-   * 
+   *
    * @param email - User's email address
    */
   forgotPassword: async (email: string) => {
@@ -366,7 +370,7 @@ export const authService = {
     // Jika email tidak ditemukan, return diam-diam
     // Ini untuk keamanan: tidak memberitahu attacker apakah email terdaftar atau tidak
     if (!user) return;
-    
+
     // Generate token reset password yang unik
     const resetToken = crypto.randomBytes(32).toString("hex");
     await prisma.user.update({
@@ -387,7 +391,7 @@ export const authService = {
   /**
    * Completes password reset using token from email.
    * Validates token hasn't expired and updates password.
-   * 
+   *
    * @param resetData - Object with token and newPassword
    * @returns Updated user object (without password)
    */
@@ -406,7 +410,7 @@ export const authService = {
       },
     });
     if (!user) throw new AppError("Invalid or expired token", 400);
-    
+
     // Hash password baru sebelum disimpan
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const updatedUser = await prisma.user.update({

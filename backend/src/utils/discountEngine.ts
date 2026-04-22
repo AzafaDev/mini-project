@@ -1,10 +1,10 @@
-import { DiscountType } from "../../generated/prisma/enums";
+import { DiscountType } from "@prisma/client";
 
 export const calculateDiscount = (
   basePrice: number,
   quantity: number,
   discountType: DiscountType,
-  discountValue: number
+  discountValue: number,
 ): number => {
   const subtotal = basePrice * quantity;
   if (discountType === DiscountType.PERCENTAGE) {

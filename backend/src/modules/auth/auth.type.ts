@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Role } from "../../../generated/prisma/enums";
+import { Role } from "@prisma/client";
 
 export type AuthRegister = {
   email: string;

@@ -1,4 +1,4 @@
-import { DiscountType } from "../../../generated/prisma/enums";
+import { DiscountType } from "@prisma/client";
 
 /**
  * Discount Calculator Service - Single Source of Truth untuk semua logika diskon
@@ -18,7 +18,7 @@ class DiscountCalculatorService {
     basePrice: number,
     quantity: number,
     discountType: DiscountType,
-    discountValue: number
+    discountValue: number,
   ): number {
     const subtotal = basePrice * quantity;
 
@@ -44,7 +44,7 @@ class DiscountCalculatorService {
     startDate: Date,
     endDate: Date,
     maxUsage?: number | null,
-    usedCount?: number | null
+    usedCount?: number | null,
   ): { valid: boolean; error?: string } {
     const now = new Date();
 
@@ -77,14 +77,17 @@ class DiscountCalculatorService {
     basePrice: number,
     quantity: number,
     discounts: Array<number>,
-    pointsUsed: number = 0
+    pointsUsed: number = 0,
   ): {
     totalPrice: number;
     totalDiscount: number;
     finalPrice: number;
   } {
     const totalPrice = basePrice * quantity;
-    const totalDiscount = discounts.reduce((sum, discount) => sum + discount, 0);
+    const totalDiscount = discounts.reduce(
+      (sum, discount) => sum + discount,
+      0,
+    );
     const finalPrice = Math.max(0, totalPrice - totalDiscount - pointsUsed);
 
     return {

@@ -1,4 +1,4 @@
-import { DiscountType } from "../../../generated/prisma/enums";
+import { DiscountType } from "@prisma/client";
 import { discountCalculatorService } from "../discount/discount-calculator.service";
 import type { DiscountCalculatorService } from "../discount/discount-calculator.service";
 
@@ -11,9 +11,7 @@ import type { DiscountCalculatorService } from "../discount/discount-calculator.
  * - 100% dapat di unit test tanpa dependency apapun
  */
 class TicketPricingService {
-  constructor(
-    private discountCalculator = discountCalculatorService
-  ) {}
+  constructor(private discountCalculator = discountCalculatorService) {}
 
   /**
    * Hitung harga dasar tiket
@@ -35,7 +33,7 @@ class TicketPricingService {
     ticketPrice: number,
     quantity: number,
     voucherDiscount: number = 0,
-    couponDiscount: number = 0
+    couponDiscount: number = 0,
   ): number {
     const totalPrice = ticketPrice * quantity;
     const totalDiscount = voucherDiscount + couponDiscount;
@@ -54,7 +52,7 @@ class TicketPricingService {
   calculateFinalPrice(
     basePrice: number,
     totalDiscount: number,
-    pointsUsed: number = 0
+    pointsUsed: number = 0,
   ): {
     totalPrice: number;
     discount: number;
@@ -82,7 +80,7 @@ class TicketPricingService {
   calculateEarnedPoints(
     finalPrice: number,
     multiplier: number,
-    maxPoints: number
+    maxPoints: number,
   ): number {
     const earnedPoints = Math.floor(finalPrice * multiplier);
     // Batasi maksimal poin yang bisa didapatkan per transaksi
@@ -121,7 +119,7 @@ class TicketPricingService {
         ticketPrice,
         quantity,
         voucher.discountType,
-        voucher.discountValue
+        voucher.discountValue,
       );
     }
 
@@ -130,7 +128,7 @@ class TicketPricingService {
         ticketPrice,
         quantity,
         coupon.discountType,
-        coupon.discountValue
+        coupon.discountValue,
       );
     }
 
@@ -138,7 +136,7 @@ class TicketPricingService {
       ticketPrice,
       quantity,
       voucherDiscount,
-      couponDiscount
+      couponDiscount,
     );
 
     return this.calculateFinalPrice(basePrice, totalDiscount, pointsUsed);

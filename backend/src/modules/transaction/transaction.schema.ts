@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TransactionStatus } from "../../../generated/prisma/enums";
+import { TransactionStatus } from "@prisma/client";
 
 export const createTransactionSchema = z.object({
   body: z.object({
@@ -31,5 +31,9 @@ export const getTransactionsQuerySchema = z.object({
 });
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
-export type UpdateTransactionStatusInput = z.infer<typeof updateTransactionStatusSchema>;
-export type GetTransactionsQueryInput = z.infer<typeof getTransactionsQuerySchema>;
+export type UpdateTransactionStatusInput = z.infer<
+  typeof updateTransactionStatusSchema
+>;
+export type GetTransactionsQueryInput = z.infer<
+  typeof getTransactionsQuerySchema
+>;

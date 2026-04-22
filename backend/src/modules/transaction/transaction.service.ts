@@ -2,7 +2,7 @@ import { prisma } from "../../config/prisma";
 import { sendEmail } from "../../utils/sendEmail";
 import { handleFileUpload } from "../../utils/handleFileUpload";
 import { UploadedFile } from "express-fileupload";
-import { TransactionStatus, DiscountType } from "../../../generated/prisma/enums";
+import { TransactionStatus, DiscountType } from "@prisma/client";
 import {
   restoreTicketAvailability,
   restoreUserPoints,
@@ -101,12 +101,18 @@ export const transactionService = {
     // Organizer tidak diperbolehkan membeli tiket event mereka sendiri
     // Mencegah manipulasi statistik dan penjualan palsu
     if (event.organizerId === userId) {
-      console.log("[DEBUG Transaction Service] Organizer attempted to buy their own event:", {
-        userId,
-        eventId,
-        organizerId: event.organizerId,
-      });
-      throw new AppError("Organizers cannot purchase tickets for their own events", 403);
+      console.log(
+        "[DEBUG Transaction Service] Organizer attempted to buy their own event:",
+        {
+          userId,
+          eventId,
+          organizerId: event.organizerId,
+        },
+      );
+      throw new AppError(
+        "Organizers cannot purchase tickets for their own events",
+        403,
+      );
     }
 
     const ticket =
@@ -164,7 +170,7 @@ export const transactionService = {
           ticket.price,
           quantity,
           voucher.discountType as DiscountType,
-          voucher.discountValue
+          voucher.discountValue,
         );
         discount += calculatedDiscount;
         console.log(
@@ -217,7 +223,7 @@ export const transactionService = {
           ticket.price,
           quantity,
           coupon.discountType as DiscountType,
-          coupon.discountValue
+          coupon.discountValue,
         );
         discount += calculatedDiscount;
         console.log(
@@ -233,7 +239,7 @@ export const transactionService = {
     const pricing = ticketPricingService.calculateFinalPrice(
       ticket.price * quantity,
       discount,
-      pointsUsed
+      pointsUsed,
     );
     const totalPrice = pricing.totalPrice;
     const finalPrice = pricing.finalPrice;
@@ -277,7 +283,7 @@ export const transactionService = {
         if (pointsUsed > MAX_POINTS_PER_TRANSACTION) {
           throw new AppError(
             `Maximum points per transaction is ${MAX_POINTS_PER_TRANSACTION}`,
-            400
+            400,
           );
         }
 
@@ -285,19 +291,27 @@ export const transactionService = {
         // Menggunakan updateMany dengan kondisi untuk mencegah negative balance
         // Tidak ada celah race condition antara cek dan update
         const updateResult = await tx.user.updateMany({
-          where: { 
+          where: {
             id: userId,
-            points: { gte: pointsUsed } 
+            points: { gte: pointsUsed },
           },
           data: { points: { decrement: pointsUsed } },
         });
 
         // Jika tidak ada baris yang terupdate, berarti poin tidak cukup
         if (updateResult.count === 0) {
-          throw new AppError("Failed to deduct points: insufficient balance or user not found", 400);
+          throw new AppError(
+            "Failed to deduct points: insufficient balance or user not found",
+            400,
+          );
         }
 
-        console.log("[DEBUG Transaction Service] points deducted:", pointsUsed, "remaining active:", activePoints - pointsUsed);
+        console.log(
+          "[DEBUG Transaction Service] points deducted:",
+          pointsUsed,
+          "remaining active:",
+          activePoints - pointsUsed,
+        );
       }
 
       const transaction = await tx.transaction.create({
@@ -352,9 +366,9 @@ export const transactionService = {
         } else {
           // Untuk tiket custom, kurangi available di ticket dengan pengecekan di database
           await tx.ticket.update({
-            where: { 
+            where: {
               id: ticketId,
-              available: { gte: quantity }
+              available: { gte: quantity },
             },
             data: { available: { decrement: quantity } },
           });
@@ -491,8 +505,17 @@ export const transactionService = {
           expiresAt: true,
           autoCancelAt: true,
           createdAt: true,
-           event: { select: { id: true, name: true, imageUrl: true, location: true, startDate: true, endDate: true } },
-           ticket: true,
+          event: {
+            select: {
+              id: true,
+              name: true,
+              imageUrl: true,
+              location: true,
+              startDate: true,
+              endDate: true,
+            },
+          },
+          ticket: true,
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -617,9 +640,18 @@ export const transactionService = {
           expiresAt: true,
           autoCancelAt: true,
           createdAt: true,
-           event: { select: { id: true, name: true, imageUrl: true, location: true, startDate: true, endDate: true } },
-           user: { select: { id: true, fullName: true, email: true } },
-           ticket: true,
+          event: {
+            select: {
+              id: true,
+              name: true,
+              imageUrl: true,
+              location: true,
+              startDate: true,
+              endDate: true,
+            },
+          },
+          user: { select: { id: true, fullName: true, email: true } },
+          ticket: true,
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -729,7 +761,7 @@ export const transactionService = {
     const earnedPoints = ticketPricingService.calculateEarnedPoints(
       transaction.finalPrice,
       POINTS_EARNED_MULTIPLIER,
-      MAX_POINTS_PER_TRANSACTION
+      MAX_POINTS_PER_TRANSACTION,
     );
 
     console.log("[DEBUG Transaction Service] earned points calculation:", {

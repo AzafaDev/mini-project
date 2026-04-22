@@ -1,7 +1,7 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
 import { discountCalculatorService } from "./discount-calculator.service";
-import { DiscountType } from "../../../generated/prisma/enums";
+import { DiscountType } from "@prisma/client";
 
 export const voucherService = {
   /**
@@ -19,7 +19,11 @@ export const voucherService = {
         AND ("maxUsage" IS NULL OR "usedCount" < "maxUsage")
     `;
 
-    return vouchers as Array<{ code: string; discountType: DiscountType; discountValue: number }>;
+    return vouchers as Array<{
+      code: string;
+      discountType: DiscountType;
+      discountValue: number;
+    }>;
   },
 
   /**
@@ -36,7 +40,12 @@ export const voucherService = {
     price: number;
     quantity: number;
   }) => {
-    console.log("[DEBUG Voucher Service] validateVoucher input:", { eventId, code, price, quantity });
+    console.log("[DEBUG Voucher Service] validateVoucher input:", {
+      eventId,
+      code,
+      price,
+      quantity,
+    });
 
     const voucher = await prisma.voucher.findFirst({
       where: {
@@ -54,7 +63,7 @@ export const voucherService = {
       voucher.startDate,
       voucher.endDate,
       voucher.maxUsage,
-      voucher.usedCount
+      voucher.usedCount,
     );
 
     if (!eligibility.valid) {
@@ -65,7 +74,7 @@ export const voucherService = {
       price,
       quantity,
       voucher.discountType,
-      voucher.discountValue
+      voucher.discountValue,
     );
 
     console.log("[DEBUG Voucher Service] validateVoucher discount:", discount);
@@ -99,7 +108,12 @@ export const voucherService = {
     endDate: Date;
     maxUsage?: number;
   }) => {
-    console.log("[DEBUG Voucher Service] createVoucher input:", { eventId, code, discountType, discountValue });
+    console.log("[DEBUG Voucher Service] createVoucher input:", {
+      eventId,
+      code,
+      discountType,
+      discountValue,
+    });
 
     // Verify event belongs to organizer
     const event = await prisma.event.findFirst({
@@ -160,7 +174,10 @@ export const voucherService = {
     maxUsage?: number;
     isActive?: boolean;
   }) => {
-    console.log("[DEBUG Voucher Service] updateVoucher input:", { id, organizerId });
+    console.log("[DEBUG Voucher Service] updateVoucher input:", {
+      id,
+      organizerId,
+    });
 
     const voucher = await prisma.voucher.findFirst({
       where: { id },
@@ -191,8 +208,17 @@ export const voucherService = {
   /**
    * Delete a voucher
    */
-  deleteVoucher: async ({ id, organizerId }: { id: string; organizerId: string }) => {
-    console.log("[DEBUG Voucher Service] deleteVoucher input:", { id, organizerId });
+  deleteVoucher: async ({
+    id,
+    organizerId,
+  }: {
+    id: string;
+    organizerId: string;
+  }) => {
+    console.log("[DEBUG Voucher Service] deleteVoucher input:", {
+      id,
+      organizerId,
+    });
 
     const voucher = await prisma.voucher.findFirst({
       where: { id },
@@ -212,7 +238,9 @@ export const voucherService = {
    * Get all vouchers for organizer's events
    */
   getOrganizerVouchers: async ({ organizerId }: { organizerId: string }) => {
-    console.log("[DEBUG Voucher Service] getOrganizerVouchers input:", { organizerId });
+    console.log("[DEBUG Voucher Service] getOrganizerVouchers input:", {
+      organizerId,
+    });
 
     const events = await prisma.event.findMany({
       where: { organizerId },
@@ -231,7 +259,10 @@ export const voucherService = {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("[DEBUG Voucher Service] getOrganizerVouchers result:", vouchers.length);
+    console.log(
+      "[DEBUG Voucher Service] getOrganizerVouchers result:",
+      vouchers.length,
+    );
     return vouchers;
   },
 };

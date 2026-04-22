@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TicketType } from "../../../generated/prisma/enums";
+import { TicketType } from "@prisma/client";
 
 const ticketSchema = z.object({
   type: z.nativeEnum(TicketType),
