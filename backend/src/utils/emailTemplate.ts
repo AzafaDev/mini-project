@@ -2,7 +2,7 @@ import handlebars from "handlebars";
 import fs from "fs";
 import path from "path";
 
-const TEMPLATES_DIR = path.join(process.cwd(), "src/templates/emails");
+const TEMPLATES_DIR = path.join(__dirname, "../templates/emails");
 
 const templateCache: Record<string, HandlebarsTemplateDelegate> = {};
 
