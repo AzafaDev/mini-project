@@ -1,8 +1,13 @@
-import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+import "dotenv/config";
 
-// Inisialisasi standar Prisma Client untuk stabilitas di Vercel
-const prisma = new PrismaClient().$extends({
+// Inisialisasi Prisma Client dengan Driver Adapter PostgreSQL (Prisma v7)
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({ adapter }).$extends({
   query: {
     event: {
       // Otomatis filter event yang sudah dihapus pada findFirst
@@ -12,7 +17,7 @@ const prisma = new PrismaClient().$extends({
       },
       // Otomatis filter event yang sudah dihapus pada findUnique
       async findUnique({ args, query }) {
-        if (args.where && 'id' in args.where) {
+        if (args.where && "id" in args.where) {
           args.where = { ...args.where, isDeleted: false };
         }
         return query(args);

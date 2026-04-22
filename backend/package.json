@@ -16,7 +16,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.0",
     "@types/axios": "^0.9.36",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
@@ -26,6 +25,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.0",
     "@types/pg": "^8.20.0",
+    "@vitest/coverage-v8": "^2.1.0",
     "axios": "^1.15.0",
     "nodemon": "^3.1.14",
     "prisma": "^7.6.0",
@@ -34,7 +34,7 @@
     "vitest": "^2.1.0"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.6.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
