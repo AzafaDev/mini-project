@@ -15,6 +15,6 @@ export const uploadToCloudinary = async (filePath: string, folder: string) => {
   } catch (error:any) {
     // Selalu hapus file temporary meskipun upload gagal
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    throw new Error("Failed to upload file to Cloudinary", error.message);
+    throw new Error(`Failed to upload file to Cloudinary: ${error.message}`);
   }
 };
