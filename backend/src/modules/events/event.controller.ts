@@ -4,10 +4,10 @@ import { getUploadUrl } from "../../utils/uploadHelper";
 import { UploadedFile } from "express-fileupload";
 import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
+import { catchAsync } from "../../utils/catchAsync";
 
 export const eventController = {
-  // Ambil semua event dengan support filter, sorting, dan pagination
-  getAllEvents: async (req: Request, res: Response) => {
+  getAllEvents: catchAsync(async (req: Request, res: Response) => {
     const {
       search,
       category,
@@ -37,33 +37,15 @@ export const eventController = {
     });
 
     res.status(200).json({ success: true, data, pagination });
-  },
+  }),
 
-  /**
-   * Get single event by ID.
-   * 
-   * @param req - Express request with event ID in params
-   * @param res - Express response
-   * @returns JSON with event data or 404 if not found
-   */
-  getEventById: async (req: Request, res: Response) => {
+  getEventById: catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-
     const event = await eventService.getEventById({ id: id as string });
-
     res.status(200).json({ success: true, data: event });
-  },
+  }),
 
-  /**
-   * Create new event (Organizer only).
-   * Handles FormData parsing for file uploads and nested ticket data.
-   * 
-   * @param req - Express request with authenticated organizer and event data
-   * @param res - Express response
-   * @returns JSON with created event data
-   */
-  // Buat event baru - Hanya untuk role ORGANIZER
-  createEvent: async (req: AuthRequest, res: Response) => {
+  createEvent: catchAsync<AuthRequest>(async (req, res) => {
     const {
       name,
       description,
@@ -82,18 +64,14 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    // Upload gambar event jika ada
     const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
 
     let parsedTickets: { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[] | undefined;
     if (tickets) {
-      // Jika tickets dikirim sebagai string JSON (karena FormData), parse terlebih dahulu
       if (typeof tickets === 'string') {
         try {
           parsedTickets = JSON.parse(tickets);
-        } catch (e) {
-          // Jika gagal parse, gunakan default ticket
-        }
+        } catch (e) {}
       } else {
         parsedTickets = tickets as unknown as { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[];
       }
@@ -119,19 +97,12 @@ export const eventController = {
       message: "Created event successfully",
       data: event,
     });
-  },
+  }),
 
-  /**
-   * Update existing event (Organizer only, must be event owner).
-   * 
-   * @param req - Express request with event ID in params and updated data in body
-   * @param res - Express response
-   * @returns JSON with updated event data
-   */
-  updateEvent: async (req: AuthRequest, res: Response) => {
+  updateEvent: catchAsync<AuthRequest>(async (req, res) => {
     const id = req.params.id as string;
-
     const organizerId = req.userId;
+
     if (!organizerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -174,17 +145,9 @@ export const eventController = {
       message: "Updated event successfully",
       data: event,
     });
-  },
+  }),
 
-/**
-   * Soft delete event (Organizer only, must be event owner).
-   * Marks event as deleted without removing from database.
-   * 
-   * @param req - Express request with event ID in params
-   * @param res - Express response
-   * @returns JSON with success message
-   */
-  deleteEvent: async (req: AuthRequest, res: Response) => {
+  deleteEvent: catchAsync<AuthRequest>(async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
@@ -198,16 +161,9 @@ export const eventController = {
       success: true,
       message: "Deleted event successfully",
     });
-  },
+  }),
 
-  /**
-   * Get all events created by current organizer.
-   * 
-   * @param req - Express request with authenticated organizer
-   * @param res - Express response
-   * @returns JSON with array of events
-   */
-  getMyEvents: async (req: AuthRequest, res: Response) => {
+  getMyEvents: catchAsync<AuthRequest>(async (req, res) => {
     const userId = req.userId;
 
     if (!userId) {
@@ -217,16 +173,9 @@ export const eventController = {
     const events = await eventService.getMyEvents({ id: userId });
 
     res.status(200).json({ success: true, data: events });
-  },
+  }),
 
-  /**
-   * Get statistics for a specific event (Organizer only).
-   * 
-   * @param req - Express request with event ID in params and authenticated organizer
-   * @param res - Express response
-   * @returns JSON with event statistics (revenue, tickets sold, etc.)
-   */
-  getEventStats: async (req: AuthRequest, res: Response) => {
+  getEventStats: catchAsync<AuthRequest>(async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
@@ -234,30 +183,15 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    try {
-      const stats = await eventService.getEventStats({
-        id: id as string,
-        organizerId: userId,
-      });
+    const stats = await eventService.getEventStats({
+      id: id as string,
+      organizerId: userId,
+    });
 
-      res.status(200).json({ success: true, data: stats });
-    } catch (error: any) {
-      res.status(error.statusCode || 500).json({
-        success: false,
-        message: error.message || "Internal server error",
-      });
-    }
-  },
+    res.status(200).json({ success: true, data: stats });
+  }),
 
-  /**
-   * Get aggregated statistics for all events by current organizer.
-   * Supports filtering by year, month, or day.
-   * 
-   * @param req - Express request with query params (year, month, day)
-   * @param res - Express response
-   * @returns JSON with organizer statistics
-   */
-  getOrganizerStats: async (req: AuthRequest, res: Response) => {
+  getOrganizerStats: catchAsync<AuthRequest>(async (req, res) => {
     const userId = req.userId;
     const { year, month, day } = req.query;
 
@@ -265,55 +199,26 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    try {
-      const stats = await eventService.getOrganizerStats({
-        organizerId: userId,
-        year: year ? Number(year) : undefined,
-        month: month ? Number(month) : undefined,
-        day: day ? Number(day) : undefined,
-      });
+    const stats = await eventService.getOrganizerStats({
+      organizerId: userId,
+      year: year ? Number(year) : undefined,
+      month: month ? Number(month) : undefined,
+      day: day ? Number(day) : undefined,
+    });
 
-      res.status(200).json({ success: true, data: stats });
-    } catch (error: any) {
-      res.status(error.statusCode || 500).json({
-        success: false,
-        message: error.message || "Internal server error",
-      });
-    }
-  },
+    res.status(200).json({ success: true, data: stats });
+  }),
 
-  /**
-   * Get public profile of an organizer (including their events and reviews).
-   * 
-   * @param req - Express request with organizer ID in params
-   * @param res - Express response
-   * @returns JSON with organizer profile data
-   */
-  getOrganizerProfile: async (req: Request, res: Response) => {
+  getOrganizerProfile: catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
+    const profile = await eventService.getOrganizerProfile({
+      organizerId: id as string,
+    });
 
-    try {
-      const profile = await eventService.getOrganizerProfile({
-        organizerId: id as string,
-      });
+    res.status(200).json({ success: true, data: profile });
+  }),
 
-      res.status(200).json({ success: true, data: profile });
-    } catch (error: any) {
-      res.status(error.statusCode || 500).json({
-        success: false,
-        message: error.message || "Internal server error",
-      });
-    }
-  },
-
-  /**
-   * Get list of attendees for a specific event (Organizer only).
-   * 
-   * @param req - Express request with event ID in params and authenticated organizer
-   * @param res - Express response
-   * @returns JSON with array of attendee details
-   */
-  getEventAttendees: async (req: AuthRequest, res: Response) => {
+  getEventAttendees: catchAsync<AuthRequest>(async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
@@ -321,18 +226,11 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    try {
-      const attendees = await eventService.getEventAttendees({
-        eventId: id as string,
-        organizerId: userId,
-      });
+    const attendees = await eventService.getEventAttendees({
+      eventId: id as string,
+      organizerId: userId,
+    });
 
-      res.status(200).json({ success: true, data: attendees });
-    } catch (error: any) {
-      res.status(error.statusCode || 500).json({
-        success: false,
-        message: error.message || "Internal server error",
-      });
-    }
-  },
+    res.status(200).json({ success: true, data: attendees });
+  }),
 };

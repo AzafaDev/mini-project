@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma";
+import { Prisma } from "@prisma/client";
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 import { AppError } from "../../utils/AppError";
 import { CreateEvent, UpdateEvent } from "./event.type";
@@ -60,7 +61,7 @@ export const eventService = {
     const currentSortBy = sortBy || "startDate";
     const currentSortOrder = sortOrder || "asc";
 
-    const where: any = { isDeleted: false };
+    const where: Prisma.EventWhereInput = { isDeleted: false };
     if (search)
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -81,7 +82,7 @@ export const eventService = {
 
     console.log("[DEBUG Event Service] getAllEvents where clause:", JSON.stringify(where));
 
-    const orderBy: any = {};
+    const orderBy: Prisma.EventOrderByWithRelationInput = {};
     const validSortFields = ["name", "startDate", "price", "createdAt"];
     if (validSortFields.includes(currentSortBy)) {
       orderBy[currentSortBy] = currentSortOrder === "desc" ? "desc" : "asc";
@@ -345,7 +346,7 @@ export const eventService = {
 
     if (!existingEvent) throw new AppError("Event not found", 404);
 
-    const data: any = {};
+    const data: Prisma.EventUpdateInput = {};
 
     if (name !== undefined) {
       if (!name.trim()) throw new AppError("Name cannot be empty", 400);
