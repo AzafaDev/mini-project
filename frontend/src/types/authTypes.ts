@@ -1,3 +1,5 @@
+import { Coupon } from './profile.types';
+
 export interface User {
   id: string;
   email: string;
@@ -9,6 +11,7 @@ export interface User {
   points?: number;
   createdAt: string;
   referralCode?: string;
+  ownedCoupons?: Coupon[];
 }
 
 export interface LoginRequest {

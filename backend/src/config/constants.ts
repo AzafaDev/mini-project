@@ -23,6 +23,9 @@ export const DEFAULT_LIMIT = 10;
 // Batas maksimal data yang bisa diambil per halaman
 export const MAX_LIMIT = 100;
 
+// Format nomor telepon (Indonesia: minimal 10-15 digit, bisa diawali +62 atau 0)
+export const PHONE_NUMBER_REGEX = /^(\+62|0)[0-9]{9,14}$/;
+
 // Token verifikasi email berlaku 24 jam
 export const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 // Token reset password hanya berlaku 15 menit demi keamanan

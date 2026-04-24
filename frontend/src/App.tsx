@@ -48,28 +48,11 @@ const isNoNavbarRoute = (pathname: string) => {
 const ProfilePageWrapper = () => {
   const user = useAuthStore((state) => state.user);
   const [loading, setLoading] = useState(true);
-  const [points, setPoints] = useState(0);
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // HAPUS fetchCurrentUser() - sudah dipanggil di App level
-        const pointsRes = await profileService.getPoints();
-        if (pointsRes.success && pointsRes.points !== undefined) {
-          setPoints(pointsRes.points);
-        }
-        const couponsRes = await profileService.getCoupons();
-        if (couponsRes.success && couponsRes.data) {
-          setCoupons(couponsRes.data);
-        }
-      } catch (error) {
-        console.error("Failed to load profile data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
+    // Data sudah tersedia di auth store dari /auth/me yang dipanggil di App level
+    // /auth/me sudah include ownedCoupons dan points
+    setLoading(false);
   }, []);
 
   if (loading) {

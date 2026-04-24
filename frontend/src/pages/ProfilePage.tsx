@@ -110,11 +110,13 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get user from props or fallback to store
+  // Auth store's /auth/me already includes ownedCoupons
   const storeUser = useAuthStore((state) => state.user);
   const user = propsUser || storeUser;
 
-  const [points, setPoints] = useState<number>(user?.points ?? 0);
-  const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
+  // Points and coupons are now available directly from user object
+  const points = user?.points ?? 0;
+  const coupons = user?.ownedCoupons || initialCoupons;
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -606,26 +608,26 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                 <p className="text-text-muted">No active coupons</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {coupons.map((coupon) => (
-                    <div
-                      key={coupon.id}
-                      className="bg-dark-darker rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-primary font-mono font-bold">
-                          {coupon.code}
-                        </span>
-                        <span className="text-xs text-text-muted">
-                          {coupon.discountType === "PERCENTAGE"
-                            ? `${coupon.discountValue}% OFF`
-                            : `Rp ${coupon.discountValue.toLocaleString()} OFF`}
-                        </span>
-                      </div>
-                      <div className="text-xs text-text-muted">
-                        Exp: {new Date(coupon.endDate).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
+                   {coupons.map((coupon: Coupon) => (
+                     <div
+                       key={coupon.id}
+                       className="bg-dark-darker rounded-lg p-4"
+                     >
+                       <div className="flex justify-between items-start mb-2">
+                         <span className="text-primary font-mono font-bold">
+                           {coupon.code}
+                         </span>
+                         <span className="text-xs text-text-muted">
+                           {coupon.discountType === "PERCENTAGE"
+                             ? `${coupon.discountValue}% OFF`
+                             : `Rp ${coupon.discountValue.toLocaleString()} OFF`}
+                         </span>
+                       </div>
+                       <div className="text-xs text-text-muted">
+                         Exp: {new Date(coupon.endDate).toLocaleDateString()}
+                       </div>
+                     </div>
+                   ))}
                 </div>
                )}
              </section>

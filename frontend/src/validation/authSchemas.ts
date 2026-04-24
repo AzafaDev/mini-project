@@ -14,7 +14,10 @@ export const registerSchema = Yup.object().shape({
   email: Yup.string()
     .required("Email is required")
     .email("Please enter a valid email address"),
-  phoneNumber: Yup.string(),
+  phoneNumber: Yup.string().matches(
+    /^(\+62|0)[0-9]{9,14}$/,
+    "Phone number must be 10-15 digits, can start with +62 or 0"
+  ),
   password: Yup.string()
     .required("Password is required")
     .min(8, "Password must be at least 8 characters"),
@@ -23,6 +26,9 @@ export const registerSchema = Yup.object().shape({
     .oneOf(["CUSTOMER", "ORGANIZER"], "Invalid role selected"),
   referrerCode: Yup.string(),
 });
+
+// Phone number regex for validation
+export const PHONE_REGEX = /^(\+62|0)[0-9]{9,14}$/;
 
 // Verify Email Schema (6-digit OTP)
 export const verifyEmailSchema = Yup.object().shape({
@@ -51,7 +57,10 @@ export const resetPasswordSchema = Yup.object().shape({
 // Update Profile Schema
 export const updateProfileSchema = Yup.object().shape({
   fullName: Yup.string().min(1),
-  phoneNumber: Yup.string(),
+  phoneNumber: Yup.string().matches(
+    /^(\+62|0)[0-9]{9,14}$/,
+    "Phone number must be 10-15 digits, can start with +62 or 0"
+  ),
   profilePicture: Yup.mixed().optional(),
 });
 
