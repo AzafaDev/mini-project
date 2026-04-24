@@ -7,6 +7,7 @@ import {
   RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
   POINTS_EXPIRATION_MONTHS,
   COUPON_EXPIRATION_MONTHS,
+  PHONE_NUMBER_REGEX,
 } from "../../config/constants";
 import { Role } from "@prisma/client";
 import { AuthRegister, Login, VerifyEmail } from "./auth.type";
@@ -48,22 +49,30 @@ export const authService = {
    * @returns Object containing the newly created user
    */
   register: async ({
-    email,
-    password,
-    fullName,
-    phoneNumber,
-    role,
-    referrerCode,
-    imageUrl,
-  }: AuthRegister) => {
-    let referrer: { id: string } | null = null;
-    // Jika user memasukkan kode referral, validasi apakah kode tersebut valid
-    if (referrerCode) {
-      referrer = await prisma.user.findFirst({
-        where: { referralCode: { equals: referrerCode, mode: "insensitive" } },
-      });
-      if (!referrer) throw new AppError("Invalid referral code", 409);
-    }
+     email,
+     password,
+     fullName,
+     phoneNumber,
+     role,
+     referrerCode,
+     imageUrl,
+   }: AuthRegister) => {
+     // Validasi format nomor telepon jika diisi
+     if (phoneNumber && !PHONE_NUMBER_REGEX.test(phoneNumber)) {
+       throw new AppError(
+         "Invalid phone number format. Must be 10-15 digits, can start with +62 or 0",
+         400
+       );
+     }
+
+     let referrer: { id: string } | null = null;
+     // Jika user memasukkan kode referral, validasi apakah kode tersebut valid
+     if (referrerCode) {
+       referrer = await prisma.user.findFirst({
+         where: { referralCode: { equals: referrerCode, mode: "insensitive" } },
+       });
+       if (!referrer) throw new AppError("Invalid referral code", 409);
+     }
 
     // Generate kode verifikasi 6 digit untuk email
     const verifyToken = generateVerificationCode();
@@ -289,21 +298,29 @@ export const authService = {
    * @param data - Profile update data (userId required, others optional)
    * @returns Updated user object with ownedCoupons
    */
-  updateProfile: async ({
-    userId,
-    fullName,
-    phoneNumber,
-    imageUrl,
-  }: {
-    userId: string;
-    fullName?: string;
-    phoneNumber?: string;
-    imageUrl?: string;
-  }) => {
-    const data: any = {};
-    if (fullName !== undefined) data.fullName = fullName;
-    if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
-    if (imageUrl !== undefined) data.profilePicture = imageUrl;
+   updateProfile: async ({
+     userId,
+     fullName,
+     phoneNumber,
+     imageUrl,
+   }: {
+     userId: string;
+     fullName?: string;
+     phoneNumber?: string;
+     imageUrl?: string;
+   }) => {
+     // Validasi format nomor telepon jika diisi
+     if (phoneNumber !== undefined && !PHONE_NUMBER_REGEX.test(phoneNumber)) {
+       throw new AppError(
+         "Invalid phone number format. Must be 10-15 digits, can start with +62 or 0",
+         400
+       );
+     }
+
+     const data: any = {};
+     if (fullName !== undefined) data.fullName = fullName;
+     if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
+     if (imageUrl !== undefined) data.profilePicture = imageUrl;
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },

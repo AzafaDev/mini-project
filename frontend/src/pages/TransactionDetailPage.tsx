@@ -313,10 +313,10 @@ const TransactionDetailPage: React.FC = () => {
                     <span className="text-error-light">-{formatIDR(currentTransaction.discount)}</span>
                   </div>
                 )}
-                {currentTransaction.pointsUsed > 0 && (
+                 {currentTransaction.pointsUsed > 0 && (
                   <div className="flex justify-between">
                     <span className="text-text-muted">Points Used ({currentTransaction.pointsUsed})</span>
-                    <span className="text-primary">-{formatIDR(currentTransaction.pointsUsed * 10)}</span>
+                    <span className="text-primary">-{formatIDR(currentTransaction.pointsUsed)}</span>
                   </div>
                 )}
                 <div className="flex justify-between pt-3 border-t border-white/10">

@@ -172,23 +172,30 @@ const RegistrationPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Phone Number */}
-                <div className="space-y-1.5">
-                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
-                    Phone Number
-                  </label>
-                  <input
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    type="tel"
-                    value={formik.values.phoneNumber}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="w-full bg-dark-darker border-none ring-1 ring-border-muted/30 focus:ring-primary text-text-light px-4 py-3 rounded-lg placeholder:text-dark-card text-sm transition-all outline-none"
-                    placeholder="+62xxxxxxxxxx"
-                    disabled={isLoading}
-                  />
-                </div>
+                 {/* Phone Number */}
+                 <div className="space-y-1.5">
+                   <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
+                     Phone Number
+                   </label>
+                   <input
+                     id="phoneNumber"
+                     name="phoneNumber"
+                     type="tel"
+                     value={formik.values.phoneNumber}
+                     onChange={formik.handleChange}
+                     onBlur={formik.handleBlur}
+                     className={`w-full bg-dark-darker border-none ring-1 focus:ring-primary text-text-light px-4 py-3 rounded-lg placeholder:text-dark-card text-sm transition-all outline-none ${
+                       formik.touched.phoneNumber && formik.errors.phoneNumber
+                         ? "ring-red-500/50 focus:ring-red-500/50"
+                         : "ring-border-muted/30"
+                     }`}
+                     placeholder="+62xxxxxxxxxx"
+                     disabled={isLoading}
+                   />
+                   {formik.touched.phoneNumber && formik.errors.phoneNumber && (
+                     <p className="text-red-400 text-xs ml-1">{formik.errors.phoneNumber}</p>
+                   )}
+                 </div>
 
                 {/* Role Selection */}
                 <div className="space-y-1.5">
