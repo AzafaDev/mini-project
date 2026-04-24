@@ -27,12 +27,17 @@ import EditEventPage from "./pages/EditEventPage";
 import PointsHistoryPage from "./pages/PointsHistoryPage";
 import EventAttendeesPage from "./pages/EventAttendeesPage";
 import { profileService, type Coupon } from "./services/api";
+import DashboardLayout from "./components/layout/DashboardLayout";
 
 const noNavbarRoutes = [
   "/dashboard",
   "/transactions",
   "/transactions/organizer",
   "/events/create",
+  "/profile",
+  "/my-tickets",
+  "/my-transactions",
+  "/profile/points",
 ];
 
 const isNoNavbarRoute = (pathname: string) => {
@@ -125,105 +130,107 @@ const App = () => {
           <Route path="/events/:id" element={<EventDetaiPage />} />
           <Route path="/organizer/:id" element={<OrganizerProfilePage />} />
 
-          {/* Protected routes - require authentication */}
-          <Route
-            path="/checkout/:id"
-            element={
-              <ProtectedRoute>
-                <CheckoutPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/transactions/:id"
-            element={
-              <ProtectedRoute>
-                <TransactionDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-transactions"
-            element={
-              <ProtectedRoute>
-                <MyTransactionsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-tickets"
-            element={
-              <ProtectedRoute>
-                <MyTickets />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePageWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/points"
-            element={
-              <ProtectedRoute>
-                <PointsHistoryPage />
-              </ProtectedRoute>
-            }
-          />
+           {/* Protected routes - require authentication */}
+           <Route
+             path="/checkout/:id"
+             element={
+               <ProtectedRoute>
+                 <CheckoutPage />
+               </ProtectedRoute>
+             }
+           />
+           <Route
+             path="/transactions/:id"
+             element={
+               <ProtectedRoute>
+                 <TransactionDetailPage />
+               </ProtectedRoute>
+             }
+           />
+           <Route
+             path="/my-transactions"
+             element={
+               <ProtectedRoute>
+                 <MyTransactionsPage />
+               </ProtectedRoute>
+             }
+           />
+           <Route
+             path="/my-tickets"
+             element={
+               <ProtectedRoute>
+                 <MyTickets />
+               </ProtectedRoute>
+             }
+           />
 
-          {/* Protected routes - require ORGANIZER role */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute requiredRole="ORGANIZER">
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/transactions"
-            element={
-              <ProtectedRoute requiredRole="ORGANIZER">
-                <TransactionsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/transactions/organizer"
-            element={
-              <ProtectedRoute requiredRole="ORGANIZER">
-                <TransactionsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events/create"
-            element={
-              <ProtectedRoute requiredRole="ORGANIZER">
-                <CreateEventPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events/:id/edit"
-            element={
-              <ProtectedRoute requiredRole="ORGANIZER">
-                <EditEventPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events/:id/attendees"
-            element={
-              <ProtectedRoute requiredRole="ORGANIZER">
-                <EventAttendeesPage />
-              </ProtectedRoute>
-            }
-          />
+           {/* Protected routes - require ORGANIZER role - wrapped in DashboardLayout */}
+           <Route element={<DashboardLayout />}>
+             <Route
+               path="/dashboard"
+               element={
+                 <ProtectedRoute requiredRole="ORGANIZER">
+                   <DashboardPage />
+                 </ProtectedRoute>
+               }
+             />
+             <Route
+               path="/transactions"
+               element={
+                 <ProtectedRoute requiredRole="ORGANIZER">
+                   <TransactionsPage />
+                 </ProtectedRoute>
+               }
+             />
+             <Route
+               path="/transactions/organizer"
+               element={
+                 <ProtectedRoute requiredRole="ORGANIZER">
+                   <TransactionsPage />
+                 </ProtectedRoute>
+               }
+             />
+             <Route
+               path="/profile"
+               element={
+                 <ProtectedRoute>
+                   <ProfilePageWrapper />
+                 </ProtectedRoute>
+               }
+             />
+             <Route
+               path="/profile/points"
+               element={
+                 <ProtectedRoute>
+                   <PointsHistoryPage />
+                 </ProtectedRoute>
+               }
+             />
+             <Route
+               path="/events/create"
+               element={
+                 <ProtectedRoute requiredRole="ORGANIZER">
+                   <CreateEventPage />
+                 </ProtectedRoute>
+               }
+             />
+             <Route
+               path="/events/:id/edit"
+               element={
+                 <ProtectedRoute requiredRole="ORGANIZER">
+                   <EditEventPage />
+                 </ProtectedRoute>
+               }
+             />
+             <Route
+               path="/events/:id/attendees"
+               element={
+                 <ProtectedRoute requiredRole="ORGANIZER">
+                   <EventAttendeesPage />
+                 </ProtectedRoute>
+               }
+             />
+           </Route>
         </Routes>
       </main>
 

@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEventStore } from "../stores/useEventStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
-import { Sidebar } from "../components/sidebar";
 import { EventStatsModal } from "../components/dashboard/EventStatsModal";
 import { DashboardTab } from "../components/dashboard/DashboardTab";
 import { EventsTab } from "../components/dashboard/EventsTab";
@@ -274,30 +273,26 @@ export default function OrganizerDashboard() {
   if (isInitialLoading) {
     return (
       <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter']">
-        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
-        <main className="md:ml-64 min-h-screen">
-          <div className="pt-24 pb-12 px-8">
-            <div className="animate-pulse">
-              <div className="h-8 bg-dark-surface rounded w-48 mb-8"></div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="h-32 bg-dark-surface rounded-lg"></div>
-                <div className="h-32 bg-dark-surface rounded-lg"></div>
-                <div className="h-32 bg-dark-surface rounded-lg"></div>
-                <div className="h-32 bg-dark-surface rounded-lg"></div>
-              </div>
+        <div className="p-4 md:p-8 pt-20 md:pt-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-dark-surface rounded w-48 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <div className="h-32 bg-dark-surface rounded-lg"></div>
+              <div className="h-32 bg-dark-surface rounded-lg"></div>
+              <div className="h-32 bg-dark-surface rounded-lg"></div>
+              <div className="h-32 bg-dark-surface rounded-lg"></div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter'] selection:bg-accent selection:text-[#D9D8FF]">
-      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Main Area */}
-      <main className="md:ml-64 min-h-screen pt-16">
+      <div className="pt-16">
         {/* Header */}
         <div className="pt-4 pb-4 px-4 md:px-8 border-b border-white/5">
           <div className="flex items-center justify-between">
@@ -353,19 +348,19 @@ export default function OrganizerDashboard() {
           )}
           {activeTab === "vouchers" && <VouchersTab />}
         </div>
-      </main>
 
-      {/* Event Stats Modal */}
-      {showStatsModal && selectedEvent && (
-        <EventStatsModal
-          eventId={selectedEvent.id}
-          eventName={selectedEvent.name}
-          onClose={() => {
-            setShowStatsModal(false);
-            setSelectedEvent(null);
-          }}
-        />
-      )}
+        {/* Event Stats Modal */}
+        {showStatsModal && selectedEvent && (
+          <EventStatsModal
+            eventId={selectedEvent.id}
+            eventName={selectedEvent.name}
+            onClose={() => {
+              setShowStatsModal(false);
+              setSelectedEvent(null);
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

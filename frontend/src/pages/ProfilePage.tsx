@@ -13,7 +13,6 @@ import {
   updateProfileSchema,
   changePasswordSchema,
 } from "../validation/authSchemas";
-import { Sidebar } from "../components/sidebar";
 
 interface ProfilePageProps {
   user?: User;
@@ -25,23 +24,6 @@ interface ProfilePageProps {
 
 const ProfileSkeleton = () => (
   <div className="bg-dark text-text-light min-h-screen font-sans">
-    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-dark-surface flex-col py-6 px-4 gap-2 z-40 pt-20">
-      <div className="mb-8 px-4">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-full bg-dark-elevated animate-pulse" />
-          <div>
-            <div className="h-4 w-24 bg-dark-elevated rounded animate-pulse mb-1" />
-            <div className="h-2 w-16 bg-dark-elevated rounded animate-pulse" />
-          </div>
-        </div>
-      </div>
-      <div className="space-y-2 px-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-10 bg-dark-elevated rounded-lg animate-pulse" />
-        ))}
-      </div>
-    </aside>
-
     <main className="lg:ml-64 pt-24 pb-12 px-6 md:px-12">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
@@ -288,9 +270,7 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
 
   return (
     <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
-      <Sidebar />
-
-      <main className="lg:ml-64 pt-24 pb-12 px-6 md:px-12">
+      <div className="p-4 md:p-8 pt-20 md:pt-8">
         <div className="max-w-6xl mx-auto">
           {/* Header Section */}
           <div className="mb-12">
@@ -647,13 +627,12 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                     </div>
                   ))}
                 </div>
-              )}
-            </section>
-          </div>
-        </div>
-      </main>
+               )}
+             </section>
+           </div>
+         </div>
 
-      {/* Mobile Navigation Bar */}
+        {/* Mobile Navigation Bar */}
       <div className="md:hidden fixed bottom-0 left-0 w-full bg-dark-surface h-16 flex items-center justify-around z-50 border-t border-border-muted/10">
         <button
           onClick={() =>
@@ -687,5 +666,6 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
         </button>
       </div>
     </div>
+  </div>
   );
 }

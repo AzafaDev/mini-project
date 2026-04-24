@@ -26,7 +26,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all duration-200">
+    <header className="fixed top-0 w-full z-50 bg-[#131313] backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all duration-200">
       <div className="flex items-center justify-between px-4 md:px-8 h-16 w-full max-w-[1440px] mx-auto">
         
         {/* --- Logo & Navigasi Desktop --- */}

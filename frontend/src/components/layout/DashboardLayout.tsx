@@ -3,10 +3,12 @@ import { Sidebar } from "../sidebar";
 
 const DashboardLayout = () => {
   return (
-    <div className="min-h-screen bg-dark">
+    <div className="min-h-screen bg-dark flex">
       <Sidebar />
-      <main className="md:ml-64 min-h-screen">
-        <Outlet />
+      <main className="flex-1 md:ml-64 min-h-screen transition-all duration-300">
+        <div className="p-4 md:p-8 pt-20 md:pt-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
