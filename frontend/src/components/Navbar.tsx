@@ -3,11 +3,22 @@ import { useAuthStore } from "../stores/useAuthStore";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
+/**
+ * Komponen Navbar utama aplikasi yang muncul di semua halaman.
+ * Mendukung responsive design untuk desktop dan mobile.
+ * Menampilkan menu navigasi, tombol login/register, dan dropdown profil user.
+ */
 const Navbar = () => {
+  // --- Ambil state dan fungsi dari Auth Store ---
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
+  
+  // State untuk mengontrol buka/tutup menu mobile
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  /**
+   * Handler untuk proses logout user
+   */
   const handleLogout = async () => {
     await logout();
     navigate("/");
@@ -17,6 +28,8 @@ const Navbar = () => {
   return (
     <header className="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all duration-200">
       <div className="flex items-center justify-between px-4 md:px-8 h-16 w-full max-w-[1440px] mx-auto">
+        
+        {/* --- Logo & Navigasi Desktop --- */}
         <div className="flex items-center gap-6">
           <Link to="/">
             <motion.span
@@ -28,6 +41,7 @@ const Navbar = () => {
             </motion.span>
           </Link>
 
+          {/* Menu navigasi hanya tampil di layar desktop */}
           <nav className="hidden md:flex items-center gap-6">
             <Link
               to="/"
@@ -54,9 +68,11 @@ const Navbar = () => {
           </nav>
         </div>
 
+        {/* --- Sisi Kanan Navbar --- */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {/* Mobile Menu Button */}
+            
+            {/* Tombol toggle menu mobile */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden text-white p-2"
@@ -66,6 +82,7 @@ const Navbar = () => {
               </span>
             </button>
 
+            {/* --- Tampilan jika user BELUM login --- */}
             {!isAuthenticated ? (
               <div className="hidden md:flex items-center gap-2">
                 <Link
@@ -81,9 +98,12 @@ const Navbar = () => {
                 </Link>
               </div>
             ) : (
+            /* --- Tampilan jika user SUDAH login --- */
               <div className="flex items-center gap-4">
 
+                {/* Avatar Profile dengan Dropdown Menu */}
                 <div className="group relative">
+                  {/* Tombol Avatar */}
                   <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#4b4dd8] to-[#c0c1ff] p-[2px] cursor-pointer">
                     <div className="w-full h-full rounded-full bg-[#131313] flex items-center justify-center overflow-hidden">
                       {user?.profilePicture ? (
@@ -100,7 +120,7 @@ const Navbar = () => {
                     </div>
                   </div>
 
-                  {/* Dropdown Menu Sederhana */}
+                  {/* Dropdown Menu Profile - Muncul saat hover */}
                   <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-[#464555]/30 rounded-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-2xl">
                     <div className="px-4 py-2 border-b border-[#464555]/30 mb-1">
                       <p className="text-xs text-[#C7C4D8]">Signed in as</p>
@@ -109,7 +129,7 @@ const Navbar = () => {
                       </p>
                     </div>
 
-                    {/* Dashboard - only for ORGANIZER */}
+                    {/* Menu Dashboard - Hanya muncul untuk role ORGANIZER */}
                     {user?.role === "ORGANIZER" && (
                       <Link
                         to="/dashboard"
@@ -122,7 +142,6 @@ const Navbar = () => {
                       </Link>
                     )}
 
-                    {/* Profile */}
                     <Link
                       to="/profile"
                       className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2 min-h-[48px]"
@@ -133,7 +152,6 @@ const Navbar = () => {
                       Profile
                     </Link>
 
-                    {/* My Tickets */}
                     <Link
                       to="/my-tickets"
                       className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2 min-h-[48px]"
@@ -144,7 +162,6 @@ const Navbar = () => {
                       My Tickets
                     </Link>
 
-                    {/* History */}
                     <Link
                       to="/my-transactions"
                       className="w-full text-left px-4 py-2 text-sm text-[#C7C4D8] hover:bg-[#2A2A2A] transition-colors flex items-center gap-2 min-h-[48px]"
@@ -174,7 +191,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Drawer */}
+      {/* --- Menu Mobile (Drawer) --- */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-16 left-0 w-full bg-[#131313] border-t border-white/5 shadow-2xl">
           <div className="px-4 py-4 space-y-2">

@@ -17,21 +17,35 @@ import {
   type VoucherWithEvent,
 } from "../services/api";
 
+/**
+ * Tipe untuk filter pencarian event
+ */
 interface EventFilters {
   search?: string;
   category?: string;
   location?: string;
 }
 
+/**
+ * Zustand Store untuk mengelola seluruh data Event, Review, dan Voucher.
+ * Menangani daftar event, detail event, review, voucher, dan semua fitur
+ * untuk Organizer (buat event, kelola voucher, lihat statistik, dll).
+ * Ini adalah store terbesar yang menangani hampir seluruh fitur utama aplikasi.
+ */
 interface EventStore {
+  // --- State Utama Event ---
   events: Event[];
   currentEvent: Event | null;
   currentEventReviews: Review[];
   currentEventVouchers: Voucher[];
   organizerProfile: OrganizerProfile | null;
+  
+  // --- State Loading & Error ---
   loading: boolean;
   loadingEvent: boolean;
   error: string | null;
+  
+  // --- State Pagination & Filter ---
   pagination: {
     page: number;
     totalPages: number;
@@ -39,12 +53,14 @@ interface EventStore {
   };
   filters: EventFilters;
   
-  // Organizer state
+  // --- State Khusus Organizer ---
   myEvents: Event[];
   organizerStats: OrganizerStats | null;
   eventStats: EventStats | null;
   eventAttendees: EventAttendee[];
   myVouchers: VoucherWithEvent[];
+  
+  // --- State Loading Khusus Organizer ---
   loadingMyEvents: boolean;
   loadingOrganizerStats: boolean;
   loadingEventStats: boolean;
@@ -52,37 +68,22 @@ interface EventStore {
   loadingMyVouchers: boolean;
   loadingEventAction: boolean;
   
+  // --- Method Utama User ---
   fetchEvents: (params: GetEventsParams) => Promise<void>;
   fetchEventById: (id: string) => Promise<Event | null>;
   fetchEventReviews: (eventId: string) => Promise<void>;
   fetchEventVouchers: (eventId: string) => Promise<void>;
-  fetchOrganizerProfile: (
-    organizerId: string,
-  ) => Promise<OrganizerProfile | null>;
-  createReview: (
-    eventId: string,
-    rating: number,
-    comment: string,
-  ) => Promise<boolean>;
-  submitReview: (
-    eventId: string,
-    rating: number,
-    comment: string,
-  ) => Promise<boolean>;
-  updateReview: (
-    reviewId: string,
-    eventId: string,
-    rating: number,
-    comment: string,
-  ) => Promise<boolean>;
-  validateVoucher: (
-    eventId: string,
-    code: string,
-    price: number,
-    quantity: number,
-  ) => Promise<number>;
+  fetchOrganizerProfile: (organizerId: string) => Promise<OrganizerProfile | null>;
   
-  // Organizer actions
+  // --- Method Review ---
+  createReview: (eventId: string, rating: number, comment: string) => Promise<boolean>;
+  submitReview: (eventId: string, rating: number, comment: string) => Promise<boolean>;
+  updateReview: (reviewId: string, eventId: string, rating: number, comment: string) => Promise<boolean>;
+  
+  // --- Method Voucher ---
+  validateVoucher: (eventId: string, code: string, price: number, quantity: number) => Promise<number>;
+  
+  // --- Method Khusus Organizer ---
   fetchMyEvents: () => Promise<void>;
   fetchOrganizerStats: (year?: number, month?: number, day?: number) => Promise<void>;
   fetchEventStats: (eventId: string) => Promise<void>;
@@ -95,6 +96,7 @@ interface EventStore {
   updateVoucher: (id: string, data: UpdateVoucherRequest) => Promise<boolean>;
   deleteVoucher: (id: string) => Promise<boolean>;
   
+  // --- Method Helper & Reset State ---
   setPage: (page: number) => void;
   setFilters: (filters: EventFilters) => void;
   clearEvents: () => void;
@@ -106,6 +108,7 @@ interface EventStore {
 }
 
 export const useEventStore = create<EventStore>((set, get) => ({
+  // --- Nilai Default State Utama ---
   events: [],
   currentEvent: null,
   currentEventReviews: [],
@@ -117,7 +120,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
   pagination: { page: 1, totalPages: 1, total: 0 },
   filters: { search: undefined, category: undefined, location: undefined },
   
-  // Organizer state
+  // --- Nilai Default State Organizer ---
   myEvents: [],
   organizerStats: null,
   eventStats: null,
@@ -130,6 +133,10 @@ export const useEventStore = create<EventStore>((set, get) => ({
   loadingMyVouchers: false,
   loadingEventAction: false,
 
+  /**
+   * Mengambil daftar semua event dengan filter dan pagination
+   * @param params - Parameter pencarian, filter, dan pagination
+   */
   fetchEvents: async (params: GetEventsParams) => {
     set({ loading: true, error: null });
     try {
@@ -152,6 +159,10 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Mengubah halaman pagination dan memuat ulang daftar event
+   * @param page - Nomor halaman yang akan dituju
+   */
   setPage: (page: number) => {
     const { filters } = get();
     const { fetchEvents } = get();
@@ -162,6 +173,10 @@ export const useEventStore = create<EventStore>((set, get) => ({
     });
   },
 
+  /**
+   * Mengatur filter pencarian dan memuat ulang daftar event dari halaman 1
+   * @param newFilters - Filter baru yang akan diterapkan
+   */
   setFilters: (newFilters: EventFilters) => {
     const { fetchEvents } = get();
     fetchEvents({
@@ -171,14 +186,25 @@ export const useEventStore = create<EventStore>((set, get) => ({
     });
   },
 
+  /**
+   * Membersihkan daftar event dan mengembalikan pagination ke halaman 1
+   */
   clearEvents: () =>
     set({
       events: [],
       pagination: { page: 1, totalPages: 1, total: 0 },
     }),
 
+  /**
+   * Membersihkan pesan error dari state
+   */
   clearError: () => set({ error: null }),
 
+  /**
+   * Mengambil detail event berdasarkan ID
+   * @param id - ID event yang akan diambil
+   * @returns Data event atau null jika gagal
+   */
   fetchEventById: async (id: string) => {
     set({ loadingEvent: true, loading: true, error: null });
     try {
@@ -187,9 +213,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       return response.data;
     } catch (error: any) {
       set({
-        error:
-          error.message ||
-          `Failed to fetch event with id ${id}`,
+        error: error.message || `Failed to fetch event with id ${id}`,
         loadingEvent: false,
         loading: false,
       });
@@ -197,47 +221,58 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Mengambil semua review untuk event tertentu
+   * @param eventId - ID event yang reviewnya akan diambil
+   */
   fetchEventReviews: async (eventId: string) => {
     try {
       const response = await reviewsVouchersService.getEventReviews(eventId);
       set({ currentEventReviews: response.data });
     } catch (error: any) {
-      console.error(
-        "Failed to fetch reviews:",
-        error.message || error.message,
-      );
+      console.error("Failed to fetch reviews:", error.message);
       set({ currentEventReviews: [] });
     }
   },
 
+  /**
+   * Mengambil semua voucher yang tersedia untuk event tertentu
+   * @param eventId - ID event yang vouchernya akan diambil
+   */
   fetchEventVouchers: async (eventId: string) => {
     try {
       const response = await reviewsVouchersService.getEventVouchers(eventId);
       set({ currentEventVouchers: response.data });
     } catch (error: any) {
-      console.error(
-        "Failed to fetch vouchers:",
-        error.message || error.message,
-      );
+      console.error("Failed to fetch vouchers:", error.message);
       set({ currentEventVouchers: [] });
     }
   },
 
+  /**
+   * Mengambil profil organizer berdasarkan ID
+   * @param organizerId - ID organizer yang profilnya akan diambil
+   * @returns Data profil organizer atau null jika gagal
+   */
   fetchOrganizerProfile: async (organizerId: string) => {
     try {
       const response = await eventService.getOrganizerProfile(organizerId);
       set({ organizerProfile: response.data });
       return response.data;
     } catch (error: any) {
-      console.error(
-        "Failed to fetch organizer profile:",
-        error.message || error.message,
-      );
+      console.error("Failed to fetch organizer profile:", error.message);
       set({ organizerProfile: null });
       return null;
     }
   },
 
+  /**
+   * Membuat review baru untuk event
+   * @param eventId - ID event yang akan direview
+   * @param rating - Nilai rating (1-5)
+   * @param comment - Komentar review
+   * @returns Status keberhasilan pembuatan review
+   */
   createReview: async (eventId: string, rating: number, comment: string) => {
     try {
       const response = await reviewsVouchersService.createReview(eventId, {
@@ -245,56 +280,59 @@ export const useEventStore = create<EventStore>((set, get) => ({
         comment,
       });
       if (response.success) {
-        // Refresh reviews after creating a new one
+        // Refresh daftar review setelah membuat yang baru
         await get().fetchEventReviews(eventId);
         return true;
       }
       return false;
     } catch (error: any) {
-      console.error(
-        "Failed to create review:",
-        error.message || error.message,
-      );
+      console.error("Failed to create review:", error.message);
       return false;
     }
   },
 
+  /**
+   * Alias untuk fungsi createReview (kompatibilitas backward)
+   */
   submitReview: async (eventId: string, rating: number, comment: string) => {
     return get().createReview(eventId, rating, comment);
   },
 
-  updateReview: async (
-    reviewId: string,
-    eventId: string,
-    rating: number,
-    comment: string,
-  ) => {
+  /**
+   * Memperbarui review yang sudah ada
+   * @param reviewId - ID review yang akan diupdate
+   * @param eventId - ID event terkait review
+   * @param rating - Nilai rating baru
+   * @param comment - Komentar baru
+   * @returns Status keberhasilan update review
+   */
+  updateReview: async (reviewId: string, eventId: string, rating: number, comment: string) => {
     try {
       const response = await reviewsVouchersService.updateReview(reviewId, {
         rating,
         comment,
       });
       if (response.success) {
-        // Refresh reviews after updating
+        // Refresh daftar review setelah update
         await get().fetchEventReviews(eventId);
         return true;
       }
       return false;
     } catch (error: any) {
-      console.error(
-        "Failed to update review:",
-        error.message || error.message,
-      );
+      console.error("Failed to update review:", error.message);
       return false;
     }
   },
 
-  validateVoucher: async (
-    eventId: string,
-    code: string,
-    price: number,
-    quantity: number,
-  ) => {
+  /**
+   * Memvalidasi kode voucher untuk event tertentu
+   * @param eventId - ID event yang voucher akan digunakan
+   * @param code - Kode voucher yang diinput user
+   * @param price - Total harga pesanan saat ini
+   * @param quantity - Jumlah tiket yang dipesan
+   * @returns Nilai diskon dalam IDR, 0 jika voucher tidak valid
+   */
+  validateVoucher: async (eventId: string, code: string, price: number, quantity: number) => {
     try {
       const response = await reviewsVouchersService.validateVoucher(
         eventId,
@@ -307,20 +345,20 @@ export const useEventStore = create<EventStore>((set, get) => ({
       }
       return 0;
     } catch (error: any) {
-      console.error(
-        "Failed to validate voucher:",
-        error.message || error.message,
-      );
+      console.error("Failed to validate voucher:", error.message);
       return 0;
     }
   },
 
-  // Organizer actions
+  // --- Method Khusus Organizer ---
+
+  /**
+   * Mengambil daftar event yang dibuat oleh organizer yang sedang login
+   */
   fetchMyEvents: async () => {
-    // Guard to prevent race conditions when fetch is called multiple times
-    if (get().loadingMyEvents) {
-      return;
-    }
+    // Guard untuk mencegah race condition jika dipanggil berkali-kali
+    if (get().loadingMyEvents) return;
+    
     set({ loadingMyEvents: true, error: null });
     try {
       const response = await eventService.getMyEvents();
@@ -333,10 +371,15 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Mengambil statistik keseluruhan untuk organizer
+   * @param year - Tahun filter (opsional)
+   * @param month - Bulan filter (opsional)
+   * @param day - Hari filter (opsional)
+   */
   fetchOrganizerStats: async (year?: number, month?: number, day?: number) => {
-    if (get().loadingOrganizerStats) {
-      return;
-    }
+    if (get().loadingOrganizerStats) return;
+    
     set({ loadingOrganizerStats: true, error: null });
     try {
       const response = await eventService.getOrganizerStats(year, month, day);
@@ -349,6 +392,10 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Mengambil statistik detail untuk event tertentu
+   * @param eventId - ID event yang statistiknya akan diambil
+   */
   fetchEventStats: async (eventId: string) => {
     set({ loadingEventStats: true, error: null });
     try {
@@ -362,6 +409,10 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Mengambil daftar peserta yang sudah mendaftar event
+   * @param eventId - ID event yang daftar pesertanya akan diambil
+   */
   fetchEventAttendees: async (eventId: string) => {
     set({ loadingEventAttendees: true, error: null });
     try {
@@ -375,12 +426,16 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Membuat event baru oleh organizer
+   * @param data - Data event termasuk file gambar
+   * @returns Data event yang berhasil dibuat atau null
+   */
   createEvent: async (data) => {
     set({ loadingEventAction: true, error: null });
     try {
       const response = await eventService.createEvent(data);
       if (response.success) {
-        // Refresh my events list
         await get().fetchMyEvents();
         set({ loadingEventAction: false });
         return response.data;
@@ -396,12 +451,17 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Memperbarui data event yang sudah ada
+   * @param id - ID event yang akan diupdate
+   * @param data - Data event yang akan diubah
+   * @returns Data event yang sudah diupdate atau null
+   */
   updateEvent: async (id, data) => {
     set({ loadingEventAction: true, error: null });
     try {
       const response = await eventService.updateEvent(id, data);
       if (response.success) {
-        // Refresh my events list
         await get().fetchMyEvents();
         set({ loadingEventAction: false });
         return response.data;
@@ -417,12 +477,16 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Menghapus event
+   * @param id - ID event yang akan dihapus
+   * @returns Status keberhasilan penghapusan
+   */
   deleteEvent: async (id: string) => {
     set({ loadingEventAction: true, error: null });
     try {
       const response = await eventService.deleteEvent(id);
       if (response.success) {
-        // Refresh my events list
         await get().fetchMyEvents();
         set({ loadingEventAction: false });
         return true;
@@ -438,6 +502,9 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Mengambil daftar semua voucher yang dibuat oleh organizer
+   */
   fetchMyVouchers: async () => {
     set({ loadingMyVouchers: true, error: null });
     try {
@@ -451,6 +518,11 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Membuat voucher baru untuk event
+   * @param data - Data voucher yang akan dibuat
+   * @returns Status keberhasilan pembuatan voucher
+   */
   createVoucher: async (data: CreateVoucherRequest) => {
     set({ loadingEventAction: true, error: null });
     try {
@@ -471,6 +543,12 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Memperbarui data voucher yang sudah ada
+   * @param id - ID voucher yang akan diupdate
+   * @param data - Data voucher yang akan diubah
+   * @returns Status keberhasilan update voucher
+   */
   updateVoucher: async (id: string, data: UpdateVoucherRequest) => {
     set({ loadingEventAction: true, error: null });
     try {
@@ -491,6 +569,11 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Menghapus voucher
+   * @param id - ID voucher yang akan dihapus
+   * @returns Status keberhasilan penghapusan
+   */
   deleteVoucher: async (id: string) => {
     set({ loadingEventAction: true, error: null });
     try {
@@ -511,10 +594,19 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }
   },
 
+  /**
+   * Membersihkan data event yang sedang dibuka (untuk cleanup)
+   */
   clearCurrentEvent: () => set({ currentEvent: null }),
 
+  /**
+   * Membersihkan data profil organizer dari state
+   */
   clearOrganizerProfile: () => set({ organizerProfile: null }),
 
+  /**
+   * Membersihkan semua data event terkait (detail, review, voucher)
+   */
   clearEventData: () =>
     set({
       currentEvent: null,
@@ -523,6 +615,9 @@ export const useEventStore = create<EventStore>((set, get) => ({
       organizerProfile: null,
     }),
 
+  /**
+   * Membersihkan semua data organizer dari state
+   */
   clearOrganizerData: () =>
     set({
       myEvents: [],

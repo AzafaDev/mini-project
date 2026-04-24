@@ -6,11 +6,19 @@ import { useCartStore } from "../stores/useCartStore";
 import { getEventStatus } from "../lib/eventUtils";
 import { useToastStore } from "../stores/useToastStore";
 
+/**
+ * Interface untuk pilihan jumlah tiket
+ */
 interface TicketSelection {
   general: number;
   vip: number;
 }
 
+/**
+ * Custom hook untuk mengelola seluruh logika di halaman Detail Event.
+ * Menangani pemilihan tiket, validasi voucher, add to cart,
+ * dan sistem review event.
+ */
 interface UseEventDetailReturn {
   event: any;
   loading: boolean;
@@ -41,12 +49,14 @@ interface UseEventDetailReturn {
 }
 
 export const useEventDetail = (): UseEventDetailReturn => {
+  // --- Ambil dependencies dari router dan store ---
   const { id } = useParams<{ id: string }>();
   const { fetchEventById, currentEvent, loadingEvent, submitReview } = useEventStore();
   const { user } = useAuthStore();
   const { addItem } = useCartStore();
   const addToast = useToastStore(state => state.addToast);
 
+  // --- Local States ---
   const [selectedTickets, setSelectedTickets] = useState<TicketSelection>({ general: 0, vip: 0 });
   const [voucherCode, setVoucherCode] = useState("");
   const [couponCode, setCouponCode] = useState("");
@@ -57,23 +67,29 @@ export const useEventDetail = (): UseEventDetailReturn => {
   const [userReview, setUserReview] = useState({ rating: 5, comment: "" });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+  /**
+   * Mengambil data event saat halaman pertama kali dimuat
+   */
   useEffect(() => {
     if (id) {
       fetchEventById(id);
     }
   }, [id, fetchEventById]);
 
+  // --- Perhitungan Data Tambahan Event ---
   const eventStatus = currentEvent ? getEventStatus(currentEvent) : "Unknown";
-
   const averageRating = (currentEvent?.reviews?.length ?? 0) > 0
     ? (currentEvent?.reviews?.reduce((sum: number, r: any) => sum + r.rating, 0) ?? 0) / (currentEvent?.reviews?.length ?? 1)
     : 0;
-
   const hasUserReviewed = !!user && !!(currentEvent?.reviews?.some((r: any) => r.userId === user.id));
-
+  
+  // Hitung total harga secara realtime setiap perubahan pilihan tiket
   const totalPrice = selectedTickets.general * (currentEvent?.price ?? 0) +
     selectedTickets.vip * (currentEvent?.vipPrice ?? currentEvent?.price ?? 0) - discount;
 
+  /**
+   * Handler untuk memvalidasi dan mengaplikasikan kode voucher
+   */
   const applyVoucher = useCallback(() => {
     if (!voucherCode.trim()) {
       setVoucherError("Voucher code is required");
@@ -90,6 +106,9 @@ export const useEventDetail = (): UseEventDetailReturn => {
     }
   }, [voucherCode, totalPrice]);
 
+  /**
+   * Handler untuk memvalidasi dan mengaplikasikan kode kupon
+   */
   const applyCoupon = useCallback(() => {
     if (!couponCode.trim()) {
       setCouponError("Coupon code is required");
@@ -105,6 +124,9 @@ export const useEventDetail = (): UseEventDetailReturn => {
     }
   }, [couponCode]);
 
+  /**
+   * Handler untuk menambahkan tiket yang dipilih ke keranjang
+   */
   const addToCart = useCallback(() => {
     if (selectedTickets.general === 0 && selectedTickets.vip === 0) {
       addToast("error", "Please select at least one ticket");
@@ -113,6 +135,7 @@ export const useEventDetail = (): UseEventDetailReturn => {
 
     if (!currentEvent) return;
 
+    // Tambahkan tiket general ke keranjang jika ada
     if (selectedTickets.general > 0) {
       addItem({
         eventId: currentEvent.id,
@@ -124,6 +147,7 @@ export const useEventDetail = (): UseEventDetailReturn => {
       });
     }
 
+    // Tambahkan tiket VIP ke keranjang jika ada
     if (selectedTickets.vip > 0) {
       addItem({
         eventId: currentEvent.id,
@@ -138,15 +162,24 @@ export const useEventDetail = (): UseEventDetailReturn => {
     addToast("success", "Tickets added to cart!");
   }, [selectedTickets, currentEvent, addItem]);
 
+  /**
+   * Membuka modal review event
+   */
   const openReviewModal = useCallback(() => {
     setIsReviewModalOpen(true);
   }, []);
 
+  /**
+   * Menutup modal review dan reset form
+   */
   const closeReviewModal = useCallback(() => {
     setIsReviewModalOpen(false);
     setUserReview({ rating: 5, comment: "" });
   }, []);
 
+  /**
+   * Handler untuk mengirim review event ke backend
+   */
   const submitReviewHandler = useCallback(async () => {
     if (!userReview.comment.trim()) {
       addToast("error", "Please write a review comment");
@@ -165,6 +198,7 @@ export const useEventDetail = (): UseEventDetailReturn => {
     }
   }, [id, userReview, submitReview, closeReviewModal]);
 
+  // Kembalikan semua state dan fungsi ke komponen
   return {
     event: currentEvent,
     loading: loadingEvent,

@@ -1,3 +1,6 @@
+/**
+ * Konstanta semua status yang mungkin untuk transaksi
+ */
 export const TRANSACTION_STATUS = {
   PENDING: 'WAITING_PAYMENT',
   WAITING_CONFIRMATION: 'WAITING_CONFIRMATION',
@@ -7,16 +10,27 @@ export const TRANSACTION_STATUS = {
   CANCELED: 'CANCELED',
 } as const;
 
+/**
+ * Konstanta tipe tiket yang tersedia
+ */
 export const TICKET_TYPE = {
   GENERAL: 'GENERAL',
   VIP: 'VIP',
 } as const;
 
+/**
+ * Konfigurasi sistem poin loyalty
+ * MAX_PER_TRANSACTION: Batas maksimal poin yang bisa dipakai per transaksi
+ * POINT_VALUE: Nilai tukar 1 poin dalam rupiah
+ */
 export const POINTS_CONFIG = {
   MAX_PER_TRANSACTION: 50000,
-  POINT_VALUE: 1, // 1 point = 1 IDR
+  POINT_VALUE: 1,
 } as const;
 
+/**
+ * Daftar route aplikasi frontend
+ */
 export const API_ROUTES = {
   HOME: '/',
   LOGIN: '/login',
@@ -31,7 +45,7 @@ export const API_ROUTES = {
 } as const;
 
 /**
- * Fallback images
+ * Daftar gambar fallback untuk kasus gambar gagal dimuat
  */
 export const FALLBACK_IMAGES = {
   AVATAR: "https://via.placeholder.com/64",
@@ -44,7 +58,7 @@ export const FALLBACK_IMAGES = {
 };
 
 /**
- * Event categories
+ * Daftar kategori event yang tersedia di sistem
  */
 export const EVENT_CATEGORIES = [
   "Conference",
