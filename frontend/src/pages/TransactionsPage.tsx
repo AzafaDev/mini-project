@@ -5,7 +5,6 @@ import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
 import { formatIDR, formatDate } from "../lib/formatters";
 import { type TransactionStatus } from "../services/api";
-import { Sidebar } from "../components/sidebar";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 type FilterStatus = "ALL" | TransactionStatus;
@@ -179,10 +178,9 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
 
   return (
     <div className="bg-dark text-text-light font-sans min-h-screen selection:bg-primary/30">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content */}
-      <main className="md:ml-64 pt-24 pb-12 px-6 md:px-12">
+      <div className="p-4 md:p-8 pt-20 md:pt-8">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tighter text-text-light mb-2">
@@ -463,9 +461,8 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
             </>
           )}
         </div>
-      </main>
 
-      {/* Payment Proof Modal */}
+        {/* Payment Proof Modal */}
       {isProofModalOpen && selectedTransactionId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -554,9 +551,10 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
              </div>
            </div>
          </div>
-       )}
-    </div>
+        )}
+     </div>
+   </div>
   );
-};
+ };
 
 export default TransactionsPage;
