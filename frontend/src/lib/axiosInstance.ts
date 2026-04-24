@@ -1,20 +1,28 @@
 import axios, { AxiosError } from "axios";
-import type { AxiosRequestConfig } from "axios";
 
+/**
+ * Instance Axios yang sudah dikonfigurasi untuk seluruh aplikasi.
+ * Dilengkapi interceptor untuk autentikasi, logging, dan error handling terpusat.
+ */
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
   withCredentials: true,
 });
 
-// Request interceptor - attach auth token
-// Request interceptor - attach auth token
+/**
+ * Request Interceptor - Dijalankan sebelum setiap request dikirim
+ * Fungsi:
+ * - Menambahkan header Authorization Bearer token dari localStorage
+ * - Logging request di mode development
+ */
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Log requests in development mode
+    
+    // Log hanya di mode development
     if (import.meta.env.DEV) {
       console.log(`[REQUEST] ${config.method?.toUpperCase()} ${config.url}`);
     }
@@ -23,14 +31,23 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response interceptor - centralized error handling
+/**
+ * Response Interceptor - Dijalankan setelah setiap response diterima
+ * Fungsi:
+ * - Handling error secara terpusat untuk semua status code HTTP
+ * - Format pesan error menjadi user friendly
+ * - Logging error di mode development
+ */
 axiosInstance.interceptors.response.use(
+  // Jika response sukses, kembalikan langsung
   (response) => response,
+  
+  // Jika response error, proses dan format pesan error
   (error: AxiosError<{ message?: string }>) => {
     let errorMessage = "An unexpected error occurred";
 
     if (error.response) {
-      // Server responded with error status
+      // Jika server merespon dengan status error (4xx, 5xx)
       const status = error.response.status;
       const serverMessage = error.response.data?.message;
 
@@ -40,7 +57,6 @@ axiosInstance.interceptors.response.use(
           break;
         case 401:
           errorMessage = "Session expired. Please login again.";
-          // Optional: trigger logout or redirect to login
           break;
         case 403:
           errorMessage = serverMessage || "You don't have permission";
@@ -58,16 +74,16 @@ axiosInstance.interceptors.response.use(
           errorMessage = serverMessage || `Request failed (${status})`;
       }
     } else if (error.request) {
-      // Request made but no response (network error)
+      // Jika request terkirim tapi tidak ada response (network error)
       errorMessage = "Network error. Please check your connection.";
     }
 
-    // Log errors in development mode
+    // Log error hanya di mode development
     if (import.meta.env.DEV) {
       console.error(`[ERROR] ${errorMessage}`, error.response?.data);
     }
 
-    // Return formatted error
+    // Kembalikan error yang sudah diformat
     return Promise.reject(new Error(errorMessage));
   },
 );
