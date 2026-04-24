@@ -21,10 +21,10 @@ const OrganizerProfilePage: React.FC = () => {
 
   if (loading && !organizerProfile) {
     return (
-      <div className='bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center'>
+      <div className='bg-dark text-text-light min-h-screen flex items-center justify-center'>
         <div className='flex flex-col items-center gap-4'>
-          <div className='w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin'></div>
-          <p className='text-[#c7c4d8]'>Loading organizer profile...</p>
+          <div className='w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin'></div>
+          <p className='text-text-muted'>Loading organizer profile...</p>
         </div>
       </div>
     );
@@ -32,13 +32,13 @@ const OrganizerProfilePage: React.FC = () => {
 
   if (error) {
     return (
-      <div className='bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center'>
+      <div className='bg-dark text-text-light min-h-screen flex items-center justify-center'>
         <div className='flex flex-col items-center gap-4 text-center'>
-          <span className='material-symbols-outlined text-6xl text-[#93000a]'>
+          <span className='material-symbols-outlined text-6xl text-error'>
             error
           </span>
           <h2 className='text-2xl font-bold'>Failed to load organizer</h2>
-          <p className='text-[#c7c4d8]'>{error}</p>
+          <p className='text-text-muted'>{error}</p>
         </div>
       </div>
     );
@@ -46,9 +46,9 @@ const OrganizerProfilePage: React.FC = () => {
 
   if (!organizerProfile) {
     return (
-      <div className='bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center'>
+      <div className='bg-dark text-text-light min-h-screen flex items-center justify-center'>
         <div className='flex flex-col items-center gap-4'>
-          <span className='material-symbols-outlined text-6xl text-[#c7c4d8]'>
+          <span className='material-symbols-outlined text-6xl text-text-muted'>
             person_off
           </span>
           <h2 className='text-2xl font-bold'>Organizer not found</h2>
@@ -58,12 +58,12 @@ const OrganizerProfilePage: React.FC = () => {
   }
 
   return (
-    <div className='bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30'>
+    <div className='bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30'>
       <main className='pt-16 min-h-screen'>
         {/* Hero Section */}
-        <section className='relative w-full h-[40vh] md:h-[300px] overflow-hidden bg-gradient-to-b from-[#1c1b1b] to-[#131313]'>
+        <section className='relative w-full h-[40vh] md:h-[300px] overflow-hidden bg-gradient-to-b from-dark-surface to-dark'>
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='w-32 h-32 md:w-40 md:h-40 rounded-full bg-[#353534] flex items-center justify-center overflow-hidden border-4 border-[#c0c1ff]/20'>
+            <div className='w-32 h-32 md:w-40 md:h-40 rounded-full bg-dark-card flex items-center justify-center overflow-hidden border-4 border-primary/20'>
               {organizerProfile.imageUrl ? (
                 <img
                   src={organizerProfile.imageUrl}
@@ -71,7 +71,7 @@ const OrganizerProfilePage: React.FC = () => {
                   className='w-full h-full object-cover'
                 />
               ) : (
-                <span className='material-symbols-outlined text-6xl text-[#c7c4d8]'>
+                <span className='material-symbols-outlined text-6xl text-text-muted'>
                   person
                 </span>
               )}
@@ -86,11 +86,11 @@ const OrganizerProfilePage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className='space-y-4'
           >
-            <h1 className='text-3xl md:text-4xl font-black tracking-tighter text-[#e5e2e1]'>
+            <h1 className='text-3xl md:text-4xl font-black tracking-tighter text-text-light'>
               {organizerProfile.name}
             </h1>
             
-            <p className='text-[#c7c4d8] text-sm'>
+            <p className='text-text-muted text-sm'>
               Member since {formatDate(organizerProfile.createdAt)}
             </p>
 
@@ -98,30 +98,30 @@ const OrganizerProfilePage: React.FC = () => {
             <div className='flex justify-center gap-8 py-6'>
               <div className='text-center'>
                 <div className='flex items-center justify-center gap-1 mb-1'>
-                  <span className='material-symbols-outlined text-[#c0c1ff] text-xl'>
+                  <span className='material-symbols-outlined text-primary text-xl'>
                     star
                   </span>
-                  <span className='text-2xl font-bold text-[#e5e2e1]'>
+                  <span className='text-2xl font-bold text-text-light'>
                     {organizerProfile.rating.toFixed(1)}
                   </span>
                 </div>
-                <p className='text-xs text-[#c7c4d8] uppercase tracking-widest'>
+                <p className='text-xs text-text-muted uppercase tracking-widest'>
                   Rating
                 </p>
               </div>
               <div className='text-center'>
-                <div className='text-2xl font-bold text-[#e5e2e1] mb-1'>
+                <div className='text-2xl font-bold text-text-light mb-1'>
                   {organizerProfile.reviewCount}
                 </div>
-                <p className='text-xs text-[#c7c4d8] uppercase tracking-widest'>
+                <p className='text-xs text-text-muted uppercase tracking-widest'>
                   Reviews
                 </p>
               </div>
               <div className='text-center'>
-                <div className='text-2xl font-bold text-[#e5e2e1] mb-1'>
+                <div className='text-2xl font-bold text-text-light mb-1'>
                   {organizerProfile.eventCount}
                 </div>
-                <p className='text-xs text-[#c7c4d8] uppercase tracking-widest'>
+                <p className='text-xs text-text-muted uppercase tracking-widest'>
                   Events
                 </p>
               </div>
@@ -136,8 +136,8 @@ const OrganizerProfilePage: React.FC = () => {
               onClick={() => setActiveTab('events')}
               className={`px-6 py-4 text-sm font-bold uppercase tracking-widest transition-colors ${
                 activeTab === 'events'
-                  ? 'text-[#c0c1ff] border-b-2 border-[#c0c1ff]'
-                  : 'text-[#c7c4d8] hover:text-[#e5e2e1]'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-text-muted hover:text-text-light'
               }`}
             >
               Events
@@ -146,8 +146,8 @@ const OrganizerProfilePage: React.FC = () => {
               onClick={() => setActiveTab('reviews')}
               className={`px-6 py-4 text-sm font-bold uppercase tracking-widest transition-colors ${
                 activeTab === 'reviews'
-                  ? 'text-[#c0c1ff] border-b-2 border-[#c0c1ff]'
-                  : 'text-[#c7c4d8] hover:text-[#e5e2e1]'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-text-muted hover:text-text-light'
               }`}
             >
               Reviews
@@ -164,33 +164,33 @@ const OrganizerProfilePage: React.FC = () => {
                   <Link
                     key={event.id}
                     to={`/events/${event.id}`}
-                    className='block bg-[#1c1b1b] p-5 rounded-lg border border-white/5 hover:border-[#c0c1ff]/30 transition-all'
+                    className='block bg-dark-surface p-5 rounded-lg border border-white/5 hover:border-primary/30 transition-all'
                   >
                     <div className='flex justify-between items-start'>
                       <div>
-                        <h3 className='font-bold text-[#e5e2e1] mb-2'>
+                        <h3 className='font-bold text-text-light mb-2'>
                           {event.name}
                         </h3>
-                        <p className='text-sm text-[#c7c4d8] mb-1'>
+                        <p className='text-sm text-text-muted mb-1'>
                           {formatDate(event.startDate)} • {event.location}
                         </p>
                         <div className='flex items-center gap-1 mt-2'>
-                          <span className='material-symbols-outlined text-sm text-[#c0c1ff]'>
+                          <span className='material-symbols-outlined text-sm text-primary'>
                             star
                           </span>
-                          <span className='text-sm text-[#c7c4d8]'>
+                          <span className='text-sm text-text-muted'>
                             {event.rating ? event.rating.toFixed(1) : 'N/A'} ({event.reviewCount ?? 0} reviews)
                           </span>
                         </div>
                       </div>
-                      <span className='material-symbols-outlined text-[#c7c4d8]'>
+                      <span className='material-symbols-outlined text-text-muted'>
                         chevron_right
                       </span>
                     </div>
                   </Link>
                 ))
               ) : (
-                <div className='text-center py-12 text-[#c7c4d8]'>
+                <div className='text-center py-12 text-text-muted'>
                   <span className='material-symbols-outlined text-4xl mb-3'>
                     event
                   </span>
@@ -206,11 +206,11 @@ const OrganizerProfilePage: React.FC = () => {
                 organizerProfile.reviews.map((review) => (
                   <div
                     key={review.id}
-                    className='bg-[#1c1b1b] p-5 rounded-lg border border-white/5'
+                    className='bg-dark-surface p-5 rounded-lg border border-white/5'
                   >
                     <div className='flex items-start justify-between mb-3'>
                       <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 rounded-full bg-[#353534] flex items-center justify-center overflow-hidden'>
+                        <div className='w-10 h-10 rounded-full bg-dark-card flex items-center justify-center overflow-hidden'>
                           {review.userImage ? (
                             <img
                               src={review.userImage}
@@ -218,16 +218,16 @@ const OrganizerProfilePage: React.FC = () => {
                               className='w-full h-full object-cover'
                             />
                           ) : (
-                            <span className='material-symbols-outlined text-[#c7c4d8]'>
+                            <span className='material-symbols-outlined text-text-muted'>
                               person
                             </span>
                           )}
                         </div>
                         <div>
-                          <p className='font-medium text-[#e5e2e1]'>
+                          <p className='font-medium text-text-light'>
                             {review.userName}
                           </p>
-                          <p className='text-xs text-[#c7c4d8]'>
+                          <p className='text-xs text-text-muted'>
                             {review.eventName}
                           </p>
                         </div>
@@ -237,7 +237,7 @@ const OrganizerProfilePage: React.FC = () => {
                           <span
                             key={star}
                             className={`material-symbols-outlined text-sm ${
-                              star <= review.rating ? 'text-[#c0c1ff]' : 'text-[#353534]'
+                              star <= review.rating ? 'text-primary' : 'text-dark-card'
                             }`}
                           >
                             star
@@ -245,16 +245,16 @@ const OrganizerProfilePage: React.FC = () => {
                         ))}
                       </div>
                     </div>
-                    <p className='text-sm text-[#c7c4d8] leading-relaxed'>
+                    <p className='text-sm text-text-muted leading-relaxed'>
                       {review.comment}
                     </p>
-                    <p className='text-xs text-[#666] mt-3'>
+                    <p className='text-xs text-text-secondary mt-3'>
                       {formatDate(review.createdAt)}
                     </p>
                   </div>
                 ))
               ) : (
-                <div className='text-center py-12 text-[#c7c4d8]'>
+                <div className='text-center py-12 text-text-muted'>
                   <span className='material-symbols-outlined text-4xl mb-3'>
                     rate_review
                   </span>
@@ -267,20 +267,20 @@ const OrganizerProfilePage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className='w-full py-12 px-8 bg-[#0E0E0E] border-t border-white/5'>
+      <footer className='w-full py-12 px-8 bg-dark-darker border-t border-white/5'>
         <div className='max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6'>
-          <p className='text-xs uppercase tracking-widest text-[#C7C4D8]'>
+          <p className='text-xs uppercase tracking-widest text-text-muted'>
             © 2024 Kinetix Event Architecture.
           </p>
           <div className='flex gap-8'>
             <a
-              className='text-xs uppercase tracking-widest text-[#C7C4D8] hover:text-[#C0C1FF]'
+              className='text-xs uppercase tracking-widest text-text-muted hover:text-primary'
               href='#'
             >
               Privacy
             </a>
             <a
-              className='text-xs uppercase tracking-widest text-[#C7C4D8] hover:text-[#C0C1FF]'
+              className='text-xs uppercase tracking-widest text-text-muted hover:text-primary'
               href='#'
             >
               Terms

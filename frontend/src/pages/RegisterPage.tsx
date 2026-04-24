@@ -63,23 +63,23 @@ const RegistrationPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex flex-col font-['Inter',sans-serif]">
+    <div className="bg-dark text-text-light min-h-screen flex flex-col font-['Inter',sans-serif]">
       {/* Main Canvas */}
-      <main className="flex-grow flex items-center justify-center pt-16 pb-12 px-4 bg-[#131313]">
+      <main className="flex-grow flex items-center justify-center pt-16 pb-12 px-4 bg-dark">
         <div className="relative w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left Decoration: Editorial Context */}
           <div className="hidden lg:flex lg:col-span-5 flex-col gap-6 pr-8">
             <h1 className="text-5xl font-extrabold tracking-tighter leading-none text-white">
               Curate <br />
-              <span className="text-[#c0c1ff]">Exceptional</span> Moments.
+              <span className="text-primary">Exceptional</span> Moments.
             </h1>
-            <p className="text-[#c7c4d8] text-lg leading-relaxed">
+            <p className="text-text-muted text-lg leading-relaxed">
               Join the premier ecosystem for architecting high-impact events.
               Designed for precision, built for scale.
             </p>
-            <div className="mt-4 p-6 rounded bg-[#1c1b1b] border border-[#464555]/15">
+            <div className="mt-4 p-6 rounded bg-dark-surface border border-border-muted/15">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full overflow-hidden bg-[#2a2a2a]">
+                <div className="h-12 w-12 rounded-full overflow-hidden bg-dark-elevated">
                   <img
                     className="w-full h-full object-cover"
                     alt="Marcus Thorne"
@@ -87,15 +87,15 @@ const RegistrationPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#e5e2e1]">
+                  <p className="text-sm font-semibold text-text-light">
                     Marcus Thorne
                   </p>
-                  <p className="text-xs text-[#c7c4d8]">
+                  <p className="text-xs text-text-muted">
                     Lead Architect, Global Pulse
                   </p>
                 </div>
               </div>
-              <p className="mt-4 text-sm italic text-[#c7c4d8]/80">
+              <p className="mt-4 text-sm italic text-text-muted/80">
                 "The Midnight Architect system allowed us to scale our
                 registration 4x without losing the premium editorial feel our
                 clients expect."
@@ -105,12 +105,12 @@ const RegistrationPage: React.FC = () => {
 
           {/* Registration Card */}
           <div className="lg:col-span-7 w-full max-w-md mx-auto">
-            <div className="bg-[#2a2a2a]/80 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-[#464555]/10">
+            <div className="bg-dark-elevated/80 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-border-muted/10">
               <div className="mb-8">
                 <h2 className="text-2xl font-bold tracking-tight text-white">
                   Create Account
                 </h2>
-                <p className="text-sm text-[#c7c4d8] mt-1">
+                <p className="text-sm text-text-muted mt-1">
                   Start your journey with CuratorEvents.
                 </p>
               </div>
@@ -124,7 +124,7 @@ const RegistrationPage: React.FC = () => {
               <form className="space-y-5" onSubmit={formik.handleSubmit}>
                 {/* Full Name */}
                 <div className="space-y-1.5">
-                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
                     Full Name
                   </label>
                   <input
@@ -134,10 +134,10 @@ const RegistrationPage: React.FC = () => {
                     value={formik.values.fullName}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className={`w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 placeholder:text-[#353534] text-sm transition-all outline-none ${
+                    className={`w-full bg-dark-darker border-none text-text-light px-4 py-3 rounded-lg focus:ring-1 placeholder:text-dark-card text-sm transition-all outline-none ${
                       formik.touched.fullName && formik.errors.fullName
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                        : "ring-[#464555]/30 focus:ring-[#c0c1ff]"
+                        : "ring-border-muted/30 focus:ring-primary"
                     }`}
                     placeholder="Enter your full name"
                     disabled={isLoading}
@@ -149,7 +149,7 @@ const RegistrationPage: React.FC = () => {
 
                 {/* Email Address */}
                 <div className="space-y-1.5">
-                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
                     Email Address
                   </label>
                   <input
@@ -159,10 +159,10 @@ const RegistrationPage: React.FC = () => {
                     value={formik.values.email}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className={`w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 placeholder:text-[#353534] text-sm transition-all outline-none ${
+                    className={`w-full bg-dark-darker border-none text-text-light px-4 py-3 rounded-lg focus:ring-1 placeholder:text-dark-card text-sm transition-all outline-none ${
                       formik.touched.email && formik.errors.email
                         ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                        : "ring-[#464555]/30 focus:ring-[#c0c1ff]"
+                        : "ring-border-muted/30 focus:ring-primary"
                     }`}
                     placeholder="name@company.com"
                     disabled={isLoading}
@@ -174,7 +174,7 @@ const RegistrationPage: React.FC = () => {
 
                 {/* Phone Number */}
                 <div className="space-y-1.5">
-                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
                     Phone Number
                   </label>
                   <input
@@ -184,7 +184,7 @@ const RegistrationPage: React.FC = () => {
                     value={formik.values.phoneNumber}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className="w-full bg-[#0e0e0e] border-none ring-1 ring-[#464555]/30 focus:ring-[#c0c1ff] text-[#e5e2e1] px-4 py-3 rounded-lg placeholder:text-[#353534] text-sm transition-all outline-none"
+                    className="w-full bg-dark-darker border-none ring-1 ring-border-muted/30 focus:ring-primary text-text-light px-4 py-3 rounded-lg placeholder:text-dark-card text-sm transition-all outline-none"
                     placeholder="+62xxxxxxxxxx"
                     disabled={isLoading}
                   />
@@ -192,7 +192,7 @@ const RegistrationPage: React.FC = () => {
 
                 {/* Role Selection */}
                 <div className="space-y-1.5">
-                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
                     Account Role
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -201,8 +201,8 @@ const RegistrationPage: React.FC = () => {
                       onClick={() => formik.setFieldValue("role", "CUSTOMER")}
                       className={`flex items-center justify-center p-3 rounded-lg text-xs font-semibold transition-all border ${
                         formik.values.role === "CUSTOMER"
-                          ? "border-[#c0c1ff] bg-[#c0c1ff]/10 text-[#c0c1ff]"
-                          : "border-transparent bg-[#0e0e0e] text-[#c7c4d8]"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-transparent bg-dark-darker text-text-muted"
                       }`}
                       disabled={isLoading}
                     >
@@ -213,8 +213,8 @@ const RegistrationPage: React.FC = () => {
                       onClick={() => formik.setFieldValue("role", "ORGANIZER")}
                       className={`flex items-center justify-center p-3 rounded-lg text-xs font-semibold transition-all border ${
                         formik.values.role === "ORGANIZER"
-                          ? "border-[#c0c1ff] bg-[#c0c1ff]/10 text-[#c0c1ff]"
-                          : "border-transparent bg-[#0e0e0e] text-[#c7c4d8]"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-transparent bg-dark-darker text-text-muted"
                       }`}
                       disabled={isLoading}
                     >
@@ -228,7 +228,7 @@ const RegistrationPage: React.FC = () => {
 
                 {/* Password */}
                 <div className="space-y-1.5 relative">
-                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
                     Password
                   </label>
                   <div className="relative">
@@ -238,10 +238,10 @@ const RegistrationPage: React.FC = () => {
                       value={formik.values.password}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      className={`w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 placeholder:text-[#353534] text-sm transition-all outline-none pr-12 ${
+                      className={`w-full bg-dark-darker border-none text-text-light px-4 py-3 rounded-lg focus:ring-1 placeholder:text-dark-card text-sm transition-all outline-none pr-12 ${
                         formik.touched.password && formik.errors.password
                           ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                          : "ring-[#464555]/30 focus:ring-[#c0c1ff]"
+                          : "ring-border-muted/30 focus:ring-primary"
                       }`}
                       placeholder="••••••••"
                       type={showPassword ? "text" : "password"}
@@ -249,7 +249,7 @@ const RegistrationPage: React.FC = () => {
                     />
                     <button
                       type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#c7c4d8] cursor-pointer text-xl"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted cursor-pointer text-xl"
                       onClick={togglePassword}
                     >
                       <span className="material-symbols-outlined">
@@ -264,7 +264,7 @@ const RegistrationPage: React.FC = () => {
 
                 {/* Profile Picture */}
                 <div className="space-y-1.5">
-                  <label className="block text-[0.75rem] font-medium text-[#c7c4d8] ml-1">
+                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
                     Profile Picture
                   </label>
                   <input
@@ -272,7 +272,7 @@ const RegistrationPage: React.FC = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="w-full bg-[#0e0e0e] border-none text-[#e5e2e1] px-4 py-3 rounded-lg focus:ring-1 focus:ring-[#c0c1ff] text-sm transition-all outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#c0c1ff]/10 file:text-[#c0c1ff] hover:file:bg-[#c0c1ff]/20"
+                    className="w-full bg-dark-darker border-none text-text-light px-4 py-3 rounded-lg focus:ring-1 focus:ring-primary text-sm transition-all outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                     disabled={isLoading}
                   />
                 </div>
@@ -280,10 +280,10 @@ const RegistrationPage: React.FC = () => {
                 {/* Referral Code */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center ml-1">
-                    <label className="block text-[0.75rem] font-medium text-[#c7c4d8]">
+                    <label className="block text-[0.75rem] font-medium text-text-muted">
                       Referral Code
                     </label>
-                    <span className="text-[0.65rem] text-[#c7c4d8] bg-[#464555]/10 px-2 py-0.5 rounded uppercase font-bold tracking-wider">
+                    <span className="text-[0.65rem] text-text-muted bg-border-muted/10 px-2 py-0.5 rounded uppercase font-bold tracking-wider">
                       Optional
                     </span>
                   </div>
@@ -294,7 +294,7 @@ const RegistrationPage: React.FC = () => {
                     value={formik.values.referrerCode}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className="w-full bg-[#0e0e0e] border-none ring-1 ring-[#464555]/30 focus:ring-[#c0c1ff] text-[#e5e2e1] px-4 py-3 rounded-lg placeholder:text-[#353534] text-sm transition-all border-l-2 border-[#c0c1ff] outline-none"
+                    className="w-full bg-dark-darker border-none ring-1 ring-border-muted/30 focus:ring-primary text-text-light px-4 py-3 rounded-lg placeholder:text-dark-card text-sm transition-all border-l-2 border-primary outline-none"
                     placeholder="XYZ-12345"
                     disabled={isLoading}
                   />
@@ -304,7 +304,7 @@ const RegistrationPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-4 py-4 rounded-lg bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-[#c0c1ff]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full mt-4 py-4 rounded-lg bg-gradient-to-br from-primary to-accent text-primary-dark font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -317,10 +317,10 @@ const RegistrationPage: React.FC = () => {
                 </button>
               </form>
 
-              <p className="mt-8 text-center text-xs text-[#c7c4d8]">
+              <p className="mt-8 text-center text-xs text-text-muted">
                 Already have an account?{" "}
                 <a
-                  className="text-[#c0c1ff] font-semibold hover:underline"
+                  className="text-primary font-semibold hover:underline"
                   href="/login"
                 >
                   Sign In

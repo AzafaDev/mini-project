@@ -69,8 +69,8 @@ const ProfilePageWrapper = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin"></div>
+      <div className="bg-dark text-text-light min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

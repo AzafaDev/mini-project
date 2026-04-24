@@ -29,10 +29,10 @@ const CheckoutPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center">
+      <div className="bg-dark text-text-light min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[#c7c4d8]">Loading checkout...</p>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-text-muted">Loading checkout...</p>
         </div>
       </div>
     );
@@ -40,14 +40,14 @@ const CheckoutPage: React.FC = () => {
 
   if (!currentEvent && !isLoading) {
     return (
-      <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center">
+      <div className="bg-dark text-text-light min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-center">
-          <span className="material-symbols-outlined text-6xl text-[#93000a]">
+          <span className="material-symbols-outlined text-6xl text-error">
             event_busy
           </span>
           <h2 className="text-2xl font-bold">Event not found</h2>
-          <p className="text-[#c7c4d8]">The event you're looking for doesn't exist.</p>
-          <Link to="/" className="text-[#c0c1ff] hover:underline">
+          <p className="text-text-muted">The event you're looking for doesn't exist.</p>
+          <Link to="/" className="text-primary hover:underline">
             Go back to Home
           </Link>
         </div>
@@ -56,18 +56,18 @@ const CheckoutPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
+    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
       <main className="pt-24 pb-32 px-6 max-w-screen-2xl mx-auto">
         {/* Breadcrumb / Header */}
         <div className="mb-12">
-          <div className="flex items-center gap-2 text-[#c7c4d8] text-xs mb-4">
-            <Link to="/" className="hover:text-[#c0c1ff]">Events</Link>
+          <div className="flex items-center gap-2 text-text-muted text-xs mb-4">
+            <Link to="/" className="hover:text-primary">Events</Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <Link to={`/events/${eventId}`} className="hover:text-[#c0c1ff]">{currentEvent?.name || 'Event'}</Link>
+            <Link to={`/events/${eventId}`} className="hover:text-primary">{currentEvent?.name || 'Event'}</Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-[#c0c1ff]">Checkout</span>
+            <span className="text-primary">Checkout</span>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tighter text-[#e5e2e1]">
+          <h1 className="text-4xl font-extrabold tracking-tighter text-text-light">
             Secure Checkout
           </h1>
         </div>
@@ -76,16 +76,16 @@ const CheckoutPage: React.FC = () => {
           {/* Left Column */}
           <div className="lg:col-span-8 space-y-12">
             {/* Event Summary Card */}
-            <section className="bg-[#1c1b1b] rounded-xl overflow-hidden shadow-2xl">
+            <section className="bg-dark-surface rounded-xl overflow-hidden shadow-2xl">
               <div className="h-48 relative overflow-hidden">
                 <img
                   alt={currentEvent?.name}
                   className="w-full h-full object-cover opacity-60"
                   src={currentEvent?.imageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuDdRDS19K5BkPJR_o2gLhL_xSButi1v__xH0YgKvN3kq9-HtpAvjR_2gAdUFjid84mEd0CaTu2Sq-c2J4pwmljaPxupQub4NmuRrlvhQpBgg2VnBlUlURuheitOpwPORiqygxSyVPs8qDWcudVps9rRxX1SIXgjUUBZj_yQzZFY27qefC5xmU9u0trPGRuD6wL-eHP_1j5Bf1CBqxODn823AnAbiLnf39GZwrsUL0CGfEoVnugGWZnzXmh1eqwNnOXh4TzEcX6BmU-X"}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1c1b1b] to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-dark-surface to-transparent"></div>
                 <div className="absolute bottom-6 left-8">
-                  <span className="bg-[#c0c1ff] text-[#07006c] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 inline-block">
+                  <span className="bg-primary text-primary-dark px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 inline-block">
                     {currentEvent?.category}
                   </span>
                   <h2 className="text-3xl font-bold tracking-tight text-white">
@@ -95,38 +95,38 @@ const CheckoutPage: React.FC = () => {
               </div>
               <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-[#c0c1ff]">
+                  <span className="material-symbols-outlined text-primary">
                     calendar_today
                   </span>
                   <div>
-                    <p className="text-[#e5e2e1] font-semibold text-sm">
+                    <p className="text-text-light font-semibold text-sm">
                       {currentEvent?.startDate ? formatDate(currentEvent.startDate) : "TBA"}
                     </p>
-                    <p className="text-[#c7c4d8] text-xs">
+                    <p className="text-text-muted text-xs">
                       {currentEvent?.endDate ? formatDate(currentEvent.endDate) : ""}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-[#c0c1ff]">
+                  <span className="material-symbols-outlined text-primary">
                     location_on
                   </span>
                   <div>
-                    <p className="text-[#e5e2e1] font-semibold text-sm">
+                    <p className="text-text-light font-semibold text-sm">
                       {currentEvent?.location || "TBA"}
                     </p>
-                    <p className="text-[#c7c4d8] text-xs">Indonesia</p>
+                    <p className="text-text-muted text-xs">Indonesia</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-[#c0c1ff]">
+                  <span className="material-symbols-outlined text-primary">
                     confirmation_number
                   </span>
                   <div>
-                    <p className="text-[#e5e2e1] font-semibold text-sm">
+                    <p className="text-text-light font-semibold text-sm">
                       {selectedTickets.general + selectedTickets.vip} Tickets Reserved
                     </p>
-                    <p className="text-[#c7c4d8] text-xs">
+                    <p className="text-text-muted text-xs">
                       {currentEvent?.availableSeats ? `${currentEvent.availableSeats} seats left` : 'Limited availability'}
                     </p>
                   </div>
@@ -136,34 +136,34 @@ const CheckoutPage: React.FC = () => {
 
             {/* Ticket Selection Area */}
             <section className="space-y-6">
-              <h3 className="text-xl font-bold tracking-tight text-[#e5e2e1]">
+              <h3 className="text-xl font-bold tracking-tight text-text-light">
                 Select Ticket Tiers
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* General Tier */}
-                <div className={`bg-[#2a2a2a] border-2 ${selectedTickets.general > 0 ? "border-[#4b4dd8]/40" : "border-transparent"} hover:border-[#4b4dd8]/40 p-6 rounded-xl transition-all group`}>
+                <div className={`bg-dark-elevated border-2 ${selectedTickets.general > 0 ? "border-accent/40" : "border-transparent"} hover:border-accent/40 p-6 rounded-xl transition-all group`}>
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="text-lg font-bold text-[#e5e2e1]">
+                      <h4 className="text-lg font-bold text-text-light">
                         General Admission
                       </h4>
-                      <p className="text-[#c7c4d8] text-sm mt-1">
+                      <p className="text-text-muted text-sm mt-1">
                         Full access to main arena and outdoor gallery.
                       </p>
                     </div>
-                    <span className="bg-[#353534] px-2 py-1 rounded text-xs text-[#c7c4d8]">
+                    <span className="bg-dark-card px-2 py-1 rounded text-xs text-text-muted">
                       Available
                     </span>
                   </div>
                   <div className="flex justify-between items-end">
-                    <span className="text-xl font-black text-[#e5e2e1]">
+                    <span className="text-xl font-black text-text-light">
                       {formatIDR(priceGeneral)}
                     </span>
-                    <div className="flex items-center gap-4 bg-[#0e0e0e] rounded-full px-4 py-2">
+                    <div className="flex items-center gap-4 bg-dark-darker rounded-full px-4 py-2">
                       <button
                         onClick={() => handleUpdateTicket("general", -1)}
                         disabled={selectedTickets.general === 0}
-                        className="material-symbols-outlined text-[#c7c4d8] hover:text-[#c0c1ff] disabled:opacity-30"
+                        className="material-symbols-outlined text-text-muted hover:text-primary disabled:opacity-30"
                       >
                         remove
                       </button>
@@ -172,7 +172,7 @@ const CheckoutPage: React.FC = () => {
                       </span>
                       <button
                         onClick={() => handleUpdateTicket("general", 1)}
-                        className="material-symbols-outlined text-[#c7c4d8] hover:text-[#c0c1ff]"
+                        className="material-symbols-outlined text-text-muted hover:text-primary"
                       >
                         add
                       </button>
@@ -181,34 +181,34 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 {/* VIP Tier */}
-                <div className={`bg-[#2a2a2a] border-2 ${selectedTickets.vip > 0 ? "border-[#c0c1ff] p-6 rounded-xl relative shadow-[0_0_20px_rgba(192,193,255,0.1)]" : "border-transparent"} p-6 rounded-xl`}>
+                <div className={`bg-dark-elevated border-2 ${selectedTickets.vip > 0 ? "border-primary p-6 rounded-xl relative shadow-[0_0_20px_rgba(192,193,255,0.1)]" : "border-transparent"} p-6 rounded-xl`}>
                   {selectedTickets.vip > 0 && (
-                    <div className="absolute -top-3 left-6 bg-[#c0c1ff] px-3 py-1 rounded-full text-[10px] font-bold text-[#07006c]">
+                    <div className="absolute -top-3 left-6 bg-primary px-3 py-1 rounded-full text-[10px] font-bold text-primary-dark">
                       MOST POPULAR
                     </div>
                   )}
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="text-lg font-bold text-[#e5e2e1]">
+                      <h4 className="text-lg font-bold text-text-light">
                         VIP Experience
                       </h4>
-                      <p className="text-[#c7c4d8] text-sm mt-1">
+                      <p className="text-text-muted text-sm mt-1">
                         Priority entry, VIP lounge, and kit.
                       </p>
                     </div>
-                    <span className="bg-[#c0c1ff]/20 text-[#c0c1ff] px-2 py-1 rounded text-xs">
+                    <span className="bg-primary/20 text-primary px-2 py-1 rounded text-xs">
                       Active
                     </span>
                   </div>
                   <div className="flex justify-between items-end">
-                    <span className="text-xl font-black text-[#e5e2e1]">
+                    <span className="text-xl font-black text-text-light">
                       {formatIDR(priceVIP)}
                     </span>
-                    <div className="flex items-center gap-4 bg-[#0e0e0e] rounded-full px-4 py-2 border border-[#c0c1ff]/30">
+                    <div className="flex items-center gap-4 bg-dark-darker rounded-full px-4 py-2 border border-primary/30">
                       <button
                         onClick={() => handleUpdateTicket("vip", -1)}
                         disabled={selectedTickets.vip === 0}
-                        className="material-symbols-outlined text-[#c7c4d8] hover:text-[#c0c1ff] disabled:opacity-30"
+                        className="material-symbols-outlined text-text-muted hover:text-primary disabled:opacity-30"
                       >
                         remove
                       </button>
@@ -217,7 +217,7 @@ const CheckoutPage: React.FC = () => {
                       </span>
                       <button
                         onClick={() => handleUpdateTicket("vip", 1)}
-                        className="material-symbols-outlined text-[#c7c4d8] hover:text-[#c0c1ff]"
+                        className="material-symbols-outlined text-text-muted hover:text-primary"
                       >
                         add
                       </button>
@@ -229,15 +229,15 @@ const CheckoutPage: React.FC = () => {
 
             {/* Vouchers and Points */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-[#1c1b1b] p-6 rounded-xl space-y-4">
+              <div className="bg-dark-surface p-6 rounded-xl space-y-4">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#ffb695]">
+                  <span className="material-symbols-outlined text-warning">
                     confirmation_number
                   </span>
-                  <h3 className="font-bold text-[#e5e2e1]">Voucher Code</h3>
+                  <h3 className="font-bold text-text-light">Voucher Code</h3>
                 </div>
                 {appliedDiscount > 0 ? (
-                  <div className="flex items-center justify-between bg-[#1c3a1c] border border-green-500/30 p-3 rounded-lg">
+                  <div className="flex items-center justify-between bg-success-dark border border-green-500/30 p-3 rounded-lg">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-green-400">
                         check_circle
@@ -256,7 +256,7 @@ const CheckoutPage: React.FC = () => {
                 ) : (
                   <div className="flex gap-2">
                     <input
-                      className="bg-[#0e0e0e] border-none text-[#e5e2e1] placeholder:text-zinc-600 rounded-lg px-4 py-3 flex-grow focus:ring-1 focus:ring-[#c0c1ff] outline-none"
+                      className="bg-dark-darker border-none text-text-light placeholder:text-zinc-600 rounded-lg px-4 py-3 flex-grow focus:ring-1 focus:ring-primary outline-none"
                       placeholder="ENTER CODE"
                       type="text"
                       value={voucherCode}
@@ -265,7 +265,7 @@ const CheckoutPage: React.FC = () => {
                     <button 
                       onClick={handleApplyVoucher}
                       disabled={!voucherCode.trim() || isApplyingVoucher}
-                      className="bg-[#353534] text-[#e5e2e1] px-6 py-3 rounded-lg font-bold hover:bg-[#393939] transition-all active:scale-95 disabled:opacity-50"
+                      className="bg-dark-card text-text-light px-6 py-3 rounded-lg font-bold hover:bg-dark-card-hover transition-all active:scale-95 disabled:opacity-50"
                     >
                       {isApplyingVoucher ? (
                         <span className="material-symbols-outlined animate-spin">sync</span>
@@ -273,40 +273,40 @@ const CheckoutPage: React.FC = () => {
                     </button>
                   </div>
                 )}
-                <p className="text-[10px] text-[#c7c4d8] uppercase tracking-widest">
+                <p className="text-[10px] text-text-muted uppercase tracking-widest">
                   Only one voucher per transaction
                 </p>
               </div>
 
-              <div className="bg-[#1c1b1b] p-6 rounded-xl space-y-4">
+              <div className="bg-dark-surface p-6 rounded-xl space-y-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#c0c1ff]">
+                    <span className="material-symbols-outlined text-primary">
                       stars
                     </span>
-                    <h3 className="font-bold text-[#e5e2e1]">Loyalty Points</h3>
+                    <h3 className="font-bold text-text-light">Loyalty Points</h3>
                   </div>
-                  <span className="text-xs bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-1 rounded-full font-semibold">
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">
                     {userPoints.toLocaleString()} pts
                   </span>
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center bg-[#0e0e0e] p-4 rounded-lg">
+                  <div className="flex justify-between items-center bg-dark-darker p-4 rounded-lg">
                     <div>
-                      <p className="text-sm font-semibold text-[#e5e2e1]">
+                      <p className="text-sm font-semibold text-text-light">
                         Saldo Anda
                       </p>
-                      <p className="text-xs text-[#c7c4d8]">
+                      <p className="text-xs text-text-muted">
                         {userPoints.toLocaleString()} poin tersedia
                       </p>
                     </div>
-                    <span className="text-xs bg-[#c0c1ff]/10 text-[#c0c1ff] px-2 py-1 rounded-full font-semibold">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">
                       Maks redeem: {Math.min(userPoints, 50000).toLocaleString()}
                     </span>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-[#e5e2e1] mb-2">
+                    <label className="block text-sm font-semibold text-text-light mb-2">
                       Jumlah Poin yang Digunakan
                     </label>
                     <input
@@ -318,21 +318,21 @@ const CheckoutPage: React.FC = () => {
                         const val = parseInt(e.target.value) || 0;
                         setPointsToUse(Math.min(val, Math.min(userPoints, 50000)));
                       }}
-                      className="w-full bg-[#0e0e0e] border border-[#464555]/30 text-[#e5e2e1] rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#c0c1ff] focus:border-transparent outline-none"
+                      className="w-full bg-dark-darker border border-border-muted/30 text-text-light rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                       placeholder="Masukkan poin (0 - maks)"
                     />
                     <div className="flex justify-between mt-2">
                       <button
                         type="button"
                         onClick={() => setPointsToUse(0)}
-                        className="text-xs text-[#c7c4d8] hover:text-[#c0c1ff]"
+                        className="text-xs text-text-muted hover:text-primary"
                       >
                         Bersihkan
                       </button>
                       <button
                         type="button"
                         onClick={() => setPointsToUse(Math.min(userPoints, 50000))}
-                        className="text-xs text-[#c0c1ff] hover:underline"
+                        className="text-xs text-primary hover:underline"
                       >
                         Gunakan Maks ({Math.min(userPoints, 50000).toLocaleString()})
                       </button>
@@ -345,49 +345,49 @@ const CheckoutPage: React.FC = () => {
 
           {/* Right Column: Order Summary (Sticky) */}
           <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
-            <div className="bg-[#2a2a2a] rounded-xl p-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#c0c1ff]/10 blur-[100px] rounded-full"></div>
-              <h3 className="text-xl font-bold tracking-tight text-[#e5e2e1] mb-8">
+            <div className="bg-dark-elevated rounded-xl p-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[100px] rounded-full"></div>
+              <h3 className="text-xl font-bold tracking-tight text-text-light mb-8">
                 Order Summary
               </h3>
 
-              <div className="space-y-4 border-b border-[#464555]/15 pb-8 mb-8">
+              <div className="space-y-4 border-b border-border-muted/15 pb-8 mb-8">
                 {selectedTickets.general > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#c7c4d8]">
+                    <span className="text-text-muted">
                       General Admission ({selectedTickets.general}x)
                     </span>
-                    <span className="text-[#e5e2e1] font-medium">
+                    <span className="text-text-light font-medium">
                       {formatIDR(selectedTickets.general * priceGeneral)}
                     </span>
                   </div>
                 )}
                 {selectedTickets.vip > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#c7c4d8]">
+                    <span className="text-text-muted">
                       VIP Experience ({selectedTickets.vip}x)
                     </span>
-                    <span className="text-[#e5e2e1] font-medium">
+                    <span className="text-text-light font-medium">
                       {formatIDR(selectedTickets.vip * priceVIP)}
                     </span>
                   </div>
                 )}
                 {selectedTickets.general + selectedTickets.vip === 0 && (
-                  <p className="text-[#c7c4d8] text-sm">No tickets selected</p>
+                  <p className="text-text-muted text-sm">No tickets selected</p>
                 )}
               </div>
 
               {(appliedDiscount > 0 || pointsDiscount > 0) && (
-                <div className="space-y-4 border-b border-[#464555]/15 pb-8 mb-8">
+                <div className="space-y-4 border-b border-border-muted/15 pb-8 mb-8">
                   {appliedDiscount > 0 && (
                     <div className="flex justify-between text-sm items-center">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-xs text-[#ffb4ab]">
+                        <span className="material-symbols-outlined text-xs text-error-light">
                           confirmation_number
                         </span>
-                        <span className="text-[#c7c4d8]">Voucher Applied</span>
+                        <span className="text-text-muted">Voucher Applied</span>
                       </div>
-                      <span className="text-[#ffb4ab] font-medium">
+                      <span className="text-error-light font-medium">
                         - {formatIDR(appliedDiscount)}
                       </span>
                     </div>
@@ -395,12 +395,12 @@ const CheckoutPage: React.FC = () => {
                   {pointsToUse > 0 && pointsDiscount > 0 && (
                     <div className="flex justify-between text-sm items-center">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-xs text-[#c0c1ff]">
+                        <span className="material-symbols-outlined text-xs text-primary">
                           stars
                         </span>
-                        <span className="text-[#c7c4d8]">Points Applied</span>
+                        <span className="text-text-muted">Points Applied</span>
                       </div>
-                      <span className="text-[#c0c1ff] font-medium">
+                      <span className="text-primary font-medium">
                         - {formatIDR(pointsDiscount)}
                       </span>
                     </div>
@@ -410,20 +410,20 @@ const CheckoutPage: React.FC = () => {
 
               <div className="flex justify-between items-end mb-10">
                 <div>
-                  <p className="text-[10px] text-[#c7c4d8] uppercase tracking-[0.2em] font-bold mb-1">
+                  <p className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold mb-1">
                     Total Payable
                   </p>
-                  <p className="text-3xl font-black text-[#e5e2e1] tracking-tighter">
+                  <p className="text-3xl font-black text-text-light tracking-tighter">
                     {formatIDR(total)}
                   </p>
                 </div>
-                <p className="text-[10px] text-[#c7c4d8]">incl. VAT 11%</p>
+                <p className="text-[10px] text-text-muted">incl. VAT 11%</p>
               </div>
 
               <button 
                 onClick={handleProceedToPayment}
                 disabled={transactionLoading || selectedTickets.general + selectedTickets.vip === 0}
-                className="w-full bg-gradient-to-br from-[#c0c1ff] to-[#4b4dd8] text-[#07006c] py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_25px_rgba(75,77,216,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-br from-primary to-accent text-primary-dark py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_25px_rgba(75,77,216,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {transactionLoading ? (
                   <span className="material-symbols-outlined animate-spin">sync</span>
@@ -448,7 +448,7 @@ const CheckoutPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-[#c7c4d8] text-xs">
+            <div className="flex items-center justify-center gap-2 text-text-muted text-xs">
               <span className="material-symbols-outlined text-sm">lock</span>
               Secure SSL Encrypted Transaction
             </div>

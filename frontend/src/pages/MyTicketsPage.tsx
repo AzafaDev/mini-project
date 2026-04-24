@@ -1,3 +1,4 @@
+import { FALLBACK_IMAGES } from "../lib/constants";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,19 +26,19 @@ const StatCard = ({
   border = "",
 }: StatCardProps) => (
   <div
-    className={`bg-[#1c1b1b] p-6 rounded-xl flex flex-col justify-between ${border}`}
+    className={`bg-dark-surface p-6 rounded-xl flex flex-col justify-between ${border}`}
   >
     <div>
       <span className={`material-symbols-outlined ${colorClass} mb-4`}>
         {icon}
       </span>
-      <h3 className="text-[10px] uppercase tracking-widest text-[#c7c4d8] mb-1">
+      <h3 className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
         {label}
       </h3>
       <p className="text-3xl font-bold">{value}</p>
     </div>
     <p
-      className={`text-xs mt-4 ${colorClass === "text-tertiary" ? "text-tertiary" : "text-[#c7c4d8]"}`}
+      className={`text-xs mt-4 ${colorClass === "text-tertiary" ? "text-tertiary" : "text-text-muted"}`}
     >
       {subtext}
     </p>
@@ -75,10 +76,10 @@ const TicketCard = ({
       viewport={{ once: true }}
       className={`${
         isPast
-          ? "bg-[#0e0e0e]/50 border border-[#464555]/10 opacity-60 hover:opacity-100"
+          ? "bg-dark-darker/50 border border-border-muted/10 opacity-60 hover:opacity-100"
           : isPending
-            ? "bg-[#2a2a2a] shadow-2xl shadow-black/20"
-            : "bg-[#1c1b1b]"
+            ? "bg-dark-elevated shadow-2xl shadow-black/20"
+            : "bg-dark-surface"
       } rounded-xl overflow-hidden flex flex-col md:flex-row group transition-all duration-300`}
     >
       <div className="md:w-64 h-48 md:h-auto relative overflow-hidden">
@@ -91,10 +92,10 @@ const TicketCard = ({
           <span
             className={`px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md border ${
               isPending
-                ? "bg-[#a44100]/30 text-[#ffb695] border-[#a44100]/50"
+                ? "bg-warning-dark/30 text-warning border-warning-dark/50"
                 : isPast
-                  ? "bg-[#393939] text-[#c7c4d8] border-transparent"
-                  : "bg-[#c0c1ff]/10 text-[#c0c1ff] border-[#c0c1ff]/20"
+                  ? "bg-dark-card-hover text-text-muted border-transparent"
+                  : "bg-primary/10 text-primary border-primary/20"
             }`}
           >
             {status}
@@ -106,11 +107,11 @@ const TicketCard = ({
         <div className="flex justify-between items-start">
           <div>
             <h2
-              className={`text-2xl font-bold tracking-tight mb-1 ${isPast ? "text-[#c7c4d8]" : "text-[#e5e2e1]"}`}
+              className={`text-2xl font-bold tracking-tight mb-1 ${isPast ? "text-text-muted" : "text-text-light"}`}
             >
               {title}
             </h2>
-            <div className="flex items-center gap-4 text-[#c7c4d8] text-sm">
+            <div className="flex items-center gap-4 text-text-muted text-sm">
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">
                   calendar_month
@@ -126,9 +127,9 @@ const TicketCard = ({
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-[#c7c4d8] mb-1">{orderId}</p>
+            <p className="text-[10px] text-text-muted mb-1">{orderId}</p>
             <p
-              className={`text-xl font-black ${isPending ? "text-[#ffb695]" : "text-[#c0c1ff]"}`}
+              className={`text-xl font-black ${isPending ? "text-warning" : "text-primary"}`}
             >
               {price}
             </p>
@@ -137,19 +138,19 @@ const TicketCard = ({
 
         <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           {isPending ? (
-            <div className="flex items-center gap-3 text-sm text-[#ffb695]">
+            <div className="flex items-center gap-3 text-sm text-warning">
               <span className="material-symbols-outlined">info</span>
               <span>Proof of payment must be uploaded within 24 hours.</span>
             </div>
           ) : (
             <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full border-2 border-[#131313] bg-[#353534] overflow-hidden">
+              <div className="w-8 h-8 rounded-full border-2 border-dark bg-dark-card overflow-hidden">
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDn-FArK1l_5_YNPDgqyu5sb-Pj7e2E1m5c8DmnXy8_LJgVnD4KPXYhIiWXtT-C1Ps2Gsl4EQEgttumnFqV1fkgcXSmsUYqclTIXvI5Ou-UXlNAXhXewRwBN3MlZ5IC5ZcnOajF_ah6UT38AHme79MpmXvsal-rHAfZaDlD9j-5tamGTeImlxyPplFgpYeWYf_VgGOgLSLK4PsYc-bjSRdlVFtuhUkxm2iBi9w6D7oQGtb_Q2dM2Nxn30uWQ1_AWo8kipJ44f_YibL"
                   alt="User"
                 />
               </div>
-              <div className="w-8 h-8 rounded-full border-2 border-[#131313] bg-[#c0c1ff] text-[#1000a9] text-[10px] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-full border-2 border-dark bg-primary text-primary-darker text-[10px] flex items-center justify-center font-bold">
                 +1
               </div>
             </div>
@@ -157,7 +158,7 @@ const TicketCard = ({
 
           <div className="flex gap-3">
             {isPast ? (
-              <button className="text-[#c0c1ff] text-sm font-semibold flex items-center gap-1 hover:underline">
+              <button className="text-primary text-sm font-semibold flex items-center gap-1 hover:underline">
                 Download Invoice{" "}
                 <span className="material-symbols-outlined text-sm">
                   download
@@ -165,14 +166,14 @@ const TicketCard = ({
               </button>
             ) : (
               <>
-                <button className="bg-[#353534] text-[#e5e2e1] py-2 px-6 rounded-lg font-bold hover:bg-[#393939] transition-all text-sm">
+                <button className="bg-dark-card text-text-light py-2 px-6 rounded-lg font-bold hover:bg-dark-card-hover transition-all text-sm">
                   Details
                 </button>
                 <button
                   className={`py-2 px-6 rounded-lg font-bold transition-all flex items-center gap-2 text-sm ${
                     isPending
-                      ? "bg-gradient-to-br from-[#ffb695] to-[#a44100] text-[#351000]"
-                      : "bg-[#c0c1ff] text-[#07006c]"
+                      ? "bg-gradient-to-br from-warning to-warning-dark text-[#351000]"
+                      : "bg-primary text-primary-dark"
                   }`}
                 >
                   <span className="material-symbols-outlined text-sm">
@@ -294,7 +295,7 @@ export const MyTickets = () => {
       date: tx.event?.startDate ? formatDate(tx.event.startDate) : "",
       location: tx.event?.location || "Location TBD",
       price: priceDisplay,
-      image: tx.event?.imageUrl || "https://via.placeholder.com/300x200?text=No+Image",
+      image: tx.event?.imageUrl || FALLBACK_IMAGES.EMPTY_STATE,
       orderId: orderIdDisplay,
       isPast,
       isPending: tx.status === "WAITING_PAYMENT",
@@ -322,17 +323,17 @@ export const MyTickets = () => {
 
   if (loading && transactions.length === 0) {
     return (
-      <div className="bg-[#131313] text-[#e5e2e1] min-h-screen flex items-center justify-center">
+      <div className="bg-dark text-text-light min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#c0c1ff] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[#c7c4d8]">Loading your tickets...</p>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-text-muted">Loading your tickets...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#131313] text-[#e5e2e1] min-h-screen font-sans selection:bg-[#c0c1ff]/30">
+    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
       <main className="pt-24 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
         <section className="mb-12">
           <motion.h1
@@ -342,7 +343,7 @@ export const MyTickets = () => {
           >
             My Tickets
           </motion.h1>
-          <p className="text-[#c7c4d8] max-w-2xl leading-relaxed">
+          <p className="text-text-muted max-w-2xl leading-relaxed">
             Manage your event registrations, access your digital passes, and
             finalize pending payments for upcoming experiences.
           </p>
@@ -362,33 +363,33 @@ export const MyTickets = () => {
             value={`${pendingCount} Pending`}
             subtext="Upload payment proof for VIP access"
             colorClass="text-tertiary"
-            border="border-l-4 border-[#ffb695]"
+            border="border-l-4 border-warning"
           />
           <StatCard
             icon="history"
             label="Archived"
             value={`${pastCount} Past`}
             subtext="2023 Season Summary available"
-            colorClass="text-[#918fa1]"
+            colorClass="text-text-tertiary"
           />
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-8 mb-8 border-b border-[#464555]/20">
+        <div className="flex gap-8 mb-8 border-b border-border-muted/20">
           <button
-            className={`pb-4 ${activeTab === "upcoming" ? "text-[#c0c1ff] border-b-2 border-[#c0c1ff] font-bold" : "text-[#c7c4d8] hover:text-white transition-colors"}`}
+            className={`pb-4 ${activeTab === "upcoming" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
             onClick={() => setActiveTab("upcoming")}
           >
             Upcoming
           </button>
           <button
-            className={`pb-4 ${activeTab === "pending" ? "text-[#c0c1ff] border-b-2 border-[#c0c1ff] font-bold" : "text-[#c7c4d8] hover:text-white transition-colors"}`}
+            className={`pb-4 ${activeTab === "pending" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
             onClick={() => setActiveTab("pending")}
           >
             Pending Payment
           </button>
           <button
-            className={`pb-4 ${activeTab === "past" ? "text-[#c0c1ff] border-b-2 border-[#c0c1ff] font-bold" : "text-[#c7c4d8] hover:text-white transition-colors"}`}
+            className={`pb-4 ${activeTab === "past" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
             onClick={() => setActiveTab("past")}
           >
             Past Events
@@ -397,8 +398,8 @@ export const MyTickets = () => {
 
         {/* Ticket List */}
         {error && (
-          <div className="bg-[#93000a]/10 border border-[#93000a]/30 rounded-xl p-6 mb-6">
-            <p className="text-[#ffb4ab]">{error}</p>
+          <div className="bg-error/10 border border-error/30 rounded-xl p-6 mb-6">
+            <p className="text-error-light">{error}</p>
           </div>
         )}
 
@@ -410,14 +411,14 @@ export const MyTickets = () => {
         </div>
 
         {filteredTransactions.length === 0 && !loading && (
-          <div className="bg-[#1c1b1b] rounded-xl p-12 text-center">
-            <span className="material-symbols-outlined text-6xl text-[#666] mb-4">
+          <div className="bg-dark-surface rounded-xl p-12 text-center">
+            <span className="material-symbols-outlined text-6xl text-text-secondary mb-4">
               confirmation_number
             </span>
-            <h2 className="text-2xl font-bold text-[#e5e2e1] mb-2">
+            <h2 className="text-2xl font-bold text-text-light mb-2">
               No tickets found
             </h2>
-            <p className="text-[#c7c4d8]">
+            <p className="text-text-muted">
               {activeTab === "upcoming"
                 ? "You don't have any upcoming events."
                 : activeTab === "pending"
@@ -428,16 +429,16 @@ export const MyTickets = () => {
         )}
 
         {/* Help Center */}
-        <div className="mt-16 p-8 rounded-2xl bg-gradient-to-r from-[#1c1b1b] to-[#0e0e0e] border border-[#464555]/10 text-center">
+        <div className="mt-16 p-8 rounded-2xl bg-gradient-to-r from-dark-surface to-dark-darker border border-border-muted/10 text-center">
           <h3 className="text-xl font-bold mb-2">Need help with your tickets?</h3>
-          <p className="text-[#c7c4d8] mb-6 text-sm">
+          <p className="text-text-muted mb-6 text-sm">
             Our support team is available 24/7 for order inquiries.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="px-6 py-2 rounded-lg bg-[#353534] hover:bg-[#393939] font-bold text-sm transition-all">
+            <button className="px-6 py-2 rounded-lg bg-dark-card hover:bg-dark-card-hover font-bold text-sm transition-all">
               Visit Help Center
             </button>
-            <button className="px-6 py-2 rounded-lg border border-[#c0c1ff]/20 text-[#c0c1ff] hover:bg-[#c0c1ff]/5 font-bold text-sm transition-all">
+            <button className="px-6 py-2 rounded-lg border border-primary/20 text-primary hover:bg-primary/5 font-bold text-sm transition-all">
               Contact Support
             </button>
           </div>

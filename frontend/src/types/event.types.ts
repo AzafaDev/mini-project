@@ -10,6 +10,7 @@ export interface Event {
   availableSeats: number;
   sold?: number;
   price: number;
+  vipPrice?: number;
   imageUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +22,7 @@ export interface Event {
     email: string;
     profilePicture?: string;
   };
+  reviews?: Array<any>;
   tickets?: Array<{
     id: string;
     name: string;

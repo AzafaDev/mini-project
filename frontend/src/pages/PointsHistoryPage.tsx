@@ -45,26 +45,26 @@ export default function PointsHistoryPage() {
       case "EARNED":
         return { label: "Earned", color: "text-green-400", bg: "bg-green-500/10" };
       case "REDEEMED":
-        return { label: "Redeemed", color: "text-[#C0C1FF]", bg: "bg-[#C0C1FF]/10" };
+        return { label: "Redeemed", color: "text-primary", bg: "bg-primary/10" };
       default:
-        return { label: type, color: "text-[#C7C4D8]", bg: "bg-[#353534]" };
+        return { label: type, color: "text-text-muted", bg: "bg-dark-card" };
     }
   };
 
   if (loading) {
     return (
-      <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter']">
+      <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter']">
         <div className="max-w-4xl mx-auto px-8 py-12">
           <div className="animate-pulse">
-            <div className="h-8 bg-[#1C1B1B] rounded w-48 mb-8"></div>
+            <div className="h-8 bg-dark-surface rounded w-48 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="h-32 bg-[#1C1B1B] rounded-lg"></div>
-              <div className="h-32 bg-[#1C1B1B] rounded-lg"></div>
-              <div className="h-32 bg-[#1C1B1B] rounded-lg"></div>
+              <div className="h-32 bg-dark-surface rounded-lg"></div>
+              <div className="h-32 bg-dark-surface rounded-lg"></div>
+              <div className="h-32 bg-dark-surface rounded-lg"></div>
             </div>
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-20 bg-[#1C1B1B] rounded-lg"></div>
+                <div key={i} className="h-20 bg-dark-surface rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -74,24 +74,24 @@ export default function PointsHistoryPage() {
   }
 
   return (
-    <div className="bg-[#131313] text-[#E5E2E1] antialiased min-h-screen font-['Inter'] selection:bg-[#4B4DD8] selection:text-[#D9D8FF]">
+    <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter'] selection:bg-accent selection:text-[#D9D8FF]">
       <div className="max-w-4xl mx-auto px-8 py-12">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => navigate("/profile")}
-            className="w-10 h-10 rounded-lg bg-[#1C1B1B] flex items-center justify-center hover:bg-[#2A2A2A] transition-colors"
+            className="w-10 h-10 rounded-lg bg-dark-surface flex items-center justify-center hover:bg-dark-elevated transition-colors"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <div>
             <h1 className="text-2xl font-bold">Points History</h1>
-            <p className="text-sm text-[#C7C4D8]">View your points transactions</p>
+            <p className="text-sm text-text-muted">View your points transactions</p>
           </div>
         </div>
 
         {/* Points Balance Card */}
-        <div className="bg-gradient-to-br from-[#4B4DD8] to-[#494BD6] rounded-xl p-8 mb-8 text-[#D9D8FF] relative overflow-hidden">
+        <div className="bg-gradient-to-br from-accent to-[#494BD6] rounded-xl p-8 mb-8 text-[#D9D8FF] relative overflow-hidden">
           <span className="material-symbols-outlined absolute top-4 right-4 opacity-20 text-8xl rotate-12">
             token
           </span>
@@ -106,20 +106,20 @@ export default function PointsHistoryPage() {
         </div>
 
         {/* History List */}
-        <div className="bg-[#1C1B1B] rounded-lg border border-[#464555]/10 overflow-hidden">
-          <div className="p-4 border-b border-[#464555]/10">
+        <div className="bg-dark-surface rounded-lg border border-border-muted/10 overflow-hidden">
+          <div className="p-4 border-b border-border-muted/10">
             <h3 className="font-bold">Transaction History</h3>
           </div>
           
           {history.length > 0 ? (
             <>
-              <div className="divide-y divide-[#464555]/10">
+              <div className="divide-y divide-border-muted/10">
                 {history.map((item) => {
                   const typeInfo = getTransactionType(item.type);
                   return (
                     <div
                       key={item.id}
-                      className="p-4 flex items-center justify-between hover:bg-[#2A2A2A] transition-colors"
+                      className="p-4 flex items-center justify-between hover:bg-dark-elevated transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${typeInfo.bg}`}>
@@ -129,13 +129,13 @@ export default function PointsHistoryPage() {
                         </div>
                         <div>
                           <p className="font-medium">{item.description}</p>
-                          <p className="text-xs text-[#666] mt-1">
+                          <p className="text-xs text-text-secondary mt-1">
                             {formatDate(item.createdAt)}
                           </p>
                         </div>
                       </div>
                       <div className={`font-bold text-lg ${
-                        item.type === "EARNED" ? "text-green-400" : "text-[#C0C1FF]"
+                        item.type === "EARNED" ? "text-green-400" : "text-primary"
                       }`}>
                         {item.type === "EARNED" ? "+" : "-"}{item.points.toLocaleString()}
                       </div>
@@ -146,21 +146,21 @@ export default function PointsHistoryPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="p-4 flex items-center justify-between border-t border-[#464555]/10">
+                <div className="p-4 flex items-center justify-between border-t border-border-muted/10">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="px-4 py-2 bg-[#353534] hover:bg-[#393939] rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Previous
                   </button>
-                  <span className="text-sm text-[#C7C4D8]">
+                  <span className="text-sm text-text-muted">
                     Page {page} of {totalPages}
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="px-4 py-2 bg-[#353534] hover:bg-[#393939] rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Next
                   </button>
@@ -169,11 +169,11 @@ export default function PointsHistoryPage() {
             </>
           ) : (
             <div className="p-12 text-center">
-              <span className="material-symbols-outlined text-6xl text-[#353534] mb-4">
+              <span className="material-symbols-outlined text-6xl text-dark-card mb-4">
                 history
               </span>
-              <p className="text-[#C7C4D8]">No points history yet</p>
-              <p className="text-xs text-[#666] mt-2">Earn points by purchasing tickets</p>
+              <p className="text-text-muted">No points history yet</p>
+              <p className="text-xs text-text-secondary mt-2">Earn points by purchasing tickets</p>
             </div>
           )}
         </div>

@@ -15,7 +15,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   iconColor,
 }) => (
-  <div className="p-4 md:p-6 bg-[#1C1B1B] rounded-lg">
+  <div className="p-4 md:p-6 bg-dark-surface rounded-lg">
     <div
       className={`w-10 h-10 rounded flex items-center justify-center mb-4`}
       style={{ backgroundColor: `${iconColor}1A` }}
