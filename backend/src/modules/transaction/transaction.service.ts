@@ -98,6 +98,13 @@ export const transactionService = {
       throw new AppError("Event not found", 404);
     }
 
+    // Validasi: Cek apakah event sudah berakhir
+    // Mencegah pembelian tiket untuk event yang sudah lewat
+    const now = new Date();
+    if (now > event.endDate) {
+      throw new AppError("This event has already ended and tickets are no longer available", 400);
+    }
+
     // Organizer tidak diperbolehkan membeli tiket event mereka sendiri
     // Mencegah manipulasi statistik dan penjualan palsu
     if (event.organizerId === userId) {

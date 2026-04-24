@@ -15,6 +15,7 @@ interface ReviewSectionProps {
   reviews: Review[];
   averageRating: number;
   hasUserReviewed: boolean;
+  canUserReview?: boolean;
   onWriteReview: () => void;
 }
 
@@ -22,13 +23,14 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
   reviews,
   averageRating,
   hasUserReviewed,
+  canUserReview = false,
   onWriteReview,
 }) => {
   return (
     <section className="mt-16">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-text-light">Reviews</h2>
-        {!hasUserReviewed && (
+        {canUserReview && !hasUserReviewed && (
           <button
             onClick={onWriteReview}
             className="bg-dark-card text-text-light px-4 py-2 rounded-lg font-medium hover:bg-dark-card-hover transition-colors"

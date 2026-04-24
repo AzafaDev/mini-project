@@ -623,6 +623,7 @@ async function main() {
     const organizer = organizers[organizerIndex];
     const startDate = new Date(eventData.startDate);
     const endDate = new Date(eventData.endDate);
+    const calculatedTotal = eventData.tickets.reduce((sum, t) => sum + t.quantity, 0);
 
     const event = await prisma.event.create({
       data: {
@@ -631,8 +632,8 @@ async function main() {
         category: eventData.category,
         location: eventData.location,
         price: eventData.price,
-        totalSeats: eventData.totalSeats,
-        availableSeats: eventData.totalSeats,
+        totalSeats: calculatedTotal,
+        availableSeats: calculatedTotal,
         startDate,
         endDate,
         imageUrl: `https://picsum.photos/seed/${eventData.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}/800/400`,
@@ -667,6 +668,7 @@ async function main() {
     const organizer = organizers[organizerIndex];
     const startDate = new Date(eventData.startDate);
     const endDate = new Date(eventData.endDate);
+    const calculatedTotal = eventData.tickets.reduce((sum, t) => sum + t.quantity, 0);
 
     const event = await prisma.event.create({
       data: {
@@ -675,8 +677,8 @@ async function main() {
         category: eventData.category,
         location: eventData.location,
         price: eventData.price,
-        totalSeats: eventData.totalSeats,
-        availableSeats: eventData.totalSeats,
+        totalSeats: calculatedTotal,
+        availableSeats: calculatedTotal,
         startDate,
         endDate,
         imageUrl: `https://picsum.photos/seed/${eventData.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()}/800/400`,

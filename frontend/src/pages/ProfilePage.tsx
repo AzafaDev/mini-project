@@ -13,96 +13,13 @@ import {
   updateProfileSchema,
   changePasswordSchema,
 } from "../validation/authSchemas";
+import { Sidebar } from "../components/sidebar";
 
 interface ProfilePageProps {
   user?: User;
+  initialCoupons?: Coupon[];
+
 }
-
-// --- Sidebar Component ---
-
-interface SidebarProps {
-  role: string | undefined;
-  onNavigate: (page: string) => void;
-}
-
-const Sidebar = ({ role, onNavigate }: SidebarProps) => {
-  const logout = useAuthStore((state) => state.logout);
-  const user = useAuthStore((state) => state.user);
-
-  const customerMenu = [
-    { name: "My Tickets", icon: "confirmation_number" },
-    { name: "Transactions", icon: "receipt_long" },
-    { name: "Settings", icon: "settings", active: true },
-  ];
-
-  const organizerMenu = [
-    { name: "Dashboard", icon: "dashboard" },
-    { name: "Events", icon: "event" },
-    { name: "Transactions", icon: "receipt_long" },
-    { name: "Settings", icon: "settings", active: true },
-  ];
-
-  const menu = role === "ORGANIZER" ? organizerMenu : customerMenu;
-
-  const handleLogout = async () => {
-    await logout();
-    window.location.href = "/login";
-  };
-
-  return (
-    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-dark-surface flex-col py-6 px-4 gap-2 z-40 pt-20">
-      <div className="mb-8 px-4">
-        <div className="flex items-center gap-3 mb-2">
-          <img
-            className="w-10 h-10 rounded-full object-cover"
-            src={
-              user?.profilePicture ||
-              "https://lh3.googleusercontent.com/aida-public/AB6AXuAMIi3oA8ClFG0LdduEuZLhW5_oQlpjBRWMC9oqlfZHCnElcZE7_gKp5lqdhlcIJYowP5RQtDbTuVGFkFKYgEQq1oKBeXg-bKGZAFBzpirrflGoYwg9Mg6swHLfmxDlIMytqDAHHDjM62A-buWdr3r6_yObU-cKRWndEIssJtj8ZRonC4o2wjsfx53y9DwLPNd8lXg55q5Va3aiQX50h7cBtXk8aS8nnaOTxWgJfkBvqxocgAt6-ac8onMDDGBt7VOh-MnU94LwxTdO"
-            }
-            alt="Profile"
-          />
-          <div>
-            <div className="text-sm font-black text-text-light truncate max-w-32">
-              {user?.fullName || "User"}
-            </div>
-            <div className="text-[10px] text-text-muted uppercase tracking-widest">
-              {role === "ORGANIZER" ? "Organizer" : "Customer"}
-            </div>
-          </div>
-        </div>
-      </div>
-      <nav className="flex flex-col gap-1">
-        {menu.map((item) => (
-          <button
-            key={item.name}
-            onClick={() => item.name !== "Settings" && onNavigate(item.name)}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
-              item.active
-                ? "bg-dark-elevated text-primary font-semibold border-r-4 border-primary"
-                : "text-text-muted hover:bg-dark-elevated hover:text-text-light"
-            }`}
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            <span className="text-sm">{item.name}</span>
-          </button>
-        ))}
-      </nav>
-      <div className="mt-auto flex flex-col gap-1">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-dark-elevated transition-all">
-          <span className="material-symbols-outlined">help</span>
-          <span className="text-sm">Help Center</span>
-        </button>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-dark-elevated transition-all"
-        >
-          <span className="material-symbols-outlined">logout</span>
-          <span className="text-sm">Logout</span>
-        </button>
-      </div>
-    </aside>
-  );
-};
 
 // --- Loading Skeleton Components ---
 
@@ -205,7 +122,7 @@ const ProfileSkeleton = () => (
 
 // --- Main Page Component ---
 
-export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
+export default function ProfilePage({ user: propsUser, initialCoupons = [] }: ProfilePageProps) {
   const { fetchCurrentUser } = useAuthStore();
   const addToast = useToastStore((state) => state.addToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -215,7 +132,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
   const user = propsUser || storeUser;
 
   const [points, setPoints] = useState<number>(user?.points ?? 0);
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -371,7 +288,7 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
 
   return (
     <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
-      <Sidebar role={user?.role} onNavigate={handleNavigate} />
+      <Sidebar />
 
       <main className="lg:ml-64 pt-24 pb-12 px-6 md:px-12">
         <div className="max-w-6xl mx-auto">
@@ -668,6 +585,32 @@ export default function ProfilePage({ user: propsUser }: ProfilePageProps) {
                   </button>
                 </div>
               </form>
+            </section>
+
+            {/* Referral Code Section */}
+            <section className="md:col-span-4 bg-dark-surface rounded-xl p-8 border border-primary/20 relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 opacity-10">
+                <span className="material-symbols-outlined text-7xl">share</span>
+              </div>
+              <h4 className="text-sm font-bold text-primary uppercase tracking-widest mb-4">Refer & Earn</h4>
+              <p className="text-xs text-text-muted mb-4">Share your code with friends to earn 10,000 points!</p>
+              
+              <div className="flex items-center gap-2 bg-dark-darker p-1 rounded-lg border border-white/5">
+                <div className="flex-1 px-3 py-2 font-mono font-bold text-center text-text-light">
+                  {user?.referralCode || "NOCODE"}
+                </div>
+                <button 
+                  onClick={() => {
+                    if (user?.referralCode) {
+                      navigator.clipboard.writeText(user.referralCode);
+                      addToast("success", "Referral code copied to clipboard!");
+                    }
+                  }}
+                  className="bg-primary text-primary-dark p-2 rounded-md hover:brightness-110 transition-all"
+                >
+                  <span className="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+              </div>
             </section>
 
             {/* Coupons Section */}

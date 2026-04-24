@@ -44,9 +44,11 @@ export default function KinetixEvents() {
       location?: string;
       page: number;
       limit: number;
+      includePast: boolean;
     } = {
       page: pagination.page,
       limit: 20,
+      includePast: true, // Fetch all events including past events
     };
 
     // Add search query if provided

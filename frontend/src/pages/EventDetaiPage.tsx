@@ -11,25 +11,14 @@ const EventDetaiPage: React.FC = () => {
   const {
     event,
     loading,
-    selectedTickets,
-    voucherCode,
-    couponCode,
-    voucherError,
-    couponError,
-    discount,
-    totalPrice,
     isReviewModalOpen,
     userReview,
     isSubmittingReview,
     hasUserReviewed,
+    canUserReview,
     eventStatus,
     averageRating,
-    setSelectedTickets,
-    setVoucherCode,
-    setCouponCode,
-    applyVoucher,
-    applyCoupon,
-    addToCart,
+    handleBuyNow,
     openReviewModal,
     closeReviewModal,
     setUserReview,
@@ -60,24 +49,8 @@ const EventDetaiPage: React.FC = () => {
     );
   }
 
-  const handleTicketChange = (type: 'general' | 'vip', delta: number) => {
-    setSelectedTickets({
-      ...selectedTickets,
-      [type]: Math.max(0, selectedTickets[type] + delta)
-    });
-  };
-
   return (
     <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
-      {/* Breadcrumb */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center gap-2 text-text-muted text-xs mb-4">
-          <Link to="/" className="hover:text-primary">Events</Link>
-          <span>/</span>
-          <span className="text-primary">{event.name}</span>
-        </div>
-      </div>
-
       {/* Hero Section */}
       <EventHero
         event={event}
@@ -86,60 +59,142 @@ const EventDetaiPage: React.FC = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Ticket Selection */}
-          <div className="lg:col-span-2">
-            <TicketSelection
-              event={event}
-              selectedTickets={selectedTickets}
-              voucherCode={voucherCode}
-              couponCode={couponCode}
-              voucherError={voucherError}
-              couponError={couponError}
-              discount={discount}
-              totalPrice={totalPrice}
-              onTicketChange={handleTicketChange}
-              onVoucherChange={setVoucherCode}
-              onCouponChange={setCouponCode}
-              onApplyVoucher={applyVoucher}
-              onApplyCoupon={applyCoupon}
-              onAddToCart={addToCart}
-            />
-          </div>
-
-          {/* Sidebar Info */}
-          <div className="space-y-6">
-            <div className="bg-dark-surface rounded-xl p-6 sticky top-4">
-              <h3 className="font-bold text-lg mb-4">Ticket Prices</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-text-muted">General</span>
-                  <span className="font-bold">{formatIDR(event.price)}</span>
-                </div>
-                {event.vipPrice && (
-                  <div className="flex justify-between">
-                    <span className="text-text-muted">VIP</span>
-                    <span className="font-bold text-primary">{formatIDR(event.vipPrice)}</span>
-                  </div>
-                )}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column - Event Details */}
+          <div className="lg:col-span-7 space-y-8">
+            {/* Event Description */}
+            <div className="bg-dark-surface border border-white/5 rounded-xl p-8">
+              <h2 className="text-2xl font-bold text-text-light mb-6">About This Event</h2>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-text-muted leading-relaxed whitespace-pre-line">{event.description}</p>
               </div>
+            </div>
 
-              <div className="border-t border-border-muted/10 mt-4 pt-4">
-                <p className="text-text-secondary text-sm">
-                  Organized by <span className="text-text-light font-medium">{event.organizerName}</span>
+            {/* Event Details Bento Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Capacity */}
+              <div className="bg-dark-surface border border-white/5 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary">group</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-text-light">Capacity</h3>
+                    <p className="text-sm text-text-muted">Available seats</p>
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-primary mb-2">
+                  {event.availableSeats}/{event.totalSeats}
+                </div>
+                <div className="w-full bg-dark-elevated rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${((event.totalSeats - event.availableSeats) / event.totalSeats) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-text-muted mt-2">
+                  {event.availableSeats > 0 ? `${event.availableSeats} seats remaining` : 'Event full'}
                 </p>
               </div>
+
+              {/* Category */}
+              <div className="bg-dark-surface border border-white/5 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+                    <span className="material-symbols-outlined text-accent">category</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-text-light">Category</h3>
+                    <p className="text-sm text-text-muted">Event type</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium">
+                    {event.category}
+                  </span>
+                </div>
+              </div>
+
+{/* Organizer Info - Entire card clickable */}
+               <Link
+                 to={`/organizer/${event.organizer?.id || event.organizerId}`}
+                 className="bg-dark-surface border border-white/5 rounded-xl p-6 md:col-span-2 hover:border-primary/30 transition-all group block relative overflow-hidden"
+               >
+                 {/* Hover overlay effect */}
+                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                 
+                 {/* Content - z-10 to stay above overlay */}
+                 <div className="relative z-10">
+                   <div className="flex items-center gap-3 mb-4">
+                     <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <span className="material-symbols-outlined text-white">person</span>
+                     </div>
+                     <div>
+                       <h3 className="font-bold text-text-light">Organizer</h3>
+                       <p className="text-sm text-text-muted">Event host</p>
+                     </div>
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <span className="text-primary font-medium">
+                       {event.organizer?.fullName || event.organizerName}
+                     </span>
+                     <div className="flex items-center gap-1">
+                       {event.organizer?.rating && (
+                         <>
+                           <span className="material-symbols-outlined text-yellow-500 text-sm">star</span>
+                           <span className="text-text-light text-sm font-medium">
+                             {event.organizer.rating.toFixed(1)}
+                           </span>
+                           {event.organizer.reviewCount && (
+                             <span className="text-text-muted text-xs">
+                               ({event.organizer.reviewCount})
+                             </span>
+                           )}
+                         </>
+                       )}
+                       <span className="material-symbols-outlined text-text-muted group-hover:text-primary group-hover:translate-x-1 transition-all">
+                         chevron_right
+                       </span>
+                     </div>
+                   </div>
+                 </div>
+               </Link>
+            </div>
+
+            {/* Reviews Section - Desktop */}
+            <div className="hidden lg:block">
+              <ReviewSection
+                reviews={event.reviews || []}
+                averageRating={averageRating}
+                hasUserReviewed={hasUserReviewed}
+                canUserReview={canUserReview}
+                onWriteReview={openReviewModal}
+              />
+            </div>
+          </div>
+
+          {/* Right Column - Ticket Selection (Sticky Sidebar) */}
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-24">
+               <TicketSelection
+                 event={event}
+                 onBuyNow={handleBuyNow}
+                 isPastEvent={eventStatus === 'Completed'}
+               />
             </div>
           </div>
         </div>
 
-        {/* Reviews Section */}
-        <ReviewSection
-          reviews={event.reviews || []}
-          averageRating={averageRating}
-          hasUserReviewed={hasUserReviewed}
-          onWriteReview={openReviewModal}
-        />
+        {/* Reviews Section - Mobile */}
+        <div className="lg:hidden mt-8">
+          <ReviewSection
+            reviews={event.reviews || []}
+            averageRating={averageRating}
+            hasUserReviewed={hasUserReviewed}
+            canUserReview={canUserReview}
+            onWriteReview={openReviewModal}
+          />
+        </div>
       </div>
 
       {/* Review Modal */}

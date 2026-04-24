@@ -33,6 +33,7 @@ export const eventService = {
     limit,
     sortBy,
     sortOrder,
+    includePast = false,
   }: {
     search?: string;
     category?: string;
@@ -45,6 +46,7 @@ export const eventService = {
     limit?: number;
     sortBy?: string;
     sortOrder?: string;
+    includePast?: boolean;
   }): Promise<{
     data: any[];
     pagination: {
@@ -54,7 +56,7 @@ export const eventService = {
       totalPages: number;
     };
   }> => {
-    console.log("[DEBUG Event Service] getAllEvents input:", { search, category, location, startDate, endDate, minPrice, maxPrice, page, limit, sortBy, sortOrder });
+    console.log("[DEBUG Event Service] getAllEvents input:", { search, category, location, startDate, endDate, minPrice, maxPrice, page, limit, sortBy, sortOrder, includePast });
 
     const currentPage = Math.max(1, page || 1);
     const currentLimit = Math.max(1, Math.min(100, limit || 10));
@@ -78,6 +80,10 @@ export const eventService = {
       where.price = {};
       if (minPrice) where.price.gte = parseInt(minPrice);
       if (maxPrice) where.price.lte = parseInt(maxPrice);
+    }
+    // Filter out past events by default (only show ongoing or upcoming events)
+    if (!includePast) {
+      where.endDate = { gte: new Date() };
     }
 
     console.log("[DEBUG Event Service] getAllEvents where clause:", JSON.stringify(where));

@@ -8,6 +8,7 @@ export interface User {
   phoneNumber?: string;
   points?: number;
   createdAt: string;
+  referralCode?: string;
 }
 
 export interface LoginRequest {

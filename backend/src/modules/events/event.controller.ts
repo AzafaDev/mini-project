@@ -20,6 +20,7 @@ export const eventController = {
       limit,
       sortBy,
       sortOrder,
+      includePast,
     } = req.query;
 
     const { data, pagination } = await eventService.getAllEvents({
@@ -34,6 +35,7 @@ export const eventController = {
       limit: Number(limit),
       sortBy: sortBy as string,
       sortOrder: sortOrder as string,
+      includePast: includePast === "true",
     });
 
     res.status(200).json({ success: true, data, pagination });
