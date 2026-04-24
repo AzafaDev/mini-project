@@ -7,10 +7,12 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=frontend",
-    "postinstall": "npm run postinstall --workspace=backend"
+    "postinstall": "cd backend && npx prisma generate"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.0"
   }
 }
