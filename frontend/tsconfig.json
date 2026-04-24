@@ -7,7 +7,7 @@
     "skipLibCheck": true,
 
     /* Perbaikan untuk import.meta.env */
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
 
     /* Bundler mode (PENTING untuk React 19/Vite) */
     "moduleResolution": "Bundler",
