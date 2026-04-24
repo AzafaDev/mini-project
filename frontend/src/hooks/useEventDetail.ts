@@ -1,47 +1,28 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEventStore } from "../stores/useEventStore";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useCartStore } from "../stores/useCartStore";
+import { useTransactionStore } from "../stores/useTransactionStore";
 import { getEventStatus } from "../lib/eventUtils";
 import { useToastStore } from "../stores/useToastStore";
 
 /**
- * Interface untuk pilihan jumlah tiket
- */
-interface TicketSelection {
-  general: number;
-  vip: number;
-}
-
-/**
  * Custom hook untuk mengelola seluruh logika di halaman Detail Event.
- * Menangani pemilihan tiket, validasi voucher, add to cart,
- * dan sistem review event.
+ * Implements direct transaction flow: navigates directly to checkout instead of using cart.
+ * Handles review system with purchase verification for authenticated users.
  */
 interface UseEventDetailReturn {
   event: any;
   loading: boolean;
   error: string | null;
-  selectedTickets: TicketSelection;
-  voucherCode: string;
-  couponCode: string;
-  voucherError: string | null;
-  couponError: string | null;
-  discount: number;
-  totalPrice: number;
   isReviewModalOpen: boolean;
   userReview: { rating: number; comment: string };
   isSubmittingReview: boolean;
   hasUserReviewed: boolean;
+  canUserReview: boolean;
   eventStatus: string;
   averageRating: number;
-  setSelectedTickets: (tickets: TicketSelection) => void;
-  setVoucherCode: (code: string) => void;
-  setCouponCode: (code: string) => void;
-  applyVoucher: () => void;
-  applyCoupon: () => void;
-  addToCart: () => void;
+  handleBuyNow: () => void;
   openReviewModal: () => void;
   closeReviewModal: () => void;
   setUserReview: (review: { rating: number; comment: string }) => void;
@@ -51,116 +32,82 @@ interface UseEventDetailReturn {
 export const useEventDetail = (): UseEventDetailReturn => {
   // --- Ambil dependencies dari router dan store ---
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { fetchEventById, currentEvent, loadingEvent, submitReview } = useEventStore();
   const { user } = useAuthStore();
-  const { addItem } = useCartStore();
+  const { fetchMyTransactions, transactions } = useTransactionStore();
   const addToast = useToastStore(state => state.addToast);
 
   // --- Local States ---
-  const [selectedTickets, setSelectedTickets] = useState<TicketSelection>({ general: 0, vip: 0 });
-  const [voucherCode, setVoucherCode] = useState("");
-  const [couponCode, setCouponCode] = useState("");
-  const [voucherError, setVoucherError] = useState<string | null>(null);
-  const [couponError, setCouponError] = useState<string | null>(null);
-  const [discount, setDiscount] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [userReview, setUserReview] = useState({ rating: 5, comment: "" });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   /**
-   * Mengambil data event saat halaman pertama kali dimuat
+   * Mengambil data event dan user transactions saat halaman pertama kali dimuat
    */
   useEffect(() => {
     if (id) {
       fetchEventById(id);
     }
-  }, [id, fetchEventById]);
+    // Fetch user transactions for review permission check
+    if (user) {
+      fetchMyTransactions();
+    }
+  }, [id, fetchEventById, user, fetchMyTransactions]);
+
+  // --- Data Transformation ---
+  const transformedEvent = currentEvent ? {
+    ...currentEvent,
+    // Transform tickets: map available -> availableQuantity
+    tickets: currentEvent.tickets?.map(ticket => ({
+      ...ticket,
+      availableQuantity: ticket.available,
+    })) || [],
+    // Transform reviews: flatten user data and remove nested user object
+    reviews: currentEvent.reviews?.map(review => ({
+      ...review,
+      userAvatar: review.userImage,  // ✅ Use flattened field from backend
+      userName: review.userName || 'Anonymous',  // ✅ Use flattened field from backend
+      user: undefined,
+    })) || [],
+  } : null;
 
   // --- Perhitungan Data Tambahan Event ---
-  const eventStatus = currentEvent ? getEventStatus(currentEvent) : "Unknown";
-  const averageRating = (currentEvent?.reviews?.length ?? 0) > 0
-    ? (currentEvent?.reviews?.reduce((sum: number, r: any) => sum + r.rating, 0) ?? 0) / (currentEvent?.reviews?.length ?? 1)
-    : 0;
-  const hasUserReviewed = !!user && !!(currentEvent?.reviews?.some((r: any) => r.userId === user.id));
-  
-  // Hitung total harga secara realtime setiap perubahan pilihan tiket
-  const totalPrice = selectedTickets.general * (currentEvent?.price ?? 0) +
-    selectedTickets.vip * (currentEvent?.vipPrice ?? currentEvent?.price ?? 0) - discount;
+  const eventStatus = transformedEvent ? getEventStatus(transformedEvent) : "Unknown";
+  // Use backend-calculated averageRating if available, fallback to manual calculation
+  const averageRating = transformedEvent?.averageRating ??
+    ((transformedEvent?.reviews?.length ?? 0) > 0
+      ? (transformedEvent?.reviews?.reduce((sum: number, r: any) => sum + r.rating, 0) ?? 0) / (transformedEvent?.reviews?.length ?? 1)
+      : 0);
+  const hasUserReviewed = !!user && !!(transformedEvent?.reviews?.some((r: any) => r.userId === user.id));
+
+  // Check if user has purchased tickets for this event with 'DONE' status
+  const canUserReview = !!user && !!transformedEvent &&
+    transactions.some(transaction =>
+      transaction.eventId === transformedEvent.id &&
+      transaction.status === 'DONE'
+    );
 
   /**
-   * Handler untuk memvalidasi dan mengaplikasikan kode voucher
+   * Handler untuk navigasi langsung ke halaman checkout dengan authentication check.
+   * Redirects unauthenticated users to login with return path preserved.
+   * Part of direct transaction flow - bypasses cart entirely.
    */
-  const applyVoucher = useCallback(() => {
-    if (!voucherCode.trim()) {
-      setVoucherError("Voucher code is required");
+  const handleBuyNow = useCallback(() => {
+    if (!id) return;
+
+    if (!user) {
+      // Redirect to login with return path
+      const returnPath = encodeURIComponent(location.pathname);
+      navigate(`/login?returnUrl=${returnPath}`);
+      addToast("info", "Please login to purchase tickets");
       return;
     }
 
-    if (voucherCode.toUpperCase() === "DISKON50") {
-      const discountAmount = Math.floor(totalPrice * 0.5);
-      setDiscount(discountAmount);
-      setVoucherError(null);
-      addToast("success", "Voucher applied! 50% discount");
-    } else {
-      setVoucherError("Invalid voucher code");
-    }
-  }, [voucherCode, totalPrice]);
-
-  /**
-   * Handler untuk memvalidasi dan mengaplikasikan kode kupon
-   */
-  const applyCoupon = useCallback(() => {
-    if (!couponCode.trim()) {
-      setCouponError("Coupon code is required");
-      return;
-    }
-
-    if (couponCode.toUpperCase() === "PROMO10") {
-      setDiscount(10000);
-      setCouponError(null);
-      addToast("success", "Coupon applied! Rp 10.000 discount");
-    } else {
-      setCouponError("Invalid coupon code");
-    }
-  }, [couponCode]);
-
-  /**
-   * Handler untuk menambahkan tiket yang dipilih ke keranjang
-   */
-  const addToCart = useCallback(() => {
-    if (selectedTickets.general === 0 && selectedTickets.vip === 0) {
-      addToast("error", "Please select at least one ticket");
-      return;
-    }
-
-    if (!currentEvent) return;
-
-    // Tambahkan tiket general ke keranjang jika ada
-    if (selectedTickets.general > 0) {
-      addItem({
-        eventId: currentEvent.id,
-        eventName: currentEvent.name,
-        eventImage: currentEvent.imageUrl ?? '',
-        ticketType: "GENERAL",
-        quantity: selectedTickets.general,
-        price: currentEvent.price,
-      });
-    }
-
-    // Tambahkan tiket VIP ke keranjang jika ada
-    if (selectedTickets.vip > 0) {
-      addItem({
-        eventId: currentEvent.id,
-        eventName: currentEvent.name,
-        eventImage: currentEvent.imageUrl ?? '',
-        ticketType: "VIP",
-        quantity: selectedTickets.vip,
-        price: currentEvent.vipPrice ?? currentEvent.price,
-      });
-    }
-
-    addToast("success", "Tickets added to cart!");
-  }, [selectedTickets, currentEvent, addItem]);
+    navigate(`/checkout/${id}`);
+  }, [id, navigate, user, location.pathname, addToast]);
 
   /**
    * Membuka modal review event
@@ -200,28 +147,17 @@ export const useEventDetail = (): UseEventDetailReturn => {
 
   // Kembalikan semua state dan fungsi ke komponen
   return {
-    event: currentEvent,
+    event: transformedEvent,
     loading: loadingEvent,
     error: null,
-    selectedTickets,
-    voucherCode,
-    couponCode,
-    voucherError,
-    couponError,
-    discount,
-    totalPrice,
     isReviewModalOpen,
     userReview,
     isSubmittingReview,
     hasUserReviewed,
+    canUserReview,
     eventStatus,
     averageRating,
-    setSelectedTickets,
-    setVoucherCode,
-    setCouponCode,
-    applyVoucher,
-    applyCoupon,
-    addToCart,
+    handleBuyNow,
     openReviewModal,
     closeReviewModal,
     setUserReview,

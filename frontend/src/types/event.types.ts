@@ -21,15 +21,30 @@ export interface Event {
     fullName: string;
     email: string;
     profilePicture?: string;
+    rating?: number;
+    reviewCount?: number;
   };
   reviews?: Array<any>;
+  averageRating?: number;
+  vouchers?: Array<{
+    id: string;
+    code: string;
+    discountType: "PERCENTAGE" | "FIXED";
+    discountValue: number;
+    minPurchase?: number;
+    maxDiscount?: number;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+  }>;
   tickets?: Array<{
     id: string;
     name: string;
-    type: string;
+    type: 'GENERAL' | 'VIP';
     description?: string;
     price: number;
     quantity: number;
+    available: number;
     availableQuantity: number;
   }>;
 }
@@ -57,6 +72,7 @@ export interface GetEventsParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  includePast?: boolean;
 }
 
 export interface CreateEventRequest {

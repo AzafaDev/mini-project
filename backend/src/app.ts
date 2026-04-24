@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import fileUpload from "express-fileupload";
 import path from "node:path";
 import os from "node:os";
+import fs from "node:fs";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -20,6 +21,9 @@ dotenv.config();
 // Validasi environment variable penting sebelum server start
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET is required. Server cannot start.");
+}
+if (!process.env.CLOUDINARY_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  throw new Error("Cloudinary environment variables (CLOUDINARY_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) are required. Server cannot start.");
 }
 
 const app = express();
@@ -40,13 +44,18 @@ app.use(
 app.use(cookieParser());
 
 // File upload handler harus sebelum body parser agar file tidak terganggu
+const tempFileDir = process.env.NODE_ENV === "production"
+  ? os.tmpdir()
+  : path.join(process.cwd(), "temp");
+
+if (!fs.existsSync(tempFileDir)) {
+  fs.mkdirSync(tempFileDir, { recursive: true });
+}
+
 app.use(
   fileUpload({
     useTempFiles: true,
-    // Gunakan folder /tmp bawaan OS saat di Vercel, dan folder temp lokal saat development
-    tempFileDir: process.env.NODE_ENV === "production" 
-      ? os.tmpdir() 
-      : path.join(process.cwd(), "backend", "temp"),
+    tempFileDir,
   }),
 );
 

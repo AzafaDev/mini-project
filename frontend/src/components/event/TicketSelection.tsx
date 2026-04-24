@@ -1,180 +1,156 @@
 import React from "react";
 import { formatIDR } from "../../lib/formatters";
+import { Event } from "../../types/event.types";
 
 interface TicketSelectionProps {
-  event: any;
-  selectedTickets: { general: number; vip: number };
-  voucherCode: string;
-  couponCode: string;
-  voucherError: string | null;
-  couponError: string | null;
-  discount: number;
-  totalPrice: number;
-  onTicketChange: (type: 'general' | 'vip', delta: number) => void;
-  onVoucherChange: (code: string) => void;
-  onCouponChange: (code: string) => void;
-  onApplyVoucher: () => void;
-  onApplyCoupon: () => void;
-  onAddToCart: () => void;
+  event: Event;
+  onBuyNow: () => void;
+  isPastEvent?: boolean;
 }
 
+/**
+ * Dynamic ticket selection component that maps over backend ticket array.
+ * Displays ticket information with vouchers section and handles sold-out states.
+ * Provides "Buy Now" button that navigates to checkout.
+ */
 export const TicketSelection: React.FC<TicketSelectionProps> = ({
   event,
-  selectedTickets,
-  voucherCode,
-  couponCode,
-  voucherError,
-  couponError,
-  discount,
-  totalPrice,
-  onTicketChange,
-  onVoucherChange,
-  onCouponChange,
-  onApplyVoucher,
-  onApplyCoupon,
-  onAddToCart,
+  onBuyNow,
+  isPastEvent = false,
 }) => {
+  // Check if event is sold out
+  const isSoldOut = event.availableSeats <= 0;
+
+  // Get tickets from backend array or fallback to legacy pricing
+  const tickets = event.tickets && event.tickets.length > 0
+    ? event.tickets
+    : [
+        {
+          id: 'general-fallback',
+          name: 'General Admission',
+          type: 'GENERAL' as const,
+          description: 'Regular access',
+          price: event.price,
+          quantity: event.availableSeats,
+          availableQuantity: event.availableSeats,
+        },
+        ...(event.vipPrice ? [{
+          id: 'vip-fallback',
+          name: 'VIP Ticket',
+          type: 'VIP' as const,
+          description: 'Priority access + exclusive perks',
+          price: event.vipPrice,
+          quantity: event.availableSeats,
+          availableQuantity: event.availableSeats,
+        }] : [])
+      ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sticky top-24 self-start">
       <h2 className="text-2xl font-bold text-text-light">Select Tickets</h2>
 
-      {/* General Ticket */}
-      <div className={`bg-dark-elevated border-2 ${selectedTickets.general > 0 ? "border-accent/40" : "border-transparent"} hover:border-accent/40 p-6 rounded-xl transition-all group`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-lg text-text-light">General Admission</h3>
-            <p className="text-text-muted text-sm mt-1">Regular access</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xl font-bold text-primary">{formatIDR(event.price)}</p>
-            <p className="text-xs text-text-muted">{event.availableSeats} tickets left</p>
+      {/* Tickets */}
+      {tickets.map((ticket) => (
+        <div
+          key={ticket.id}
+          className={`bg-dark-elevated border-2 border-transparent hover:border-accent/40 p-6 rounded-xl transition-all group relative overflow-hidden ${
+            ticket.type === 'VIP' ? 'bg-gradient-to-br from-dark-elevated to-dark-surface border-accent/30' : ''
+          }`}
+        >
+          {/* Gradient overlay for VIP */}
+          {ticket.type === 'VIP' && (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl" />
+          )}
+
+          {ticket.type === 'VIP' && (
+            <div className="absolute -top-3 left-6 bg-gradient-to-r from-primary to-accent px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg">
+              <span className="material-symbols-outlined text-sm mr-1">star</span>
+              VIP EXCLUSIVE
+            </div>
+          )}
+
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex-1">
+              <h3 className="font-bold text-lg text-text-light mb-2">{ticket.name}</h3>
+              {ticket.description && (
+                <p className="text-text-muted text-sm mb-3">{ticket.description}</p>
+              )}
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  ticket.availableQuantity > 10
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                    : ticket.availableQuantity > 0
+                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                }`}>
+                  <span className="material-symbols-outlined text-xs">
+                    {ticket.availableQuantity > 10 ? 'check_circle' : ticket.availableQuantity > 0 ? 'warning' : 'error'}
+                  </span>
+                  {ticket.availableQuantity > 0 ? `${ticket.availableQuantity} left` : 'Sold out'}
+                </span>
+              </div>
+            </div>
+            <div className="text-right ml-4">
+              <p className="text-2xl font-bold text-primary mb-1">{formatIDR(ticket.price)}</p>
+              {ticket.type === 'VIP' && (
+                <p className="text-xs text-accent font-medium">Premium Experience</p>
+              )}
+            </div>
           </div>
         </div>
+      ))}
 
-        <div className="flex items-center gap-4 bg-dark-darker rounded-full px-4 py-2 mt-4">
-          <button
-            onClick={() => onTicketChange('general', -1)}
-            disabled={selectedTickets.general === 0}
-            className="p-1 text-text-light hover:text-primary disabled:text-text-secondary disabled:cursor-not-allowed transition-colors"
-          >
-            <span className="material-symbols-outlined">remove</span>
-          </button>
-          <span className="flex-1 text-center font-bold">{selectedTickets.general}</span>
-          <button
-            onClick={() => onTicketChange('general', 1)}
-            className="p-1 text-text-light hover:text-primary transition-colors"
-          >
-            <span className="material-symbols-outlined">add</span>
-          </button>
-        </div>
-      </div>
-
-      {/* VIP Ticket */}
-      {event.vipPrice && (
-        <div className={`bg-dark-elevated border-2 ${selectedTickets.vip > 0 ? "border-primary p-6 rounded-xl relative shadow-[0_0_20px_rgba(192,193,255,0.1)]" : "border-transparent"} p-6 rounded-xl`}>
-          <div className="absolute -top-3 left-6 bg-primary px-3 py-1 rounded-full text-[10px] font-bold text-primary-dark">
-            VIP
+      {/* Vouchers Section */}
+      {event.vouchers && event.vouchers.length > 0 && (
+        <div className="bg-dark-surface border border-border-muted/20 p-6 rounded-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="material-symbols-outlined text-accent">local_offer</span>
+            <h3 className="font-bold text-lg text-text-light">Available Vouchers</h3>
           </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-lg text-text-light">VIP Ticket</h3>
-              <p className="text-text-muted text-sm mt-1">Priority access + exclusive perks</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-bold text-primary">{formatIDR(event.vipPrice)}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 bg-dark-darker rounded-full px-4 py-2 border border-primary/30 mt-4">
-            <button
-              onClick={() => onTicketChange('vip', -1)}
-              disabled={selectedTickets.vip === 0}
-              className="p-1 text-text-light hover:text-primary disabled:text-text-secondary disabled:cursor-not-allowed transition-colors"
-            >
-              <span className="material-symbols-outlined">remove</span>
-            </button>
-            <span className="flex-1 text-center font-bold">{selectedTickets.vip}</span>
-            <button
-              onClick={() => onTicketChange('vip', 1)}
-              className="p-1 text-text-light hover:text-primary transition-colors"
-            >
-              <span className="material-symbols-outlined">add</span>
-            </button>
+          <div className="space-y-3">
+            {event.vouchers.filter(voucher => voucher.isActive).map((voucher) => (
+              <div key={voucher.id} className="flex items-center justify-between bg-gradient-to-r from-dark-elevated to-dark-card p-4 rounded-lg border border-accent/10">
+                <div>
+                  <p className="font-bold text-text-light mb-1">{voucher.code}</p>
+                  <p className="text-sm text-text-muted">
+                    {voucher.discountType === 'PERCENTAGE'
+                      ? `${voucher.discountValue}% discount`
+                      : `${formatIDR(voucher.discountValue)} off`
+                    }
+                    {voucher.minPurchase && ` • Min. ${formatIDR(voucher.minPurchase)}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-accent text-sm">check_circle</span>
+                  <span className="text-xs text-accent font-medium">Active</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Voucher & Coupon */}
-      <div className="space-y-4">
-        <div>
-          <input
-            type="text"
-            value={voucherCode}
-            onChange={(e) => onVoucherChange(e.target.value)}
-            placeholder="Enter voucher code"
-            className="w-full bg-dark-darker border-none text-text-light placeholder:text-zinc-600 rounded-lg px-4 py-3 flex-grow focus:ring-1 focus:ring-primary outline-none"
-          />
-          {voucherError && <p className="text-error-light text-sm mt-1">{voucherError}</p>}
-          <button
-            onClick={onApplyVoucher}
-            className="bg-dark-card text-text-light px-6 py-3 rounded-lg font-bold hover:bg-dark-card-hover transition-all active:scale-95 disabled:opacity-50 mt-2"
-          >
-            Apply Voucher
-          </button>
-        </div>
-
-        <div>
-          <input
-            type="text"
-            value={couponCode}
-            onChange={(e) => onCouponChange(e.target.value)}
-            placeholder="Enter coupon code"
-            className="w-full bg-dark-darker border border-border-muted/30 text-text-light rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          />
-          {couponError && <p className="text-error-light text-sm mt-1">{couponError}</p>}
-          <button
-            onClick={onApplyCoupon}
-            className="bg-dark-card text-text-light px-6 py-3 rounded-lg font-bold hover:bg-dark-card-hover transition-all active:scale-95 disabled:opacity-50 mt-2"
-          >
-            Apply Coupon
-          </button>
-        </div>
-      </div>
-
-      {/* Price Summary */}
-      <div className="space-y-4 border-b border-border-muted/15 pb-8 mb-8">
-        {selectedTickets.general > 0 && (
-          <div className="flex justify-between">
-            <span>General x{selectedTickets.general}</span>
-            <span>{formatIDR(selectedTickets.general * event.price)}</span>
-          </div>
-        )}
-        {selectedTickets.vip > 0 && (
-          <div className="flex justify-between">
-            <span>VIP x{selectedTickets.vip}</span>
-            <span>{formatIDR(selectedTickets.vip * event.vipPrice)}</span>
-          </div>
-        )}
-        {discount > 0 && (
-          <div className="flex justify-between text-warning">
-            <span>Discount</span>
-            <span>-{formatIDR(discount)}</span>
-          </div>
-        )}
-        <div className="flex justify-between font-bold text-xl pt-4 border-t border-border-muted/15">
-          <span>Total</span>
-          <span className="text-primary">{formatIDR(totalPrice)}</span>
-        </div>
-      </div>
-
-      {/* Add to Cart Button */}
+      {/* Buy Now Button */}
       <button
-        onClick={onAddToCart}
-        className="w-full bg-gradient-to-br from-primary to-accent text-primary-dark py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_25px_rgba(75,77,216,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={onBuyNow}
+        disabled={isSoldOut || isPastEvent}
+        className={`w-full py-4 rounded-xl font-bold text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 relative overflow-hidden ${
+          isSoldOut || isPastEvent
+            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+            : 'bg-gradient-to-r from-primary via-primary to-accent text-white hover:shadow-[0_0_30px_rgba(192,193,255,0.4)] hover:scale-[1.02]'
+        }`}
       >
-        <span className="material-symbols-outlined">shopping_cart</span>
-        Add to Cart
+        {/* Button gradient overlay */}
+        {!isSoldOut && !isPastEvent && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+        )}
+
+        <span className="material-symbols-outlined relative z-10">
+          {isPastEvent ? 'event_busy' : isSoldOut ? 'event_busy' : 'shopping_cart_checkout'}
+        </span>
+        <span className="relative z-10">
+          {isPastEvent ? 'Event Ended' : isSoldOut ? 'Event Sold Out' : 'Purchase Tickets'}
+        </span>
       </button>
     </div>
   );

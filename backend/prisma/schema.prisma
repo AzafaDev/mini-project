@@ -1,12 +1,179 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id                          String             @id @default(uuid())
+  email                       String             @unique
+  password                    String
+  fullName                    String
+  phoneNumber                 String?
+  profilePicture              String?
+  role                        Role
+  referralCode                String             @unique @default(uuid())
+  referredBy                  String?
+  points                      Int                @default(0)
+  createdAt                   DateTime           @default(now())
+  updatedAt                   DateTime           @updatedAt
+  isVerified                  Boolean            @default(false)
+  verifyToken                 String?
+  verifyTokenExpiresAt        DateTime?
+  resetPasswordToken          String?
+  resetPasswordTokenExpiresAt DateTime?
+  ownedCoupons                Coupon[]
+  events                      Event[]
+  earnedPoints                PointTransaction[] @relation("EarnedPoints")
+  reviews                     Review[]
+  transactions                Transaction[]
+  referrer                    User?              @relation("ReferralChain", fields: [referredBy], references: [referralCode])
+  referredUsers               User[]             @relation("ReferralChain")
+
+  @@index([email])
+  @@index([referralCode])
+}
+
+model Event {
+  id             String        @id @default(uuid())
+  name           String
+  description    String
+  location       String
+  category       String
+  startDate      DateTime
+  endDate        DateTime
+  totalSeats     Int
+  availableSeats Int
+  price          Int
+  imageUrl       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organizerId    String
+  deletedAt      DateTime?
+  deletedBy      String?
+  isDeleted      Boolean       @default(false)
+  organizer      User          @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  reviews        Review[]
+  tickets        Ticket[]
+  transactions   Transaction[]
+  vouchers       Voucher[]
+
+  @@index([organizerId])
+  @@index([category])
+  @@index([startDate])
+  @@index([location])
+}
+
+model Ticket {
+  id           String        @id @default(uuid())
+  eventId      String
+  price        Int
+  quantity     Int
+  available    Int
+  type         TicketType    @default(GENERAL)
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([eventId])
+}
+
+model Transaction {
+  id                     String            @id @default(uuid())
+  userId                 String
+  eventId                String
+  ticketId               String?
+  quantity               Int
+  totalPrice             Int
+  discount               Int               @default(0)
+  pointsUsed             Int               @default(0)
+  couponId               String?
+  voucherId              String?
+  finalPrice             Int
+  status                 TransactionStatus @default(WAITING_PAYMENT)
+  paymentProof           String?
+  paymentProofUploadedAt DateTime?
+  paidAt                 DateTime?
+  expiresAt              DateTime
+  autoCancelAt           DateTime?
+  createdAt              DateTime          @default(now())
+  coupon                 Coupon?           @relation(fields: [couponId], references: [id])
+  event                  Event             @relation(fields: [eventId], references: [id])
+  ticket                 Ticket?           @relation(fields: [ticketId], references: [id])
+  user                   User              @relation(fields: [userId], references: [id])
+  voucher                Voucher?          @relation(fields: [voucherId], references: [id])
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model Voucher {
+  id            String        @id @default(uuid())
+  code          String
+  discountType  DiscountType  @default(PERCENTAGE)
+  discountValue Int
+  startDate     DateTime
+  endDate       DateTime
+  maxUsage      Int?
+  usedCount     Int           @default(0)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  eventId       String
+  transactions  Transaction[]
+  event         Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([code, eventId])
+  @@index([eventId])
+  @@index([code])
+}
+
+model Coupon {
+  id            String        @id @default(uuid())
+  code          String        @unique
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  userId        String?
+  discountType  DiscountType  @default(PERCENTAGE)
+  discountValue Int
+  user          User?         @relation(fields: [userId], references: [id])
+  transactions  Transaction[]
+
+  @@index([code])
+  @@index([userId])
+  @@index([isActive])
+}
+
+model PointTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  reason    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation("EarnedPoints", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum Role {
@@ -31,187 +198,4 @@ enum DiscountType {
 enum TicketType {
   GENERAL
   VIP
-}
-
-model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  password       String
-  fullName       String
-  phoneNumber    String?
-  profilePicture String?
-  role           Role
-  referralCode   String   @unique @default(uuid())
-  referredBy     String?
-  points         Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  isVerified                  Boolean   @default(false)
-  verifyToken                 String?
-  verifyTokenExpiresAt        DateTime?
-  resetPasswordToken          String?
-  resetPasswordTokenExpiresAt DateTime?
-
-  earnedPoints  PointTransaction[] @relation("EarnedPoints")
-  ownedCoupons  Coupon[]
-  referredUsers User[]             @relation("ReferralChain")
-  referrer      User?              @relation("ReferralChain", fields: [referredBy], references: [referralCode])
-
-  events       Event[]
-  transactions Transaction[]
-  reviews      Review[]
-
-  @@index([email])
-  @@index([referralCode])
-}
-
-model Event {
-  id             String   @id @default(uuid())
-  name           String
-  description    String
-  location       String
-  category       String
-  startDate      DateTime
-  endDate        DateTime
-  totalSeats     Int
-  availableSeats Int
-  price          Int // 0 = free, base price
-  imageUrl       String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-  deletedBy String?
-
-  organizerId String
-  organizer   User   @relation(fields: [organizerId], references: [id], onDelete: Cascade)
-
-  tickets      Ticket[]
-  reviews      Review[]
-  vouchers     Voucher[]
-  transactions Transaction[]
-
-  @@index([organizerId])
-  @@index([category])
-  @@index([startDate])
-  @@index([location])
-}
-
-model Ticket {
-  id        String    @id @default(uuid())
-  eventId   String
-  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  
-  type      TicketType @default(GENERAL)
-  price     Int
-  quantity  Int
-  available Int
-
-  transactions Transaction[]
-
-  @@index([eventId])
-}
-
-model Transaction {
-  id                     String            @id @default(uuid())
-  userId                 String
-  user                   User              @relation(fields: [userId], references: [id])
-  eventId                String
-  event                  Event             @relation(fields: [eventId], references: [id])
-  ticketId               String?
-  ticket                 Ticket?           @relation(fields: [ticketId], references: [id])
-  quantity               Int
-  totalPrice             Int
-  discount               Int               @default(0)
-  pointsUsed             Int               @default(0)
-  couponId               String?
-  coupon                 Coupon?           @relation(fields: [couponId], references: [id])
-  voucherId              String?
-  voucher                Voucher?          @relation(fields: [voucherId], references: [id])
-  finalPrice             Int
-  status                 TransactionStatus @default(WAITING_PAYMENT)
-  paymentProof           String?
-  paymentProofUploadedAt DateTime?
-  paidAt                 DateTime?
-  expiresAt              DateTime
-  autoCancelAt           DateTime?
-  createdAt              DateTime          @default(now())
-
-  @@index([userId])
-  @@index([eventId])
-  @@index([status])
-  @@index([expiresAt])
-  @@index([createdAt])
-}
-
-model Review {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  rating    Int // 1-5
-  comment   String?
-  createdAt DateTime @default(now())
-
-  @@unique([userId, eventId])
-  @@index([eventId])
-  @@index([userId])
-}
-
-model Voucher {
-  id            String       @id @default(uuid())
-  code          String
-  discountType  DiscountType @default(PERCENTAGE)
-  discountValue Int
-  startDate     DateTime
-  endDate       DateTime
-  maxUsage      Int?
-  usedCount     Int          @default(0)
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-
-  eventId      String
-  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-
-  @@unique([code, eventId])
-  @@index([eventId])
-  @@index([code])
-}
-
-model Coupon {
-  id            String       @id @default(uuid())
-  code          String       @unique
-  discountType  DiscountType @default(PERCENTAGE)
-  discountValue Int
-  startDate     DateTime
-  endDate       DateTime
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-
-  userId       String?
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  transactions Transaction[]
-
-  @@index([code])
-  @@index([userId])
-  @@index([isActive])
-}
-
-model PointTransaction {
-  id        String   @id @default(uuid())
-  userId    String
-  amount    Int
-  reason    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation("EarnedPoints", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([userId, createdAt])
 }
