@@ -81,7 +81,7 @@ interface EventStore {
   updateReview: (reviewId: string, eventId: string, rating: number, comment: string) => Promise<boolean>;
   
   // --- Method Voucher ---
-  validateVoucher: (eventId: string, code: string, price: number, quantity: number) => Promise<number>;
+  validateVoucher: (eventId: string, code: string, price: number, quantity: number) => Promise<{ discount: number; discountType?: "PERCENTAGE" | "FIXED"; discountValue?: number }>;
   
   // --- Method Khusus Organizer ---
   fetchMyEvents: () => Promise<void>;
@@ -330,7 +330,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
    * @param code - Kode voucher yang diinput user
    * @param price - Total harga pesanan saat ini
    * @param quantity - Jumlah tiket yang dipesan
-   * @returns Nilai diskon dalam IDR, 0 jika voucher tidak valid
+   * @returns Object dengan discount, discountType, dan discountValue, atau { discount: 0 } jika tidak valid
    */
   validateVoucher: async (eventId: string, code: string, price: number, quantity: number) => {
     try {
@@ -341,12 +341,16 @@ export const useEventStore = create<EventStore>((set, get) => ({
         quantity,
       );
       if (response.success && response.valid) {
-        return response.discount || 0;
+        return {
+          discount: response.discount || 0,
+          discountType: response.discountType,
+          discountValue: response.discountValue,
+        };
       }
-      return 0;
+      return { discount: 0 };
     } catch (error: any) {
       console.error("Failed to validate voucher:", error.message);
-      return 0;
+      return { discount: 0 };
     }
   },
 

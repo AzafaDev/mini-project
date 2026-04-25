@@ -2,8 +2,8 @@
 export const TRANSACTION_EXPIRATION_HOURS = 2;
 // Batas waktu transaksi menunggu konfirmasi organizer sebelum otomatis dibatalkan
 export const TRANSACTION_AUTO_CANCEL_DAYS = 3;
-// Setiap 1 rupiah menghasilkan 0.01 poin (1% cashback, 1 poin = Rp100)
-export const POINTS_EARNED_MULTIPLIER = 0.01;
+// Setiap 1 rupiah menghasilkan 0.1 poin (10% cashback, 1 poin = Rp1)
+export const POINTS_EARNED_MULTIPLIER = 0.10;
 // Maksimal poin yang bisa dipakai atau didapat per transaksi
 export const MAX_POINTS_PER_TRANSACTION = 50000;
 
