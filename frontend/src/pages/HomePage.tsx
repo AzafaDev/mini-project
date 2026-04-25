@@ -8,9 +8,10 @@ import { EventCard } from "../components/home/EventCard";
 
 export default function KinetixEvents() {
   const [activeCategory, setActiveCategory] = useState("All Events");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   
+  const debouncedSearch = useDebounce(searchInput, 500);
   const debouncedLocation = useDebounce(locationQuery, 800);
   
   const { events, loading, error, fetchEvents, pagination } = useEventStore();
@@ -52,8 +53,8 @@ export default function KinetixEvents() {
     };
 
     // Add search query if provided
-    if (searchQuery.trim()) {
-      params.search = searchQuery.trim();
+    if (debouncedSearch.trim()) {
+      params.search = debouncedSearch.trim();
     }
 
     // Add category filter (not "All Events")
@@ -67,24 +68,24 @@ export default function KinetixEvents() {
     }
 
     fetchEvents(params);
-  }, [activeCategory, searchQuery, debouncedLocation, fetchEvents, pagination.page]);
+  }, [activeCategory, debouncedSearch, debouncedLocation, fetchEvents, pagination.page]);
 
   // Filter events client-side for search (if API search didn't work)
   const filteredEvents = useMemo(() => {
     if (!events) return [];
     
     // If we have search query, do client-side filtering as backup
-    if (searchQuery.trim()) {
+    if (debouncedSearch.trim()) {
       return events.filter((event) =>
-        event.name.toLowerCase().includes(searchQuery.toLowerCase())
+        event.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       );
     }
     
     return events;
-  }, [events, searchQuery]);
+  }, [events, debouncedSearch]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    setSearchInput(e.target.value);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -133,7 +134,7 @@ export default function KinetixEvents() {
                   className="bg-dark-surface border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white text-sm md:text-base outline-none focus:border-primary transition-colors"
                   placeholder="Search event title..."
                   type="text"
-                  value={searchQuery}
+                  value={searchInput}
                 />
               </div>
               <div className="relative w-full">
@@ -241,9 +242,9 @@ export default function KinetixEvents() {
                     <span className="material-symbols-outlined text-6xl mb-4">
                       event_busy
                     </span>
-                    <p>
-                      No events found for "{searchQuery}" in {activeCategory}
-                    </p>
+                  <p>
+                      No events found for "{debouncedSearch}" in {activeCategory}
+                  </p>
                   </motion.div>
                 )}
               </AnimatePresence>
