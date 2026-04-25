@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useFormik } from "formik";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -8,6 +8,7 @@ const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const [isTokenExpired, setIsTokenExpired] = useState(false);
   
   const { isAuthenticated, user,resetPassword, isLoading, error: storeError, clearError, resetPasswordSuccess, clearResetPasswordStatus } = useAuthStore();
   
@@ -26,7 +27,12 @@ const ResetPassword: React.FC = () => {
         return;
       }
 
-      await resetPassword(token, values.newPassword);
+      const success = await resetPassword(token, values.newPassword);
+      
+      // Check if token expired
+      if (storeError && storeError.toLowerCase().includes("expired")) {
+        setIsTokenExpired(true);
+      }
     },
   });
 
@@ -66,7 +72,7 @@ const ResetPassword: React.FC = () => {
   const isAllChecksPassed = Object.values(passwordChecks).every(Boolean);
 
   return (
-    <div className="bg-dark text-text-light min-h-screen flex flex-col font-['Inter',sans-serif] selection:bg-accent selection:text-[#d9d8ff]">
+    <div className="bg-dark text-text-light min-h-screen flex flex-col font-['Inter',sans-serif] selection:bg-accent selection:text-[#d9d8ff] pt-16">
       {/* Main Content Canvas */}
       <main className="flex-grow flex items-center justify-center px-6 py-12 relative overflow-hidden">
         {/* Atmospheric Background Elements */}
@@ -110,21 +116,21 @@ const ResetPassword: React.FC = () => {
                   New Password
                 </label>
                 <div className="relative">
-                  <input
-                    className={`w-full bg-dark-darker text-text-light p-3.5 lg:rounded text-sm placeholder-text-tertiary outline-none transition-all ${
-                      formik.touched.newPassword && formik.errors.newPassword
-                        ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                        : "focus:ring-1 focus:ring-primary"
-                    }`}
-                    id="newPassword"
-                    name="newPassword"
-                    placeholder="••••••••••••"
-                    type="password"
-                    value={formik.values.newPassword}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    disabled={isLoading || resetPasswordSuccess}
-                  />
+<input
+                      className={`w-full bg-dark-darker text-text-light p-3.5 lg:rounded text-sm placeholder-text-tertiary outline-none transition-all ${
+                        formik.touched.newPassword && formik.errors.newPassword
+                          ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
+                          : "focus:ring-1 focus:ring-primary"
+                      }`}
+                      id="newPassword"
+                      name="newPassword"
+                      placeholder="••••••••••••"
+                      type="password"
+                      value={formik.values.newPassword}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      disabled={isLoading || resetPasswordSuccess || isTokenExpired}
+                    />
                 </div>
                 {formik.touched.newPassword && formik.errors.newPassword && (
                   <p className="text-red-400 text-xs ml-1">{formik.errors.newPassword}</p>
@@ -179,31 +185,49 @@ const ResetPassword: React.FC = () => {
                   Confirm New Password
                 </label>
                 <div className="relative">
-                  <input
-                    className={`w-full bg-dark-darker text-text-light p-3.5 lg:rounded text-sm placeholder-text-tertiary outline-none transition-all ${
-                      formik.touched.confirmPassword && formik.errors.confirmPassword
-                        ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
-                        : "focus:ring-1 focus:ring-primary"
-                    }`}
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    placeholder="••••••••••••"
-                    type="password"
-                    value={formik.values.confirmPassword}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    disabled={isLoading || resetPasswordSuccess}
-                  />
+<input
+                      className={`w-full bg-dark-darker text-text-light p-3.5 lg:rounded text-sm placeholder-text-tertiary outline-none transition-all ${
+                        formik.touched.confirmPassword && formik.errors.confirmPassword
+                          ? "ring-1 ring-red-500/50 focus:ring-red-500/50"
+                          : "focus:ring-1 focus:ring-primary"
+                      }`}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      placeholder="••••••••••••"
+                      type="password"
+                      value={formik.values.confirmPassword}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      disabled={isLoading || resetPasswordSuccess || isTokenExpired}
+                    />
                 </div>
                 {formik.touched.confirmPassword && formik.errors.confirmPassword && (
                   <p className="text-red-400 text-xs ml-1">{formik.errors.confirmPassword}</p>
                 )}
               </div>
 
-              {/* Error Message */}
-              {(storeError) && (
-                <div className="p-3 bg-error-light/10 border border-error-light/30 rounded-lg">
-                  <p className="text-error-light text-xs">{storeError}</p>
+{/* Error Message - Regular */}
+               {storeError && !isTokenExpired && (
+                 <div className="p-3 bg-error-light/10 border border-error-light/30 rounded-lg">
+                   <p className="text-error-light text-xs">{storeError}</p>
+                 </div>
+               )}
+
+              {/* Expired Token Message */}
+              {isTokenExpired && (
+                <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg text-center space-y-3">
+                  <p className="text-warning font-medium">
+                    🔗 Link reset password sudah kadaluarsa
+                  </p>
+                  <p className="text-text-muted text-xs">
+                    Link hanya berlaku 15 menit. Silakan minta link baru.
+                  </p>
+                  <Link
+                    to="/forgot-password"
+                    className="inline-block px-6 py-2 bg-primary text-primary-dark rounded-lg font-bold text-sm hover:opacity-90 transition-all"
+                  >
+                    Kirim ulang link reset password
+                  </Link>
                 </div>
               )}
 
@@ -221,7 +245,7 @@ const ResetPassword: React.FC = () => {
                 <button
                   className="w-full bg-gradient-to-br from-primary to-accent text-primary-dark py-4 lg:rounded font-bold tracking-tight text-sm active:scale-[0.98] transition-transform duration-150 shadow-lg shadow-primary/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   type="submit"
-                  disabled={isLoading || resetPasswordSuccess || !isAllChecksPassed}
+                  disabled={isLoading || resetPasswordSuccess || isTokenExpired}
                 >
                   {isLoading ? (
                     <>

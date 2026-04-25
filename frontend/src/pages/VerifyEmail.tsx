@@ -60,6 +60,15 @@ const EmailVerification: React.FC = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
+  // Detect expired token and reset timer
+  useEffect(() => {
+    if (error && error.toLowerCase().includes("expired")) {
+      setTimer(0);
+      localStorage.setItem("emailVerificationTimer", "0");
+      localStorage.setItem("emailVerificationTimerSetAt", Date.now().toString());
+    }
+  }, [error]);
+
   // Timer logic
   useEffect(() => {
     const interval = setInterval(() => {
@@ -164,9 +173,14 @@ const EmailVerification: React.FC = () => {
 
         {/* Verification Card */}
         <div className="bg-dark-surface rounded-lg p-8 shadow-2xl ring-1 ring-white/5">
-          {error && (
+          {error && !error.toLowerCase().includes("expired") && (
             <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
               {error}
+            </div>
+          )}
+          {error && error.toLowerCase().includes("expired") && (
+            <div className="mb-4 p-3 bg-warning/10 border border-warning/30 rounded-lg text-warning text-sm text-center">
+              Kode verifikasi sudah kadaluarsa. Silakan kirim ulang kode baru.
             </div>
           )}
           {resendVerificationSuccess && (
