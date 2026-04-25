@@ -61,12 +61,10 @@ export const FALLBACK_IMAGES = {
  * Daftar kategori event yang tersedia di sistem
  */
 export const EVENT_CATEGORIES = [
+  "Music",
   "Conference",
-  "Concert",
   "Workshop",
   "Seminar",
-  "Meetup",
-  "Webinar",
-  "Exhibition",
-  "Competition",
+  "Sports",
+  "Entertainment",
 ] as const;

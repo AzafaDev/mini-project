@@ -1,7 +1,7 @@
 import { FALLBACK_IMAGES } from "../lib/constants";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { formatIDR, formatDate } from "../lib/formatters";
@@ -48,6 +48,8 @@ const StatCard = ({
 // --- Sub-komponen: Ticket Card ---
 type TicketCardProps = {
   status: string;
+  eventId: string;
+  transactionId: string;
   title: string;
   date: string;
   location: string;
@@ -60,6 +62,8 @@ type TicketCardProps = {
 
 const TicketCard = ({
   status,
+  eventId,
+  transactionId,
   title,
   date,
   location,
@@ -69,6 +73,12 @@ const TicketCard = ({
   isPast,
   isPending,
 }: TicketCardProps) => {
+  const navigate = useNavigate();
+
+  const handleViewDetails = () => {
+    navigate(`/transactions/${transactionId}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -84,7 +94,9 @@ const TicketCard = ({
     >
       <div className="md:w-64 h-48 md:h-auto relative overflow-hidden">
         <img
-          className={`w-full h-full object-cover transition-all duration-500 ${isPast ? "grayscale" : "group-hover:scale-110"}`}
+          className={`w-full h-full object-cover transition-all duration-500 ${
+            isPast ? "grayscale" : "group-hover:scale-110"
+          }`}
           src={image}
           alt={title}
         />
@@ -106,11 +118,14 @@ const TicketCard = ({
       <div className="flex-1 p-6 flex flex-col justify-between">
         <div className="flex justify-between items-start">
           <div>
-            <h2
-              className={`text-2xl font-bold tracking-tight mb-1 ${isPast ? "text-text-muted" : "text-text-light"}`}
+            <Link
+              to={`/events/${eventId}`}
+              className={`text-2xl font-bold tracking-tight mb-1 hover:text-primary transition-colors ${
+                isPast ? "text-text-muted" : "text-text-light"
+              }`}
             >
               {title}
-            </h2>
+            </Link>
             <div className="flex items-center gap-4 text-text-muted text-sm">
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">
@@ -157,31 +172,21 @@ const TicketCard = ({
           )}
 
           <div className="flex gap-3">
-            {isPast ? (
-              <button className="text-primary text-sm font-semibold flex items-center gap-1 hover:underline">
-                Download Invoice{" "}
+            <button
+              onClick={handleViewDetails}
+              className="bg-dark-card text-text-light py-2 px-6 rounded-lg font-bold hover:bg-dark-card-hover transition-all text-sm min-h-[44px]"
+            >
+              View Details
+            </button>
+            {isPending && (
+              <button
+                className={`py-2 px-6 rounded-lg font-bold transition-all flex items-center gap-2 text-sm bg-gradient-to-br from-warning to-warning-dark text-[#351000]`}
+              >
                 <span className="material-symbols-outlined text-sm">
-                  download
+                  upload
                 </span>
+                Upload Proof
               </button>
-            ) : (
-              <>
-                <button className="bg-dark-card text-text-light py-2 px-6 rounded-lg font-bold hover:bg-dark-card-hover transition-all text-sm">
-                  Details
-                </button>
-                <button
-                  className={`py-2 px-6 rounded-lg font-bold transition-all flex items-center gap-2 text-sm ${
-                    isPending
-                      ? "bg-gradient-to-br from-warning to-warning-dark text-[#351000]"
-                      : "bg-primary text-primary-dark"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-sm">
-                    {isPending ? "upload" : "qr_code_2"}
-                  </span>
-                  {isPending ? "Upload Proof" : "View Pass"}
-                </button>
-              </>
             )}
           </div>
         </div>
@@ -291,6 +296,8 @@ export const MyTickets = () => {
 
     return {
       status: statusDisplay,
+      eventId: tx.event?.id || "",
+      transactionId: tx.id,
       title: tx.event?.name || "Unknown Event",
       date: tx.event?.startDate ? formatDate(tx.event.startDate) : "",
       location: tx.event?.location || "Location TBD",
