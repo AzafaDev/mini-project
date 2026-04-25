@@ -6,8 +6,16 @@ export const createEventSchema = Yup.object().shape({
   description: Yup.string().required("Description is required"),
   location: Yup.string().required("Location is required"),
   category: Yup.string().required("Category is required"),
-  startDate: Yup.string().required("Start date is required").matches(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/, "Invalid date format"),
-  endDate: Yup.string().required("End date is required").matches(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/, "Invalid date format"),
+  startDate: Yup.string()
+    .required("Start date is required")
+    .test("valid-start-date", "Invalid start date format", (value) =>
+      !value ? false : !isNaN(Date.parse(value))
+    ),
+  endDate: Yup.string()
+    .required("End date is required")
+    .test("valid-end-date", "Invalid end date format", (value) =>
+      !value ? false : !isNaN(Date.parse(value))
+    ),
   totalSeats: Yup.number()
     .required("Total seats is required")
     .integer("Total seats must be an integer")
@@ -31,8 +39,12 @@ export const updateEventSchema = Yup.object().shape({
   description: Yup.string().min(1),
   location: Yup.string().min(1),
   category: Yup.string().min(1),
-  startDate: Yup.string().matches(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/, "Invalid date format"),
-  endDate: Yup.string().matches(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/, "Invalid date format"),
+  startDate: Yup.string().test("valid-start-date", "Invalid start date format", (value) =>
+    !value ? true : !isNaN(Date.parse(value))
+  ),
+  endDate: Yup.string().test("valid-end-date", "Invalid end date format", (value) =>
+    !value ? true : !isNaN(Date.parse(value))
+  ),
   totalSeats: Yup.number().integer().positive(),
   availableSeats: Yup.number().integer().positive().optional(),
   price: Yup.number().min(0),
