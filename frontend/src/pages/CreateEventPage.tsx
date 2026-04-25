@@ -6,18 +6,6 @@ import { useEventStore } from "../stores/useEventStore";
 import { useToastStore } from "../stores/useToastStore";
 import { createEventSchema } from "../validation/eventSchemas";
 
-const CATEGORIES = [
-  "Conference",
-  "Concert",
-  "Workshop",
-  "Seminar",
-  "Festival",
-  "Sports",
-  "Exhibition",
-  "Networking",
-  "Other",
-];
-
 export default function CreateEventPage() {
   const navigate = useNavigate();
   const { createEvent, loadingEventAction, error } = useEventStore();
@@ -246,26 +234,26 @@ export default function CreateEventPage() {
                   Category *
                 </label>
                 <select
-                   name="category"
-                   value={formik.values.category}
-                   onChange={formik.handleChange}
-                   onBlur={formik.handleBlur}
-                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
-                     formik.touched.category && formik.errors.category
-                       ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-border-muted/10 focus:border-accent"
-                   }`}
+                  name="category"
+                  value={formik.values.category}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
+                    formik.touched.category && formik.errors.category
+                      ? "border-red-500/50 focus:border-red-500/50"
+                      : "border-border-muted/10 focus:border-accent"
+                  }`}
                 >
                   <option value="">Select category</option>
-                   {CATEGORIES.map((cat) => (
-                     <option key={cat} value={cat}>
-                       {cat}
-                     </option>
-                   ))}
-                 </select>
-                 {formik.touched.category && formik.errors.category && (
-                   <p className="text-red-400 text-xs mt-1">{formik.errors.category}</p>
-                 )}
+                  {EVENT_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                {formik.touched.category && formik.errors.category && (
+                  <p className="text-red-400 text-xs mt-1">{formik.errors.category}</p>
+                )}
               </div>
 
               <div>
