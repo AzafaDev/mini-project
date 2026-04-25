@@ -35,8 +35,6 @@ const noNavbarRoutes = [
   "/transactions/organizer",
   "/events/create",
   "/profile",
-  "/my-tickets",
-  "/my-transactions",
   "/profile/points",
 ];
 
@@ -122,32 +120,16 @@ const App = () => {
                </ProtectedRoute>
              }
            />
-           <Route
-             path="/transactions/:id"
-             element={
-               <ProtectedRoute>
-                 <TransactionDetailPage />
-               </ProtectedRoute>
-             }
-           />
-           <Route
-             path="/my-transactions"
-             element={
-               <ProtectedRoute>
-                 <MyTransactionsPage />
-               </ProtectedRoute>
-             }
-           />
-           <Route
-             path="/my-tickets"
-             element={
-               <ProtectedRoute>
-                 <MyTickets />
-               </ProtectedRoute>
-             }
-           />
+            <Route
+              path="/transactions/:id"
+              element={
+                <ProtectedRoute>
+                  <TransactionDetailPage />
+                </ProtectedRoute>
+              }
+            />
 
-           {/* Protected routes - require ORGANIZER role - wrapped in DashboardLayout */}
+            {/* Protected routes - require ORGANIZER role - wrapped in DashboardLayout */}
            <Route element={<DashboardLayout />}>
              <Route
                path="/dashboard"
@@ -181,15 +163,31 @@ const App = () => {
                  </ProtectedRoute>
                }
              />
-             <Route
-               path="/profile/points"
-               element={
-                 <ProtectedRoute>
-                   <PointsHistoryPage />
-                 </ProtectedRoute>
-               }
-             />
-             <Route
+              <Route
+                path="/profile/points"
+                element={
+                  <ProtectedRoute>
+                    <PointsHistoryPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-tickets"
+                element={
+                  <ProtectedRoute>
+                    <MyTickets />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-transactions"
+                element={
+                  <ProtectedRoute>
+                    <MyTransactionsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                path="/events/create"
                element={
                  <ProtectedRoute requiredRole="ORGANIZER">
