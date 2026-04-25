@@ -71,7 +71,8 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
     <>
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="md:hidden fixed top-4 left-4 z-[70] bg-[#1C1B1B] p-3 rounded-lg shadow-lg"
+        className="md:hidden fixed top-4 left-4 z-[70] bg-[#1C1B1B] p-3 rounded-lg shadow-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+        aria-label="Toggle menu"
       >
         <span className="material-symbols-outlined text-white">
           {isOpen ? "close" : "menu"}
@@ -88,7 +89,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
       <aside className={`h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] z-[60] flex flex-col border-r border-white/5 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         {/* Header */}
         <div className="px-6 py-8 border-b border-white/5">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3" onClick={() => setIsOpen(false)}>
             <div className="w-10 h-10 rounded bg-[#4B4DD8] flex items-center justify-center">
               <span className="material-symbols-outlined text-[#C0C1FF]" style={{ fontVariationSettings: "'FILL' 1" }}>
                 bolt

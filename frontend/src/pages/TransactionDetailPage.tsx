@@ -224,19 +224,19 @@ const TransactionDetailPage: React.FC = () => {
 
   return (
     <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
-      <main className="pt-24 pb-32 px-6 max-w-screen-lg mx-auto">
+      <main className="pt-20 pb-12 px-4 sm:px-6 md:px-12 max-w-screen-lg mx-auto">
         {/* Breadcrumb / Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 text-text-muted text-xs mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-1 sm:gap-2 text-text-muted text-xs mb-3 sm:mb-4">
             <Link to="/my-transactions" className="hover:text-primary">Transactions</Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-primary">Transaction Details</span>
           </div>
-          <div className="flex items-center justify-between">
-            <h1 className="text-4xl font-extrabold tracking-tighter text-text-light">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tighter text-text-light">
               Transaction Details
             </h1>
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${statusConfig.color}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold ${statusConfig.color}`}>
               <span className="material-symbols-outlined">{statusConfig.icon}</span>
               {statusConfig.label}
             </div>
@@ -244,159 +244,159 @@ const TransactionDetailPage: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="space-y-8">
-          {/* Event Info Card */}
-          <div className="bg-dark-surface rounded-xl p-8 shadow-xl">
-            <div className="flex items-start gap-6">
-              <div className="w-24 h-24 rounded-lg overflow-hidden bg-dark-elevated flex-shrink-0">
-                {currentTransaction.event?.imageUrl ? (
-                  <img 
-                    src={currentTransaction.event.imageUrl} 
-                    alt={currentTransaction.event.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl text-text-secondary">
-                      event
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex-grow">
-                <Link 
-                  to={`/events/${currentTransaction.event?.id}`}
-                  className="text-2xl font-bold text-text-light mb-2 hover:text-primary transition-colors inline-flex items-center gap-2"
-                >
-                  {currentTransaction.event?.name}
-                  <span className="material-symbols-outlined text-base">open_in_new</span>
-                </Link>
-                <div className="flex flex-wrap gap-6 text-text-muted">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary">location_on</span>
-                    <span>{currentTransaction.event?.location || "TBA"}</span>
-                  </div>
-                  {currentTransaction.event?.startDate && (
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary">calendar_today</span>
-                      <span>{formatDate(currentTransaction.event.startDate)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-           </div>
-
-          {/* Organizer Info Card */}
-          {currentTransaction.event?.organizer && (
-            <div className="bg-dark-surface rounded-xl p-8 shadow-xl">
-              <h3 className="text-lg font-bold text-text-light mb-6">Organizer</h3>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-dark-elevated flex-shrink-0">
-                  {currentTransaction.event.organizer.profilePicture ? (
-                    <img
-                      src={currentTransaction.event.organizer.profilePicture}
-                      alt={currentTransaction.event.organizer.fullName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="material-symbols-outlined text-3xl text-text-secondary">
-                        person
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Link
-                    to={`/organizer/${currentTransaction.event.organizer.id}`}
-                    className="text-xl font-bold text-text-light hover:text-primary transition-colors inline-flex items-center gap-2"
-                  >
-                    {currentTransaction.event.organizer.fullName}
-                    <span className="material-symbols-outlined text-base">open_in_new</span>
-                  </Link>
-                  <p className="text-text-muted text-sm mt-1">Event Organizer</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Transaction Details */}
-          <div className="bg-dark-surface rounded-xl p-8 shadow-xl">
-            <h3 className="text-lg font-bold text-text-light mb-6">Order Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-text-muted text-sm mb-1">Transaction ID</p>
-                <p className="font-mono text-primary">{currentTransaction.id}</p>
-              </div>
-              <div>
-                <p className="text-text-muted text-sm mb-1">Quantity</p>
-                <p className="text-text-light">{currentTransaction.quantity} ticket(s)</p>
-              </div>
-              <div>
-                <p className="text-text-muted text-sm mb-1">Created At</p>
-                <p className="text-text-light">{formatDate(currentTransaction.createdAt)}</p>
-              </div>
+        <div className="space-y-6 sm:space-y-8">
+           {/* Event Info Card */}
+           <div className="bg-dark-surface rounded-xl p-4 sm:p-6 shadow-xl">
+             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+               <div className="w-full sm:w-20 h-20 sm:h-20 rounded-lg overflow-hidden bg-dark-elevated flex-shrink-0">
+                 {currentTransaction.event?.imageUrl ? (
+                   <img 
+                     src={currentTransaction.event.imageUrl} 
+                     alt={currentTransaction.event.name}
+                     className="w-full h-full object-cover"
+                   />
+                 ) : (
+                   <div className="w-full h-full flex items-center justify-center">
+                     <span className="material-symbols-outlined text-2xl sm:text-3xl text-text-secondary">
+                       event
+                     </span>
+                   </div>
+                 )}
+               </div>
+               <div className="flex-grow min-w-0">
+                 <Link 
+                   to={`/events/${currentTransaction.event?.id}`}
+                   className="text-lg sm:text-2xl font-bold text-text-light mb-2 hover:text-primary transition-colors inline-flex items-center gap-2"
+                 >
+                   {currentTransaction.event?.name}
+                   <span className="material-symbols-outlined text-base">open_in_new</span>
+                 </Link>
+                 <div className="flex flex-wrap gap-3 sm:gap-6 text-text-muted text-sm">
+                   <div className="flex items-center gap-1.5">
+                     <span className="material-symbols-outlined text-primary">location_on</span>
+                     <span className="truncate">{currentTransaction.event?.location || "TBA"}</span>
+                   </div>
+                   {currentTransaction.event?.startDate && (
+                     <div className="flex items-center gap-1.5">
+                       <span className="material-symbols-outlined text-primary">calendar_today</span>
+                       <span>{formatDate(currentTransaction.event.startDate)}</span>
+                     </div>
+                   )}
+                 </div>
+               </div>
+             </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-white/10">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Subtotal</span>
-                  <span className="text-text-light">{formatIDR(currentTransaction.totalPrice)}</span>
-                </div>
-                {currentTransaction.discount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-text-muted">Discount</span>
-                    <span className="text-error-light">-{formatIDR(currentTransaction.discount)}</span>
-                  </div>
-                )}
-                 {currentTransaction.pointsUsed > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-text-muted">Points Used ({currentTransaction.pointsUsed})</span>
-                    <span className="text-primary">-{formatIDR(currentTransaction.pointsUsed)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between pt-3 border-t border-white/10">
-                  <span className="font-bold text-text-light">Total Paid</span>
-                  <span className="font-bold text-xl text-text-light">{formatIDR(currentTransaction.finalPrice)}</span>
+           {/* Organizer Info Card */}
+           {currentTransaction.event?.organizer && (
+             <div className="bg-dark-surface rounded-xl p-4 sm:p-6 shadow-xl">
+               <h3 className="text-lg font-bold text-text-light mb-4 sm:mb-6">Organizer</h3>
+               <div className="flex items-center gap-3 sm:gap-4">
+                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-dark-elevated flex-shrink-0">
+                   {currentTransaction.event.organizer.profilePicture ? (
+                     <img
+                       src={currentTransaction.event.organizer.profilePicture}
+                       alt={currentTransaction.event.organizer.fullName}
+                       className="w-full h-full object-cover"
+                     />
+                   ) : (
+                     <div className="w-full h-full flex items-center justify-center">
+                       <span className="material-symbols-outlined text-xl sm:text-2xl text-text-secondary">
+                         person
+                       </span>
+                     </div>
+                   )}
+                 </div>
+                 <div className="min-w-0">
+                   <Link
+                     to={`/organizer/${currentTransaction.event.organizer.id}`}
+                     className="text-base sm:text-xl font-bold text-text-light hover:text-primary transition-colors inline-flex items-center gap-2"
+                   >
+                     {currentTransaction.event.organizer.fullName}
+                     <span className="material-symbols-outlined text-base">open_in_new</span>
+                   </Link>
+                   <p className="text-text-muted text-sm mt-1">Event Organizer</p>
                 </div>
               </div>
-            </div>
-           </div>
+             </div>
+            )}
 
-           {/* Actions */}
-          <div className="bg-dark-surface rounded-xl p-8 shadow-xl">
-            <h3 className="text-lg font-bold text-text-light mb-6">Actions</h3>
-            
-            {/* User Actions */}
-            <div className="space-y-4">
-                {currentTransaction.status === "WAITING_PAYMENT" && (
-                  <>
-                    {countdown && countdown !== "Expired" && (
-                      <div className="flex items-center gap-3 bg-warning-light/10 border border-warning/30 p-4 rounded-lg">
-                        <span className="material-symbols-outlined text-warning">timer</span>
-                        <span className="text-warning">Payment expires in {countdown}</span>
-                      </div>
-                    )}
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => setIsUploadModalOpen(true)}
-                        className="flex-1 py-3 bg-gradient-to-r from-primary to-accent text-primary-dark font-bold rounded-lg hover:opacity-90"
-                      >
-                        Upload Payment Proof
-                      </button>
-                      <button
-                        onClick={() => setIsCancelModalOpen(true)}
-                        className="px-6 py-3 bg-dark-card text-text-light font-bold rounded-lg hover:bg-[#4a4a4a]"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                )}
-                {currentTransaction.status === "WAITING_CONFIRMATION" && (
-                  <div className="flex items-center gap-3 bg-warning-light/10 border border-warning/30 p-4 rounded-lg">
+            {/* Transaction Details */}
+           <div className="bg-dark-surface rounded-xl p-4 sm:p-6 shadow-xl">
+             <h3 className="text-lg font-bold text-text-light mb-4 sm:mb-6">Order Details</h3>
+             <div className="grid grid-cols-2 gap-3 sm:gap-4">
+               <div>
+                 <p className="text-text-muted text-xs sm:text-sm mb-1">Transaction ID</p>
+                 <p className="font-mono text-primary text-sm sm:text-base break-all">{currentTransaction.id}</p>
+               </div>
+               <div>
+                 <p className="text-text-muted text-xs sm:text-sm mb-1">Quantity</p>
+                 <p className="text-text-light text-sm sm:text-base">{currentTransaction.quantity} ticket(s)</p>
+               </div>
+               <div>
+                 <p className="text-text-muted text-xs sm:text-sm mb-1">Created At</p>
+                 <p className="text-text-light text-sm sm:text-base">{formatDate(currentTransaction.createdAt)}</p>
+               </div>
+             </div>
+
+             <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
+               <div className="space-y-2 sm:space-y-3">
+                 <div className="flex justify-between">
+                   <span className="text-text-muted text-sm">Subtotal</span>
+                   <span className="text-text-light text-sm sm:text-base">{formatIDR(currentTransaction.totalPrice)}</span>
+                 </div>
+                 {currentTransaction.discount > 0 && (
+                   <div className="flex justify-between">
+                     <span className="text-text-muted text-sm">Discount</span>
+                     <span className="text-error-light text-sm sm:text-base">-{formatIDR(currentTransaction.discount)}</span>
+                   </div>
+                 )}
+                  {currentTransaction.pointsUsed > 0 && (
+                   <div className="flex justify-between">
+                     <span className="text-text-muted text-sm">Points Used ({currentTransaction.pointsUsed})</span>
+                     <span className="text-primary text-sm sm:text-base">-{formatIDR(currentTransaction.pointsUsed)}</span>
+                   </div>
+                 )}
+                 <div className="flex justify-between pt-3 border-t border-white/10">
+                   <span className="font-bold text-text-light text-sm sm:text-base">Total Paid</span>
+                   <span className="font-bold text-xl text-text-light">{formatIDR(currentTransaction.finalPrice)}</span>
+                 </div>
+               </div>
+             </div>
+            </div>
+
+            {/* Actions */}
+           <div className="bg-dark-surface rounded-xl p-4 sm:p-6 shadow-xl">
+             <h3 className="text-lg font-bold text-text-light mb-4 sm:mb-6">Actions</h3>
+             
+             {/* User Actions */}
+             <div className="space-y-4">
+                 {currentTransaction.status === "WAITING_PAYMENT" && (
+                   <>
+                     {countdown && countdown !== "Expired" && (
+                       <div className="flex items-center gap-3 bg-warning-light/10 border border-warning/30 p-3 sm:p-4 rounded-lg">
+                         <span className="material-symbols-outlined text-warning">timer</span>
+                         <span className="text-warning text-sm sm:text-base">Payment expires in {countdown}</span>
+                       </div>
+                     )}
+                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                       <button
+                         onClick={() => setIsUploadModalOpen(true)}
+                         className="py-3 bg-gradient-to-r from-primary to-accent text-primary-dark font-bold rounded-lg hover:opacity-90 min-h-[44px]"
+                       >
+                         Upload Payment Proof
+                       </button>
+                       <button
+                         onClick={() => setIsCancelModalOpen(true)}
+                         className="px-4 py-3 bg-dark-card text-text-light font-bold rounded-lg hover:bg-[#4a4a4a] min-h-[44px]"
+                       >
+                         Cancel
+                       </button>
+                     </div>
+                   </>
+                 )}
+                 {currentTransaction.status === "WAITING_CONFIRMATION" && (
+                   <div className="flex items-center gap-3 bg-warning-light/10 border border-warning/30 p-3 sm:p-4 rounded-lg">
                     <span className="material-symbols-outlined text-warning">hourglass_top</span>
                     <span className="text-warning">Waiting for organizer confirmation</span>
                   </div>
@@ -418,95 +418,134 @@ const TransactionDetailPage: React.FC = () => {
           </div>
         </main>
 
-      {/* Upload Payment Proof Modal */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsUploadModalOpen(false)} />
-          <div className="relative bg-dark-surface p-6 rounded-xl border border-white/10 w-full max-w-md">
-            <button
-              onClick={() => setIsUploadModalOpen(false)}
-              className="absolute top-4 right-4 text-text-muted hover:text-text-light"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-            <h3 className="text-xl font-bold text-text-light mb-6">Upload Payment Proof</h3>
-            
-            <div className="mb-6">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                accept="image/*"
-                className="hidden"
-              />
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-              >
-                {selectedFile ? (
-                  <div>
-                    <span className="material-symbols-outlined text-4xl text-primary">check_circle</span>
-                    <p className="text-text-light mt-2">{selectedFile.name}</p>
-                    <p className="text-text-muted text-sm">Click to change</p>
-                  </div>
-                ) : (
-                  <div>
-                    <span className="material-symbols-outlined text-4xl text-text-muted">upload_file</span>
-                    <p className="text-text-light mt-2">Click to upload payment proof</p>
-                    <p className="text-text-muted text-sm">Max 5MB (JPEG, PNG)</p>
-                  </div>
-                )}
-              </div>
-            </div>
+       {/* Upload Payment Proof Modal */}
+       {isUploadModalOpen && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsUploadModalOpen(false)} />
+           <div className="relative bg-dark-surface p-4 sm:p-6 rounded-xl border border-white/10 w-full max-w-md">
+             <button
+               onClick={() => setIsUploadModalOpen(false)}
+               className="absolute top-4 right-4 text-text-muted hover:text-text-light p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
+               aria-label="Close modal"
+             >
+               <span className="material-symbols-outlined">close</span>
+             </button>
+             <h3 className="text-xl font-bold text-text-light mb-4 sm:mb-6">Upload Payment Proof</h3>
+             
+             <div className="mb-4 sm:mb-6">
+               <input
+                 type="file"
+                 ref={fileInputRef}
+                 onChange={handleFileSelect}
+                 accept="image/*"
+                 className="hidden"
+               />
+               <div
+                 onClick={() => fileInputRef.current?.click()}
+                 className="border-2 border-dashed border-white/20 rounded-lg p-6 sm:p-8 text-center cursor-pointer hover:border-primary transition-colors"
+               >
+                 {selectedFile ? (
+                   <div>
+                     <span className="material-symbols-outlined text-4xl sm:text-5xl text-primary">check_circle</span>
+                     <p className="text-text-light mt-2 text-sm sm:text-base">{selectedFile.name}</p>
+                     <p className="text-text-muted text-xs sm:text-sm">Click to change</p>
+                   </div>
+                 ) : (
+                   <div>
+                     <span className="material-symbols-outlined text-4xl sm:text-5xl text-text-muted">upload_file</span>
+                     <p className="text-text-light mt-2 text-sm sm:text-base">Click to upload payment proof</p>
+                     <p className="text-text-muted text-xs sm:text-sm">Max 5MB (JPEG, PNG)</p>
+                   </div>
+                 )}
+               </div>
+             </div>
 
-            <button
-              onClick={handleUploadProof}
-              disabled={!selectedFile || isSubmitting}
-              className="w-full py-3 bg-gradient-to-r from-primary to-accent text-primary-dark font-bold rounded-lg transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <span className="material-symbols-outlined animate-spin">sync</span>
-              ) : "Upload"}
-            </button>
-          </div>
-        </div>
-      )}
+             <button
+               onClick={handleUploadProof}
+               disabled={!selectedFile || isSubmitting}
+               className="w-full py-3 bg-gradient-to-r from-primary to-accent text-primary-dark font-bold rounded-lg transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+             >
+               {isSubmitting ? (
+                 <span className="material-symbols-outlined animate-spin">sync</span>
+               ) : "Upload"}
+             </button>
+           </div>
+         </div>
+       )}
 
-      {/* Cancel Transaction Modal */}
-      {isCancelModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsCancelModalOpen(false)} />
-          <div className="relative bg-dark-surface p-6 rounded-xl border border-white/10 w-full max-w-md">
-            <button
-              onClick={() => setIsCancelModalOpen(false)}
-              className="absolute top-4 right-4 text-text-muted hover:text-text-light"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-            <h3 className="text-xl font-bold text-text-light mb-4">Cancel Transaction?</h3>
-            <p className="text-text-muted mb-6">
-              Are you sure you want to cancel this transaction? This action cannot be undone.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setIsCancelModalOpen(false)}
-                className="flex-1 py-3 bg-dark-card text-text-light font-bold rounded-lg hover:bg-[#4a4a4a]"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleCancelTransaction}
-                disabled={isSubmitting}
-                className="flex-1 py-3 bg-error text-text-light font-bold rounded-lg hover:bg-error-hover disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <span className="material-symbols-outlined animate-spin">sync</span>
-                ) : "Cancel Transaction"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+       {/* Cancel Transaction Modal */}
+       {isCancelModalOpen && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsCancelModalOpen(false)} />
+           <div className="relative bg-dark-surface p-4 sm:p-6 rounded-xl border border-white/10 w-full max-w-md">
+             <button
+               onClick={() => setIsCancelModalOpen(false)}
+               className="absolute top-4 right-4 text-text-muted hover:text-text-light p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
+               aria-label="Close modal"
+             >
+               <span className="material-symbols-outlined">close</span>
+             </button>
+             <h3 className="text-xl font-bold text-text-light mb-3 sm:mb-4">Cancel Transaction?</h3>
+             <p className="text-text-muted mb-4 sm:mb-6 text-sm">
+               Are you sure you want to cancel this transaction? This action cannot be undone.
+             </p>
+             <div className="flex gap-3 sm:gap-4">
+               <button
+                 onClick={() => setIsCancelModalOpen(false)}
+                 className="flex-1 py-3 bg-dark-card text-text-light font-bold rounded-lg hover:bg-[#4a4a4a] min-h-[44px]"
+               >
+                 Back
+               </button>
+               <button
+                 onClick={handleCancelTransaction}
+                 disabled={isSubmitting}
+                 className="flex-1 py-3 bg-error text-text-light font-bold rounded-lg hover:bg-error-hover disabled:opacity-50 min-h-[44px]"
+               >
+                 {isSubmitting ? (
+                   <span className="material-symbols-outlined animate-spin">sync</span>
+                 ) : "Cancel Transaction"}
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
+
+       {/* Reject Transaction Modal */}
+       {isRejectModalOpen && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsRejectModalOpen(false)} />
+           <div className="relative bg-dark-surface p-4 sm:p-6 rounded-xl border border-white/10 w-full max-w-md">
+             <button
+               onClick={() => setIsRejectModalOpen(false)}
+               className="absolute top-4 right-4 text-text-muted hover:text-text-light p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
+               aria-label="Close modal"
+             >
+               <span className="material-symbols-outlined">close</span>
+             </button>
+             <h3 className="text-xl font-bold text-text-light mb-3 sm:mb-4">Reject Transaction?</h3>
+             <p className="text-text-muted mb-4 sm:mb-6 text-sm">
+               Are you sure you want to reject this transaction? This action cannot be undone.
+             </p>
+             <div className="flex gap-3 sm:gap-4">
+               <button
+                 onClick={() => setIsRejectModalOpen(false)}
+                 className="flex-1 py-3 bg-dark-card text-text-light font-bold rounded-lg hover:bg-[#4a4a4a] min-h-[44px]"
+               >
+                 Cancel
+               </button>
+               <button
+                 onClick={handleRejectTransaction}
+                 disabled={isSubmitting}
+                 className="flex-1 py-3 bg-error text-text-light font-bold rounded-lg hover:bg-error-hover disabled:opacity-50 min-h-[44px]"
+               >
+                 {isSubmitting ? (
+                   <span className="material-symbols-outlined animate-spin">sync</span>
+                 ) : "Reject Transaction"}
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
 
       {/* Reject Transaction Modal */}
       {isRejectModalOpen && (

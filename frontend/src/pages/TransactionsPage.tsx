@@ -180,7 +180,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
     <div className="bg-dark text-text-light font-sans min-h-screen selection:bg-primary/30">
 
       {/* Main Content */}
-      <div className="p-4 md:p-8 pt-20 md:pt-8">
+      <div className="p-4 md:p-8 md:pt-8">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tighter text-text-light mb-2">
@@ -290,23 +290,23 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
           </button>
         </div>
 
-        {/* Table Area */}
+         {/* Table Area */}
         <div className="bg-dark-surface rounded-xl overflow-hidden shadow-xl">
           {error && (
-            <div className="p-6 bg-error/10 border border-error/30">
+            <div className="p-4 sm:p-6 bg-error/10 border border-error/30">
               <p className="text-error-light">{error}</p>
             </div>
           )}
-          
+
           {filteredTransactions.length === 0 && !loading ? (
-            <div className="p-12 text-center">
+            <div className="p-6 sm:p-12 text-center">
               <span className="material-symbols-outlined text-6xl text-text-secondary mb-4">
                 receipt_long
               </span>
               <h2 className="text-2xl font-bold text-text-light mb-2">
                 No transactions found
               </h2>
-              <p className="text-text-muted">
+              <p className="text-text-muted px-4">
                 {searchQuery || filter !== "ALL"
                   ? "Try adjusting your filters"
                   : "No transactions yet"}
@@ -315,7 +315,7 @@ const TransactionsPage: React.FC<TransactionsPageProps> = ({ eventId }) => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[640px]">
                   <thead className="bg-dark-elevated/50 text-text-muted text-xs uppercase tracking-widest">
                     <tr>
                       <th className="px-6 py-4 font-semibold">Transaction ID</th>

@@ -42,7 +42,7 @@ export function ConfirmDialog({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -62,7 +62,7 @@ export function ConfirmDialog({
               <button
                 onClick={onClose}
                 disabled={isLoading}
-                className="px-4 py-2 rounded-lg border border-[#2d2d44] text-[#a09bb3] hover:bg-[#2d2d44] transition-colors"
+                className="px-4 py-2 rounded-lg border border-[#2d2d44] text-[#a09bb3] hover:bg-[#2d2d44] transition-colors min-h-[44px]"
               >
                 {cancelText}
               </button>
@@ -71,7 +71,7 @@ export function ConfirmDialog({
                 disabled={isLoading}
                 className={`px-4 py-2 rounded-lg text-white transition-colors flex items-center gap-2 ${buttonStyles} ${
                   isLoading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                } min-h-[44px]`}
               >
                 {isLoading && (
                   <span className="material-symbols-outlined text-lg animate-spin">

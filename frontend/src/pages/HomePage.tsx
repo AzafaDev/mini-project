@@ -94,7 +94,7 @@ export default function KinetixEvents() {
   };
 
   return (
-    <div className="bg-dark text-text-light font-sans selection:bg-primary selection:text-primary-darker min-h-screen overflow-x-hidden">
+    <div className="bg-dark text-text-light font-sans selection:bg-primary/30 selection:text-primary-darker min-h-screen overflow-x-hidden">
       <main className="pt-16">
         {/* Hero Section with Animation */}
         <section className="relative min-h-[400px] md:h-[450px] flex items-center justify-center overflow-hidden">
@@ -112,68 +112,68 @@ export default function KinetixEvents() {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-dark/60 to-dark"></div>
           </motion.div>
 
-           <div className="relative z-10 text-center px-4 md:px-6 max-w-4xl">
-             <motion.h1
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight mb-4 md:mb-6 leading-tight text-white"
-            >
-              Architect Your{" "}
-              <span className="text-primary italic">Moment</span>.
-            </motion.h1>
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-col gap-2 md:gap-3 items-center bg-dark-elevated/80 backdrop-blur-md p-4 md:p-6 rounded-xl shadow-2xl border border-white/10 w-full max-w-lg mx-auto"
-            >
-              <div className="relative w-full">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xl">search</span>
-                <input
-                  onChange={handleSearchChange}
-                  className="bg-dark-surface border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white text-sm md:text-base outline-none focus:border-primary transition-colors"
-                  placeholder="Search event title..."
-                  type="text"
-                  value={searchInput}
-                />
-              </div>
-              <div className="relative w-full">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xl">location_on</span>
-                <input
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  className="bg-dark-surface border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white text-sm md:text-base outline-none focus:border-primary transition-colors"
-                  placeholder="Filter by location..."
-                  type="text"
-                  value={locationQuery}
-                />
-              </div>
-              <button className="bg-primary text-primary-darker font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all w-full text-sm md:text-base flex justify-center">
-                <span className="material-symbols-outlined">search</span> Search Events
-              </button>
-            </motion.div>
-          </div>
-        </section>
+           <div className="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto">
+              <motion.h1
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight mb-4 md:mb-6 leading-tight text-white"
+              >
+                Architect Your{" "}
+                <span className="text-primary italic">Moment</span>.
+              </motion.h1>
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex flex-col gap-3 items-center bg-dark-elevated/80 backdrop-blur-md p-4 sm:p-6 rounded-xl shadow-2xl border border-white/10 w-full max-w-lg mx-auto"
+              >
+                <div className="relative w-full">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xl">search</span>
+                  <input
+                    onChange={handleSearchChange}
+                    className="bg-dark-surface border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white text-sm md:text-base outline-none focus:border-primary transition-colors min-h-[44px]"
+                    placeholder="Search event title..."
+                    type="text"
+                    value={searchInput}
+                  />
+                </div>
+                <div className="relative w-full">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xl">location_on</span>
+                  <input
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    className="bg-dark-surface border border-white/10 rounded-lg pl-10 pr-4 py-3 w-full text-white text-sm md:text-base outline-none focus:border-primary transition-colors min-h-[44px]"
+                    placeholder="Filter by location..."
+                    type="text"
+                    value={locationQuery}
+                  />
+                </div>
+                <button className="bg-primary text-primary-darker font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all w-full text-sm md:text-base flex justify-center min-h-[44px] items-center gap-2">
+                  <span className="material-symbols-outlined">search</span> Search Events
+                </button>
+              </motion.div>
+            </div>
+          </section>
 
         {/* Interactive Category Filters */}
-        <section className="px-4 md:px-8 mb-12 mt-8 relative z-20">
-          <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 no-scrollbar justify-start md:justify-center -mx-4 px-4 md:mx-0 md:px-0 scroll-pl-4 snap-x snap-mandatory">
-            {categories.map((cat) => (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                key={cat.label}
-                onClick={() => setActiveCategory(cat.label)}
-                className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-medium whitespace-nowrap transition-all duration-300 text-sm md:text-base snap-always ${
-                  activeCategory === cat.label
-                    ? "bg-primary text-primary-darker shadow-[0_0_20px_rgba(192,193,255,0.4)]"
-                    : "bg-dark-elevated hover:bg-dark-card-hover text-text-muted hover:text-white"
-                }`}
-              >
-                <span className="material-symbols-outlined text-lg md:text-xl">
-                  {cat.icon}
-                </span>{" "}
-                {cat.label}
-              </motion.button>
-            ))}
+        <section className="px-4 sm:px-6 md:px-8 mb-12 mt-8 relative z-20">
+          <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 no-scrollbar justify-start md:justify-center -mx-4 px-4 md:mx-0 md:px-0 scroll-pl-4 snap-x snap-mandatory">
+             {categories.map((cat) => (
+               <motion.button
+                 whileTap={{ scale: 0.95 }}
+                 key={cat.label}
+                 onClick={() => setActiveCategory(cat.label)}
+                 className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium whitespace-nowrap transition-all duration-300 text-xs sm:text-sm md:text-base snap-always ${
+                   activeCategory === cat.label
+                     ? "bg-primary text-primary-darker shadow-[0_0_20px_rgba(192,193,255,0.4)]"
+                     : "bg-dark-elevated hover:bg-dark-card-hover text-text-muted hover:text-white"
+                 } min-h-[44px]`}
+               >
+                 <span className="material-symbols-outlined text-lg md:text-xl flex-shrink-0">
+                   {cat.icon}
+                 </span>
+                 <span className="ml-1">{cat.label}</span>
+               </motion.button>
+             ))}
           </div>
         </section>
 
@@ -222,8 +222,8 @@ export default function KinetixEvents() {
             </motion.div>
           )}
 
-          {/* Events Grid */}
-          {!loading && !error && (
+           {/* Events Grid */}
+           {!loading && !error && (
             <motion.div
               layout
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 min-h-[400px]"
@@ -237,14 +237,14 @@ export default function KinetixEvents() {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="col-span-full flex flex-col items-center justify-center text-text-muted py-20"
+                    className="col-span-full flex flex-col items-center justify-center text-text-muted py-20 px-4"
                   >
                     <span className="material-symbols-outlined text-6xl mb-4">
                       event_busy
                     </span>
-                  <p>
-                      No events found for "{debouncedSearch}" in {activeCategory}
-                  </p>
+                   <p className="text-center">
+                       No events found for "{debouncedSearch}" in {activeCategory}
+                   </p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -254,28 +254,28 @@ export default function KinetixEvents() {
           {/* Pagination Controls */}
           {pagination.totalPages > 1 && (
             <div className="flex flex-col items-center gap-4 mt-12 pb-12">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-center">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page <= 1}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-elevated text-text-muted hover:bg-dark-card-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-elevated text-text-muted hover:bg-dark-card-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all min-h-[44px]"
                 >
                   <span className="material-symbols-outlined">arrow_back</span>
                   Previous
                 </button>
-                <span className="px-4 py-2 text-text-muted">
+                <span className="px-4 py-2 text-text-muted whitespace-nowrap">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <button
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page >= pagination.totalPages}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-elevated text-text-muted hover:bg-dark-card-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-elevated text-text-muted hover:bg-dark-card-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all min-h-[44px]"
                 >
                   Next
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
               </div>
-              <p className="text-sm text-text-muted">
+              <p className="text-sm text-text-muted text-center px-4">
                 Showing {events.length > 0 ? (pagination.page - 1) * 20 + 1 : 0} -{" "}
                 {Math.min(pagination.page * 20, pagination.total)} of {pagination.total} events
               </p>

@@ -58,8 +58,6 @@ export default function CreateEventPage() {
     }[]
   >([]);
 
-
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -76,7 +74,7 @@ export default function CreateEventPage() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-    
+
     // Validate custom tickets if enabled
     if (useCustomTickets) {
       if (tickets.length === 0) {
@@ -97,7 +95,9 @@ export default function CreateEventPage() {
 
     // Validate date range
     if (formik.values.startDate && formik.values.endDate) {
-      if (new Date(formik.values.startDate) >= new Date(formik.values.endDate)) {
+      if (
+        new Date(formik.values.startDate) >= new Date(formik.values.endDate)
+      ) {
         setLocalError("End date must be after start date");
         return;
       }
@@ -140,10 +140,12 @@ export default function CreateEventPage() {
 
         {/* Form */}
         <form onSubmit={handleFormSubmit} className="space-y-8">
-          {/* Image Upload */}
+          {/* Image Upload - RESPONSIVE FIX */}
           <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Event Image</h3>
-            <div className="flex items-start gap-6">
+            {/* Layout: column di mobile, row di tablet/desktop */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              {/* Preview Image */}
               <div className="w-48 h-32 rounded-lg bg-dark-elevated flex items-center justify-center overflow-hidden flex-shrink-0">
                 {imagePreview ? (
                   <img
@@ -157,7 +159,8 @@ export default function CreateEventPage() {
                   </span>
                 )}
               </div>
-              <div className="flex-1">
+              {/* Upload Controls */}
+              <div className="flex-1 w-full sm:w-auto text-center sm:text-left">
                 <input
                   type="file"
                   accept="image/*"
@@ -167,7 +170,7 @@ export default function CreateEventPage() {
                 />
                 <label
                   htmlFor="event-image"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg cursor-pointer transition-colors"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg cursor-pointer transition-colors w-full sm:w-auto min-h-[44px]"
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     upload
@@ -182,29 +185,31 @@ export default function CreateEventPage() {
           </div>
 
           {/* Basic Info */}
-          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
+          <div className="bg-dark-surface rounded-lg p-4 sm:p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Basic Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-text-muted mb-2">
                   Event Name *
                 </label>
                 <input
                   type="text"
-                   name="name"
-                   value={formik.values.name}
-                   onChange={formik.handleChange}
-                   onBlur={formik.handleBlur}
-                   placeholder="Enter event name"
-                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
-                     formik.touched.name && formik.errors.name
-                       ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-border-muted/10 focus:border-accent"
-                   }`}
-                 />
-                 {formik.touched.name && formik.errors.name && (
-                   <p className="text-red-400 text-xs mt-1">{formik.errors.name}</p>
-                 )}
+                  name="name"
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter event name"
+                  className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
+                    formik.touched.name && formik.errors.name
+                      ? "border-red-500/50 focus:border-red-500/50"
+                      : "border-border-muted/10 focus:border-accent"
+                  }`}
+                />
+                {formik.touched.name && formik.errors.name && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {formik.errors.name}
+                  </p>
+                )}
               </div>
 
               <div className="md:col-span-2">
@@ -212,21 +217,23 @@ export default function CreateEventPage() {
                   Description *
                 </label>
                 <textarea
-                   name="description"
-                   value={formik.values.description}
-                   onChange={formik.handleChange}
-                   onBlur={formik.handleBlur}
-                   placeholder="Describe your event..."
-                   rows={4}
-                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors resize-none ${
-                     formik.touched.description && formik.errors.description
-                       ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-border-muted/10 focus:border-accent"
-                   }`}
-                 />
-                 {formik.touched.description && formik.errors.description && (
-                   <p className="text-red-400 text-xs mt-1">{formik.errors.description}</p>
-                 )}
+                  name="description"
+                  value={formik.values.description}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Describe your event..."
+                  rows={4}
+                  className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors resize-none ${
+                    formik.touched.description && formik.errors.description
+                      ? "border-red-500/50 focus:border-red-500/50"
+                      : "border-border-muted/10 focus:border-accent"
+                  }`}
+                />
+                {formik.touched.description && formik.errors.description && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {formik.errors.description}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -252,7 +259,9 @@ export default function CreateEventPage() {
                   ))}
                 </select>
                 {formik.touched.category && formik.errors.category && (
-                  <p className="text-red-400 text-xs mt-1">{formik.errors.category}</p>
+                  <p className="text-red-400 text-xs mt-1">
+                    {formik.errors.category}
+                  </p>
                 )}
               </div>
 
@@ -262,69 +271,75 @@ export default function CreateEventPage() {
                 </label>
                 <input
                   type="text"
-                   name="location"
-                   value={formik.values.location}
-                   onChange={formik.handleChange}
-                   onBlur={formik.handleBlur}
-                   placeholder="Enter location"
-                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
-                     formik.touched.location && formik.errors.location
-                       ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-border-muted/10 focus:border-accent"
-                   }`}
-                 />
-                 {formik.touched.location && formik.errors.location && (
-                   <p className="text-red-400 text-xs mt-1">{formik.errors.location}</p>
-                 )}
+                  name="location"
+                  value={formik.values.location}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="Enter location"
+                  className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
+                    formik.touched.location && formik.errors.location
+                      ? "border-red-500/50 focus:border-red-500/50"
+                      : "border-border-muted/10 focus:border-accent"
+                  }`}
+                />
+                {formik.touched.location && formik.errors.location && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {formik.errors.location}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Date & Time */}
-          <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
+          <div className="bg-dark-surface rounded-lg p-4 sm:p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Date & Time</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-2">
                   Start Date & Time *
                 </label>
                 <input
                   type="datetime-local"
-                   name="startDate"
-                   value={formik.values.startDate}
-                   onChange={formik.handleChange}
-                   onBlur={formik.handleBlur}
-                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
-                     formik.touched.startDate && formik.errors.startDate
-                       ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-border-muted/10 focus:border-accent"
-                   }`}
-                 />
-                 {formik.touched.startDate && formik.errors.startDate && (
-                   <p className="text-red-400 text-xs mt-1">{formik.errors.startDate}</p>
-                 )}
-               </div>
+                  name="startDate"
+                  value={formik.values.startDate}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
+                    formik.touched.startDate && formik.errors.startDate
+                      ? "border-red-500/50 focus:border-red-500/50"
+                      : "border-border-muted/10 focus:border-accent"
+                  }`}
+                />
+                {formik.touched.startDate && formik.errors.startDate && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {formik.errors.startDate}
+                  </p>
+                )}
+              </div>
 
-               <div>
-                 <label className="block text-sm font-medium text-text-muted mb-2">
-                   End Date & Time *
-                 </label>
-                 <input
-                   type="datetime-local"
-                   name="endDate"
-                   value={formik.values.endDate}
-                   onChange={formik.handleChange}
-                   onBlur={formik.handleBlur}
-                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
-                     formik.touched.endDate && formik.errors.endDate
-                       ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-border-muted/10 focus:border-accent"
-                   }`}
-                 />
-                 {formik.touched.endDate && formik.errors.endDate && (
-                   <p className="text-red-400 text-xs mt-1">{formik.errors.endDate}</p>
-                 )}
-               </div>
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-2">
+                  End Date & Time *
+                </label>
+                <input
+                  type="datetime-local"
+                  name="endDate"
+                  value={formik.values.endDate}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
+                    formik.touched.endDate && formik.errors.endDate
+                      ? "border-red-500/50 focus:border-red-500/50"
+                      : "border-border-muted/10 focus:border-accent"
+                  }`}
+                />
+                {formik.touched.endDate && formik.errors.endDate && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {formik.errors.endDate}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -332,55 +347,59 @@ export default function CreateEventPage() {
           <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h3 className="text-lg font-bold mb-4">Tickets & Pricing</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div>
-                 <label className="block text-sm font-medium text-text-muted mb-2">
-                   Total Seats *
-                 </label>
-                 <input
-                   type="number"
-                   name="totalSeats"
-                   value={formik.values.totalSeats}
-                   onChange={formik.handleChange}
-                   onBlur={formik.handleBlur}
-                   min={1}
-                   placeholder="100"
-                   disabled={useCustomTickets}
-                   className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors disabled:opacity-50 ${
-                     formik.touched.totalSeats && formik.errors.totalSeats
-                       ? "border-red-500/50 focus:border-red-500/50"
-                       : "border-border-muted/10 focus:border-accent"
-                   }`}
-                 />
-                 {formik.touched.totalSeats && formik.errors.totalSeats && (
-                   <p className="text-red-400 text-xs mt-1">{formik.errors.totalSeats}</p>
-                 )}
-               </div>
+              <div>
+                <label className="block text-sm font-medium text-text-muted mb-2">
+                  Total Seats *
+                </label>
+                <input
+                  type="number"
+                  name="totalSeats"
+                  value={formik.values.totalSeats}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  min={1}
+                  placeholder="100"
+                  disabled={useCustomTickets}
+                  className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors disabled:opacity-50 ${
+                    formik.touched.totalSeats && formik.errors.totalSeats
+                      ? "border-red-500/50 focus:border-red-500/50"
+                      : "border-border-muted/10 focus:border-accent"
+                  }`}
+                />
+                {formik.touched.totalSeats && formik.errors.totalSeats && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {formik.errors.totalSeats}
+                  </p>
+                )}
+              </div>
 
-               {!useCustomTickets && (
-                 <div>
-                   <label className="block text-sm font-medium text-text-muted mb-2">
-                     Price per Ticket ($) *
-                   </label>
-                   <input
-                     type="number"
-                     name="price"
-                     value={formik.values.price}
-                     onChange={formik.handleChange}
-                     onBlur={formik.handleBlur}
-                     min={0}
-                     step={0.01}
-                     placeholder="0.00"
-                     className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
-                       formik.touched.price && formik.errors.price
-                         ? "border-red-500/50 focus:border-red-500/50"
-                         : "border-border-muted/10 focus:border-accent"
-                     }`}
-                   />
-                   {formik.touched.price && formik.errors.price && (
-                     <p className="text-red-400 text-xs mt-1">{formik.errors.price}</p>
-                   )}
-                 </div>
-               )}
+              {!useCustomTickets && (
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-2">
+                    Price per Ticket (IDR) *
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formik.values.price}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    min={0}
+                    step={1000}
+                    placeholder="50000"
+                    className={`w-full px-4 py-3 bg-dark-elevated border rounded-lg focus:outline-none transition-colors ${
+                      formik.touched.price && formik.errors.price
+                        ? "border-red-500/50 focus:border-red-500/50"
+                        : "border-border-muted/10 focus:border-accent"
+                    }`}
+                  />
+                  {formik.touched.price && formik.errors.price && (
+                    <p className="text-red-400 text-xs mt-1">
+                      {formik.errors.price}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Custom Ticket Types Toggle */}
@@ -443,6 +462,7 @@ export default function CreateEventPage() {
                           setTickets(newTickets);
                         }}
                         min={0}
+                        step={1000}
                         placeholder="50000"
                         className="w-full px-3 py-2 bg-dark-card border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent"
                       />
@@ -506,7 +526,7 @@ export default function CreateEventPage() {
             <button
               type="submit"
               disabled={loadingEventAction}
-              className="px-6 py-3 bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+              className="px-6 py-3 bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors min-h-[44px]"
             >
               {loadingEventAction ? (
                 <>

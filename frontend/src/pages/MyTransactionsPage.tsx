@@ -10,19 +10,11 @@ type FilterStatus = "ALL" | TransactionStatus;
 const MyTransactionsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const {
-    transactions,
-    fetchMyTransactions,
-    pagination,
-    loading,
-    error,
-    clearTransactions,
-  } = useTransactionStore();
+  const { transactions, fetchMyTransactions, pagination, loading, error } =
+    useTransactionStore();
 
-  // Filter state
   const [filter, setFilter] = useState<FilterStatus>("ALL");
 
-  // Get unique statuses from transactions
   const availableStatuses: FilterStatus[] = [
     "ALL",
     "WAITING_PAYMENT",
@@ -32,19 +24,17 @@ const MyTransactionsPage: React.FC = () => {
     "REJECTED",
   ];
 
-  // Filtered transactions
   const filteredTransactions = transactions.filter((txn) => {
     if (filter === "ALL") return true;
     return txn.status === filter;
   });
 
-  // Check if transaction needs payment proof upload
   const needsPaymentProof = (txn: Transaction) =>
     txn.status === "WAITING_PAYMENT" && !txn.paymentProof;
 
   useEffect(() => {
     fetchMyTransactions(pagination.page, 20);
-  }, [pagination.page]);
+  }, [pagination.page, fetchMyTransactions]);
 
   const getStatusConfig = (status: TransactionStatus) => {
     const configs: Record<
@@ -109,12 +99,12 @@ const MyTransactionsPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
-      <main className="pt-24 pb-32 px-6 max-w-screen-xl mx-auto">
+    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30 pb-20 md:pb-0">
+      <main className=" pb-12 px-4 sm:px-6 md:px-12 max-w-screen-xl mx-auto">
         {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-2 text-text-muted text-xs mb-4">
-            <Link to="/" className="hover:text-primary">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-1 sm:gap-2 text-text-muted text-xs mb-3 sm:mb-4">
+            <Link to="/" className="hover:text-primary flex items-center">
               Home
             </Link>
             <span className="material-symbols-outlined text-xs">
@@ -122,13 +112,13 @@ const MyTransactionsPage: React.FC = () => {
             </span>
             <span className="text-primary">My Transactions</span>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tighter text-text-light">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tighter text-text-light">
             My Transactions
           </h1>
         </div>
 
         {/* Filters */}
-        <div className="mb-8 flex flex-wrap gap-2">
+        <div className="mb-6 sm:mb-8 flex flex-wrap gap-2">
           {availableStatuses.map((status) => (
             <button
               key={status}
@@ -144,32 +134,35 @@ const MyTransactionsPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Transactions List */}
+        {/* Error */}
         {error && (
-          <div className="bg-error/10 border border-error/30 rounded-xl p-6 mb-6">
+          <div className="bg-error/10 border border-error/30 rounded-xl p-4 sm:p-6 mb-6">
             <p className="text-error-light">{error}</p>
           </div>
         )}
 
+        {/* Transaction List */}
         {filteredTransactions.length === 0 ? (
-          <div className="bg-dark-surface rounded-xl p-12 text-center">
+          <div className="text-center py-8 sm:py-12">
             <span className="material-symbols-outlined text-6xl text-text-secondary mb-4">
               receipt_long
             </span>
-            <h2 className="text-2xl font-bold text-text-light mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-text-light mb-2">
               No transactions found
             </h2>
-            <p className="text-text-muted mb-6">
-              {filter === "ALL"
-                ? "You haven't made any transactions yet."
-                : `You don't have any transactions with status "${getStatusConfig(filter).label}".`}
+            <p className="text-text-muted px-4">
+              {filter !== "ALL"
+                ? "Try adjusting your filters"
+                : "You haven't made any transactions yet."}
             </p>
-            <Link
-              to="/"
-              className="inline-block px-6 py-3 bg-primary text-primary-dark font-bold rounded-lg hover:opacity-90"
-            >
-              Browse Events
-            </Link>
+            {filter === "ALL" && (
+              <Link
+                to="/"
+                className="inline-block mt-4 px-6 py-3 bg-primary text-primary-dark font-bold rounded-lg hover:opacity-90"
+              >
+                Browse Events
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -177,60 +170,60 @@ const MyTransactionsPage: React.FC = () => {
               <div
                 key={transaction.id}
                 onClick={() => navigate(`/transactions/${transaction.id}`)}
-                className="bg-dark-surface rounded-xl p-6 cursor-pointer hover:bg-dark-elevated transition-colors"
+                className="bg-dark-surface rounded-xl p-4 sm:p-6 border border-white/5 hover:border-white/10 transition-all cursor-pointer"
               >
-                <div className="flex items-start gap-6">
-                  {/* Event Image */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-dark-elevated flex-shrink-0">
-                    {transaction.event?.imageUrl ? (
-                      <img
-                        src={transaction.event.imageUrl}
-                        alt={transaction.event.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-2xl text-text-secondary">
-                          event
-                        </span>
-                      </div>
-                    )}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  {/* Event Image - FIXED: menggunakan object-contain agar tidak terpotong */}
+                  <div className="w-full sm:w-24 h-20 sm:h-24 rounded-lg overflow-hidden flex-shrink-0 bg-dark-elevated flex items-center justify-center">
+                    <img
+                      src={
+                        transaction.event?.imageUrl ||
+                        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=400"
+                      }
+                      alt={transaction.event?.name}
+                      className="w-full h-full"
+                    />
                   </div>
 
                   {/* Event Details */}
                   <div className="flex-grow min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                       <div>
-                         <h3 className="text-lg font-bold text-text-light truncate">
-                           {transaction.event?.name}
-                         </h3>
-                         <p className="text-sm text-text-muted">
-                           {transaction.quantity} ticket{transaction.quantity > 1 ? "s" : ""}
-                         </p>
-                       </div>
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-text-light truncate">
+                          {transaction.event?.name}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-text-muted">
+                          {transaction.quantity} ticket
+                          {transaction.quantity > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <div
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusConfig(transaction.status).bgColor} ${getStatusConfig(transaction.status).color} flex justify-center items-center`}
+                          className={`px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold ${getStatusConfig(transaction.status).bgColor} ${getStatusConfig(transaction.status).color} flex justify-center items-center`}
                         >
                           <span className="material-symbols-outlined text-xs mr-1">
                             {getStatusConfig(transaction.status).icon}
                           </span>
-                          {getStatusConfig(transaction.status).label}
+                          <span className="hidden sm:inline">
+                            {getStatusConfig(transaction.status).label}
+                          </span>
+                          <span className="sm:hidden">
+                            {
+                              getStatusConfig(transaction.status).label.split(
+                                " ",
+                              )[0]
+                            }
+                          </span>
                         </div>
                         {needsPaymentProof(transaction) && (
-                          <span className="text-xs bg-warning text-primary-dark px-2 py-1 rounded-full font-bold animate-pulse">
-                            Upload Required
+                          <span className="text-[10px] bg-warning text-primary-dark px-2 py-1 rounded-full font-bold animate-pulse whitespace-nowrap">
+                            Upload
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-4 text-sm text-text-muted">
-                      <span>
-                        {transaction.quantity} ticket
-                        {transaction.quantity > 1 ? "s" : ""}
-                      </span>
-                      <span className="text-text-secondary">•</span>
+                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-text-muted">
                       <span>{formatDate(transaction.createdAt)}</span>
                       <span className="text-text-secondary">•</span>
                       <span className="text-text-light font-medium">
@@ -240,7 +233,7 @@ const MyTransactionsPage: React.FC = () => {
                   </div>
 
                   {/* Arrow */}
-                  <span className="material-symbols-outlined text-text-secondary">
+                  <span className="material-symbols-outlined text-text-secondary flex-shrink-0 self-end sm:self-center">
                     chevron_right
                   </span>
                 </div>
@@ -251,11 +244,11 @@ const MyTransactionsPage: React.FC = () => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
+          <div className="mt-6 sm:mt-8 flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] sm:min-h-10 sm:min-w-10"
             >
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
@@ -268,7 +261,7 @@ const MyTransactionsPage: React.FC = () => {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg font-medium min-h-[44px] min-w-[44px] sm:min-h-10 sm:min-w-10 ${
                       pagination.page === pageNum
                         ? "bg-primary text-primary-dark"
                         : "bg-dark-elevated text-text-muted hover:text-text-light"
@@ -281,13 +274,13 @@ const MyTransactionsPage: React.FC = () => {
             )}
 
             {pagination.totalPages > 5 && (
-              <span className="text-text-secondary px-2">...</span>
+              <span className="text-text-secondary px-1 sm:px-2">...</span>
             )}
 
             {pagination.totalPages > 5 && (
               <button
                 onClick={() => handlePageChange(pagination.totalPages)}
-                className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium ${
+                className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg font-medium min-h-[44px] min-w-[44px] sm:min-h-10 sm:min-w-10 ${
                   pagination.page === pagination.totalPages
                     ? "bg-primary text-primary-dark"
                     : "bg-dark-elevated text-text-muted hover:text-text-light"
@@ -300,40 +293,13 @@ const MyTransactionsPage: React.FC = () => {
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page === pagination.totalPages}
-              className="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-dark-elevated text-text-muted hover:text-text-light disabled:opacity-30 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] sm:min-h-10 sm:min-w-10"
             >
               <span className="material-symbols-outlined">chevron_right</span>
             </button>
           </div>
         )}
       </main>
-
-      {/* Mobile BottomNavBar */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-zinc-950/90 backdrop-blur-md z-50 border-t border-zinc-800/50">
-        <Link
-          to="/"
-          className="flex flex-col items-center justify-center text-zinc-500"
-        >
-          <span className="material-symbols-outlined">home</span>
-          <span className="text-[10px] font-medium">Home</span>
-        </Link>
-        <div className="flex flex-col items-center justify-center bg-indigo-500/10 text-indigo-200 rounded-xl px-6 py-1">
-          <span
-            className="material-symbols-outlined"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            confirmation_number
-          </span>
-          <span className="text-[10px] font-medium">Tickets</span>
-        </div>
-        <Link
-          to="/profile"
-          className="flex flex-col items-center justify-center text-zinc-500"
-        >
-          <span className="material-symbols-outlined">person</span>
-          <span className="text-[10px] font-medium">Profile</span>
-        </Link>
-      </nav>
     </div>
   );
 };
