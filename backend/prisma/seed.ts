@@ -157,22 +157,21 @@ const pastEvents = [
 
 // UPCOMING EVENTS - events in the future
 const upcomingEvents = [
-  {
-    name: "Jakarta Music Festival 2026",
-    description:
-      "Annual music festival featuring local and international artists",
-    category: "Music",
-    location: "Jakarta",
-    price: 500000,
-    totalSeats: 5000,
-    startDate: "2026-06-15",
-    endDate: "2026-06-17",
-    tickets: [
-      { name: "VIP", price: 1500000, quantity: 500 },
-      { name: "Regular", price: 500000, quantity: 3000 },
-      { name: "Early Bird", price: 350000, quantity: 1500 },
-    ],
-  },
+   {
+     name: "Jakarta Music Festival 2026",
+     description:
+       "Annual music festival featuring local and international artists",
+     category: "Music",
+     location: "Jakarta",
+     price: 500000,
+     totalSeats: 5000,
+     startDate: "2026-06-15",
+     endDate: "2026-06-17",
+     tickets: [
+       { name: "VIP", price: 1500000, quantity: 500 },
+       { name: "Regular", price: 500000, quantity: 4500 },
+     ],
+   },
   {
     name: "Indie Band Night",
     description: "Showcase of emerging indie bands from across Indonesia",
@@ -279,21 +278,20 @@ const upcomingEvents = [
       { name: "Regular", price: 200000, quantity: 35 },
     ],
   },
-  {
-    name: "Jakarta Marathon 2026",
-    description: "Annual marathon through the streets of Jakarta",
-    category: "Sports",
-    location: "Jakarta",
-    price: 250000,
-    totalSeats: 10000,
-    startDate: "2026-10-15",
-    endDate: "2026-10-15",
-    tickets: [
-      { name: "Full Marathon", price: 500000, quantity: 2000 },
-      { name: "Half Marathon", price: 300000, quantity: 3000 },
-      { name: "Fun Run 5K", price: 150000, quantity: 5000 },
-    ],
-  },
+   {
+     name: "Jakarta Marathon 2026",
+     description: "Annual marathon through the streets of Jakarta",
+     category: "Sports",
+     location: "Jakarta",
+     price: 250000,
+     totalSeats: 10000,
+     startDate: "2026-10-15",
+     endDate: "2026-10-15",
+     tickets: [
+       { name: "Full Marathon", price: 500000, quantity: 2000 },
+       { name: "Half Marathon", price: 300000, quantity: 8000 },
+     ],
+   },
   {
     name: "Badminton Tournament",
     description: "Open badminton tournament for all skill levels",
@@ -604,6 +602,21 @@ async function main() {
     
     // Buat kupon untuk setiap customer
     await createUserCoupons(user.id);
+    
+    // Buat riwayat poin untuk user yang memiliki poin awal
+    if (cust.points > 0) {
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 3);
+      
+      await prisma.pointTransaction.create({
+        data: {
+          userId: user.id,
+          amount: cust.points,
+          reason: "Initial points on registration",
+          expiresAt,
+        },
+      });
+    }
   }
   console.log(`✅ Created ${customers.length} customer users`);
 
@@ -689,20 +702,63 @@ async function main() {
       `✅ [UPCOMING] Created: ${event.name} (${eventData.startDate})`,
     );
 
-    for (const ticketData of eventData.tickets) {
-      const ticketType = getTicketType(ticketData.name);
-      const ticket = await prisma.ticket.create({
-        data: {
-          eventId: event.id,
-          type: ticketType,
-          price: ticketData.price,
-          quantity: ticketData.quantity,
-          available: ticketData.quantity,
-        },
-      });
-      console.log(`✅ Created ticket: ${ticket.type} - IDR ${ticket.price.toLocaleString("id-ID")}`);
-    }
-  }
+   // Create tickets and vouchers for this event
+   for (const ticketData of eventData.tickets) {
+     const ticketType = getTicketType(ticketData.name);
+     const ticket = await prisma.ticket.create({
+       data: {
+         eventId: event.id,
+         type: ticketType,
+         price: ticketData.price,
+         quantity: ticketData.quantity,
+         available: ticketData.quantity,
+       },
+     });
+     console.log(`✅ Created ticket: ${ticket.type} - IDR ${ticket.price.toLocaleString("id-ID")}`);
+   }
+
+   // Create vouchers for this event
+   const now = new Date();
+   const eventVouchers = [
+     {
+       code: `EARLY-${generateCouponCode()}`,
+       discountType: "PERCENTAGE" as const,
+       discountValue: 20,
+       startDate: now,
+       endDate: new Date(event.startDate.getTime() - 7 * 24 * 60 * 60 * 1000), // 1 week before event
+       maxUsage: 50,
+     },
+     {
+       code: `VIP-${generateCouponCode()}`,
+       discountType: "FIXED" as const,
+       discountValue: 100000,
+       startDate: now,
+       endDate: new Date(event.startDate.getTime() - 1 * 24 * 60 * 60 * 1000), // 1 day before event
+       maxUsage: 20,
+     },
+     {
+       code: `GROUP-${generateCouponCode()}`,
+       discountType: "PERCENTAGE" as const,
+       discountValue: 15,
+       startDate: now,
+       endDate: new Date(event.startDate.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days before event
+       maxUsage: 30,
+     },
+   ];
+
+   await Promise.all(
+     eventVouchers.map(voucher =>
+       prisma.voucher.create({
+         data: {
+           ...voucher,
+           eventId: event.id,
+           isActive: true,
+         },
+       })
+     )
+   );
+   console.log(`✅ Created ${eventVouchers.length} vouchers for ${event.name}`);
+ }
 
   // Create sample transactions for past events (customers who attended)
   console.log("\n🎫 Creating sample transactions (DONE status)...");
@@ -729,6 +785,16 @@ async function main() {
           paidAt: new Date(),
           expiresAt: new Date(),
         },
+      });
+
+      // Update available seats to reflect the transaction (sync with backend behavior)
+      await prisma.ticket.update({
+        where: { id: ticket.id },
+        data: { available: { decrement: 2 } }
+      });
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { availableSeats: { decrement: 2 } }
       });
 
       // Create review for this transaction
@@ -767,6 +833,16 @@ async function main() {
         paidAt: new Date(),
         expiresAt: new Date(),
       },
+    });
+
+    // Update available seats - CRITICAL FIX to sync with backend behavior
+    await prisma.ticket.update({
+      where: { id: ticket2.id },
+      data: { available: { decrement: 1 } }
+    });
+    await prisma.event.update({
+      where: { id: firstPastEvent.id },
+      data: { availableSeats: { decrement: 1 } }
     });
 
     await prisma.review.create({
@@ -817,6 +893,16 @@ async function main() {
         },
       });
 
+      // Update available seats - CRITICAL FIX to sync with backend behavior
+      await prisma.ticket.update({
+        where: { id: ticket3.id },
+        data: { available: { decrement: 1 } }
+      });
+      await prisma.event.update({
+        where: { id: pastEvent.id },
+        data: { availableSeats: { decrement: 1 } }
+      });
+
       await prisma.review.create({
         data: {
           userId: customer3.id,
@@ -832,6 +918,166 @@ async function main() {
     }
   }
 
+  // Create additional varied transactions for testing (with discounts and points)
+  console.log("\n🎫 Creating additional varied transactions (with discounts/points)...");
+  
+  // Transaction with voucher discount
+  const voucherEvent = createdPastEvents[2]; // Jazz Night February
+  const voucherTicket = await prisma.ticket.findFirst({
+    where: { eventId: voucherEvent.id },
+  });
+  if (voucherTicket && customer1) {
+    // Create a voucher first
+    const testVoucher = await prisma.voucher.create({
+      data: {
+        code: "TEST-VOUCHER-01",
+        discountType: "PERCENTAGE",
+        discountValue: 20,
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        maxUsage: 10,
+        isActive: true,
+        eventId: voucherEvent.id,
+      },
+    });
+
+    const txWithVoucher = await prisma.transaction.create({
+      data: {
+        userId: customer1.id,
+        eventId: voucherEvent.id,
+        ticketId: voucherTicket.id,
+        quantity: 2,
+        totalPrice: voucherTicket.price * 2,
+        discount: Math.floor((voucherTicket.price * 2 * 20) / 100), // 20% discount
+        pointsUsed: 0,
+        couponId: null,
+        voucherId: testVoucher.id,
+        finalPrice: Math.floor(voucherTicket.price * 2 * 0.8), // After 20% discount
+        status: "DONE",
+        paidAt: new Date(),
+        expiresAt: new Date(),
+      },
+    });
+
+    // Update available seats
+    await prisma.ticket.update({
+      where: { id: voucherTicket.id },
+      data: { available: { decrement: 2 } }
+    });
+    await prisma.event.update({
+      where: { id: voucherEvent.id },
+      data: { availableSeats: { decrement: 2 } }
+     });
+
+     console.log(
+       `✅ Created DONE transaction with voucher discount for ${customer1.fullName} on ${voucherEvent.name}`,
+     );
+   }
+
+  // Transaction with points used
+  const pointsEvent = createdPastEvents[1]; // Tech Conference 2025
+  const pointsTicket = await prisma.ticket.findFirst({
+    where: { eventId: pointsEvent.id },
+  });
+  if (pointsTicket && customer2) {
+    const txWithPoints = await prisma.transaction.create({
+      data: {
+        userId: customer2.id,
+        eventId: pointsEvent.id,
+        ticketId: pointsTicket.id,
+        quantity: 1,
+        totalPrice: pointsTicket.price,
+        discount: 0,
+        pointsUsed: 500, // Use 500 points = Rp50,000 discount
+        finalPrice: pointsTicket.price - 50000, // 500 × 100 = Rp50,000
+        status: "DONE",
+        paidAt: new Date(),
+        expiresAt: new Date(),
+      },
+    });
+
+    // Update available seats
+    await prisma.ticket.update({
+      where: { id: pointsTicket.id },
+      data: { available: { decrement: 1 } }
+    });
+    await prisma.event.update({
+      where: { id: pointsEvent.id },
+      data: { availableSeats: { decrement: 1 } }
+    });
+
+    // Deduct points from user
+    await prisma.user.update({
+      where: { id: customer2.id },
+      data: { points: { decrement: 500 } }
+    });
+
+    await prisma.review.create({
+      data: {
+        userId: customer2.id,
+        eventId: pointsEvent.id,
+        rating: 4,
+        comment: "Used my points to save some money! Good event.",
+      },
+    });
+
+    console.log(
+      `✅ Created DONE transaction with points used for ${customer2.fullName} on ${pointsEvent.name}`,
+    );
+  }
+
+  // Transaction with coupon
+  const couponEvent = createdPastEvents[3]; // Startup Seminar January
+  const couponTicket = await prisma.ticket.findFirst({
+    where: { eventId: couponEvent.id },
+  });
+  if (couponTicket && customer3) {
+    // Create a coupon first
+    const testCoupon = await prisma.coupon.create({
+      data: {
+        code: "TEST-COUPON-01",
+        discountType: "FIXED",
+        discountValue: 50000,
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        isActive: true,
+        userId: customer3.id,
+      },
+    });
+
+    const txWithCoupon = await prisma.transaction.create({
+      data: {
+        userId: customer3.id,
+        eventId: couponEvent.id,
+        ticketId: couponTicket.id,
+        quantity: 1,
+        totalPrice: couponTicket.price,
+        discount: 50000, // Fixed discount
+        pointsUsed: 0,
+        couponId: testCoupon.id,
+        voucherId: null,
+        finalPrice: Math.max(0, couponTicket.price - 50000), // After coupon discount
+        status: "DONE",
+        paidAt: new Date(),
+        expiresAt: new Date(),
+      },
+    });
+
+    // Update available seats
+    await prisma.ticket.update({
+      where: { id: couponTicket.id },
+      data: { available: { decrement: 1 } }
+    });
+    await prisma.event.update({
+      where: { id: couponEvent.id },
+      data: { availableSeats: { decrement: 1 } }
+     });
+
+     console.log(
+       `✅ Created DONE transaction with coupon for ${customer3.fullName} on ${couponEvent.name}`,
+     );
+   }
+
   console.log("\n🎉 Seeding completed!");
   console.log(`\n📊 Summary:`);
   console.log(`   - ${organizers.length} Organizer users`);
@@ -840,6 +1086,8 @@ async function main() {
   console.log(`   - ${pastEvents.length} PAST events (can write reviews)`);
   console.log(`   - ${upcomingEvents.length} UPCOMING events`);
   console.log(`   - Sample reviews created for past events`);
+  console.log(`   - Vouchers created for upcoming events`);
+  console.log(`   - Varied transactions (with discounts/points) for testing`);
   
   console.log(`\n📊 Organizer Login credentials:`);
   organizers.forEach((org, idx) => {
@@ -857,17 +1105,17 @@ async function main() {
     }
   });
   
-  console.log(`\n💡 To test reviews:`);
-  console.log(`   1. Login sebagai Andi Supriyadi (customer1@test.com)`);
-  console.log(`   2. Buka event lampau (misal: Jakarta Music Festival 2025)`);
-  console.log(`   3. Lihat tombol "Write a Review" (sudah memiliki transaksi)`);
-}
+   console.log(`\n💡 To test reviews:`);
+   console.log(`   1. Login sebagai Andi Supriyadi (customer1@test.com)`);
+   console.log(`   2. Buka event lampau (misal: Jakarta Music Festival 2025)`);
+   console.log(`   3. Lihat tombol "Write a Review" (sudah memiliki transaksi)`);
+ }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+ main()
+   .catch((e) => {
+     console.error(e);
+     process.exit(1);
+   })
+   .finally(async () => {
+     await prisma.$disconnect();
+   });

@@ -19,11 +19,18 @@ export async function restoreTicketAvailability(
   { ticketId, eventId, quantity }: Pick<RestoreResourcesParams, "ticketId" | "eventId" | "quantity">
 ) {
   if (ticketId) {
+    // Restore custom ticket availability
     await tx.ticket.update({
       where: { id: ticketId },
       data: { available: { increment: quantity } },
     });
+    // Also restore event availableSeats (sync)
+    await tx.event.update({
+      where: { id: eventId },
+      data: { availableSeats: { increment: quantity } },
+    });
   } else {
+    // Default ticket: only event seats
     await tx.event.update({
       where: { id: eventId },
       data: { availableSeats: { increment: quantity } },
