@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEventStore } from "../stores/useEventStore";
 import { useToastStore } from "../stores/useToastStore";
-import { formatDate } from "../lib/formatters";
+import { formatIDR, formatDate } from "../lib/formatters";
 import type { EventAttendee } from "../services/api";
 
 export default function EventAttendeesPage() {
@@ -34,9 +34,9 @@ export default function EventAttendeesPage() {
   const filteredAttendees = eventAttendees.filter((attendee) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      attendee.fullName.toLowerCase().includes(searchLower) ||
-      attendee.email.toLowerCase().includes(searchLower) ||
-      attendee.ticketName.toLowerCase().includes(searchLower)
+      (attendee.fullName || "").toLowerCase().includes(searchLower) ||
+      (attendee.email || "").toLowerCase().includes(searchLower) ||
+      (attendee.ticketName || "").toLowerCase().includes(searchLower)
     );
   });
 
@@ -114,63 +114,71 @@ export default function EventAttendeesPage() {
         {filteredAttendees.length > 0 ? (
           <div className="bg-dark-surface rounded-lg border border-border-muted/10 overflow-hidden">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-border-muted/10">
-                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
-                    Attendee
-                  </th>
-                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
-                    Ticket
-                  </th>
-                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
-                    Quantity
-                  </th>
-                  <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
-                    Purchase Date
-                  </th>
-                </tr>
-              </thead>
+<thead>
+                 <tr className="border-b border-border-muted/10">
+                   <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
+                     Attendee
+                   </th>
+                   <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
+                     Ticket
+                   </th>
+                   <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
+                     Quantity
+                   </th>
+                   <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
+                     Total Price
+                   </th>
+                   <th className="text-left px-6 py-4 text-xs font-medium text-text-muted uppercase tracking-widest">
+                     Purchase Date
+                   </th>
+                 </tr>
+               </thead>
               <tbody>
                 {paginatedAttendees.map((attendee, index) => (
-                  <tr
-                    key={`${attendee.userId}-${attendee.ticketId}-${index}`}
-                    className="border-b border-border-muted/10 hover:bg-dark-elevated transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-dark-card flex items-center justify-center overflow-hidden">
-                          {attendee.profilePicture ? (
-                            <img
-                              src={attendee.profilePicture}
-                              alt={attendee.fullName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="material-symbols-outlined text-text-secondary">
-                              person
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">{attendee.fullName}</p>
-                          <p className="text-sm text-text-secondary">{attendee.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-primary font-medium">
-                        {attendee.ticketName}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="font-bold">{attendee.quantity}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-text-muted">
-                        {formatDate(attendee.purchaseDate)}
-                      </span>
-                    </td>
-                  </tr>
+<tr
+                     key={`${attendee.userId}-${attendee.ticketId}-${index}`}
+                     className="border-b border-border-muted/10 hover:bg-dark-elevated transition-colors"
+                   >
+                     <td className="px-6 py-4">
+                       <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-full bg-dark-card flex items-center justify-center overflow-hidden">
+                           {attendee.profilePicture ? (
+                             <img
+                               src={attendee.profilePicture}
+                               alt={attendee.fullName}
+                               className="w-full h-full object-cover"
+                             />
+                           ) : (
+                             <span className="material-symbols-outlined text-text-secondary">
+                               person
+                             </span>
+                           )}
+                         </div>
+                         <div>
+                           <p className="font-medium">{attendee.fullName}</p>
+                           <p className="text-sm text-text-secondary">{attendee.email}</p>
+                         </div>
+                       </div>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className="text-primary font-medium">
+                         {attendee.ticketName}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className="font-bold">{attendee.quantity}</span>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className="font-bold text-primary">
+                         {formatIDR(attendee.totalPrice || 0)}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className="text-sm text-text-muted">
+                         {formatDate(attendee.purchaseDate)}
+                       </span>
+                     </td>
+                   </tr>
                 ))}
               </tbody>
             </table>
