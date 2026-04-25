@@ -51,41 +51,7 @@ export const createEventSchema = z.object({
   }),
 });
 
-// Update event validation schema
-export const updateEventSchema = z.object({
-  body: z.object({
-    name: z.string().min(1, "Event name is required").optional(),
-    description: z.string().min(1, "Description is required").optional(),
-    location: z.string().min(1, "Location is required").optional(),
-    category: z.string().min(1, "Category is required").optional(),
-    startDate: z
-      .string()
-      .refine((val) => !isNaN(Date.parse(val)), {
-        message: "Invalid start date format",
-      })
-      .optional(),
-    endDate: z
-      .string()
-      .refine((val) => !isNaN(Date.parse(val)), {
-        message: "Invalid end date format",
-      })
-      .optional(),
-    totalSeats: z.coerce
-      .number()
-      .int()
-      .positive("Total seats must be a positive integer")
-      .optional(),
-    price: z.coerce
-      .number()
-      .min(0, "Price must be a non-negative number")
-      .optional(),
-    availableSeats: z.coerce
-      .number()
-      .int()
-      .positive("Available seats must be a positive integer")
-      .optional(),
-  }),
-});
+
 
 // Get all events query validation schema
 export const getAllEventsQuerySchema = z.object({
@@ -110,5 +76,4 @@ export const getAllEventsQuerySchema = z.object({
 
 // Type exports
 export type CreateEventInput = z.infer<typeof createEventSchema>;
-export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export type GetAllEventsQueryInput = z.infer<typeof getAllEventsQuerySchema>;

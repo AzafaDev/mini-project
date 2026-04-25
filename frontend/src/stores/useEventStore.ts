@@ -89,7 +89,6 @@ interface EventStore {
   fetchEventStats: (eventId: string) => Promise<void>;
   fetchEventAttendees: (eventId: string) => Promise<void>;
   createEvent: (data: CreateEventRequest & { imageFile?: File }) => Promise<Event | null>;
-  updateEvent: (id: string, data: Partial<CreateEventRequest> & { imageFile?: File }) => Promise<Event | null>;
   deleteEvent: (id: string) => Promise<boolean>;
   fetchMyVouchers: () => Promise<void>;
   createVoucher: (data: CreateVoucherRequest) => Promise<boolean>;
@@ -472,27 +471,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
    * Memperbarui data event yang sudah ada
    * @param id - ID event yang akan diupdate
    * @param data - Data event yang akan diubah
-   * @returns Data event yang sudah diupdate atau null
-   */
-  updateEvent: async (id, data) => {
-    set({ loadingEventAction: true, error: null });
-    try {
-      const response = await eventService.updateEvent(id, data);
-      if (response.success) {
-        await get().fetchMyEvents();
-        set({ loadingEventAction: false });
-        return response.data;
-      }
-      set({ error: response.message || "Failed to update event", loadingEventAction: false });
-      return null;
-    } catch (error: any) {
-      set({
-        error: error.message || "Failed to update event",
-        loadingEventAction: false,
-      });
-      return null;
-    }
-  },
+
 
   /**
    * Menghapus event

@@ -14,10 +14,6 @@ export function EventsTab({ onStatsClick }: EventsTabProps) {
 
   const allEvents = myEvents.filter((e) => !e.isDeleted);
 
-  const handleEdit = (id: string) => {
-    navigate(`/events/${id}/edit`);
-  };
-
   const handleDelete = async (id: string, title: string) => {
     if (confirm(`Delete event "${title}"?`)) {
       await deleteEvent(id);
@@ -55,7 +51,6 @@ export function EventsTab({ onStatsClick }: EventsTabProps) {
               onStatsClick={() => {
                 onStatsClick({ id: event.id, name: event.name });
               }}
-              onEdit={() => handleEdit(event.id)}
               onDelete={() => handleDelete(event.id, event.name)}
             />
           ))}

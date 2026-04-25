@@ -33,22 +33,7 @@ export const createEventSchema = Yup.object().shape({
   ).optional(),
 });
 
-// Update Event Schema
-export const updateEventSchema = Yup.object().shape({
-  name: Yup.string().min(1),
-  description: Yup.string().min(1),
-  location: Yup.string().min(1),
-  category: Yup.string().min(1),
-  startDate: Yup.string().test("valid-start-date", "Invalid start date format", (value) =>
-    !value ? true : !isNaN(Date.parse(value))
-  ),
-  endDate: Yup.string().test("valid-end-date", "Invalid end date format", (value) =>
-    !value ? true : !isNaN(Date.parse(value))
-  ),
-  totalSeats: Yup.number().integer().positive(),
-  availableSeats: Yup.number().integer().positive().optional(),
-  price: Yup.number().min(0),
-});
+
 
 // Event Query Schema
 export const eventQuerySchema = Yup.object().shape({

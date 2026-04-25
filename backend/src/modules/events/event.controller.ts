@@ -101,54 +101,6 @@ export const eventController = {
     });
   }),
 
-  updateEvent: catchAsync<AuthRequest>(async (req, res) => {
-    const id = req.params.id as string;
-    const organizerId = req.userId;
-
-    if (!organizerId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const {
-      name,
-      description,
-      location,
-      category,
-      startDate,
-      endDate,
-      totalSeats,
-      availableSeats,
-      price,
-    } = req.body;
-
-    const existingEvent = await eventService.getEventById({ id });
-    if (!existingEvent) {
-      return res.status(404).json({ success: false, message: "Event not found" });
-    }
-
-    const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
-
-    const event = await eventService.updateEvent({
-      id,
-      name,
-      description,
-      location,
-      category,
-      startDate,
-      endDate,
-      totalSeats,
-      availableSeats,
-      price,
-      imageUrl,
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "Updated event successfully",
-      data: event,
-    });
-  }),
-
   deleteEvent: catchAsync<AuthRequest>(async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
