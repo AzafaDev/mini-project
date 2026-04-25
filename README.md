@@ -1,0 +1,189 @@
+Kinetix Events - Event Management & Ticketing Platform
+Full-stack event ticketing system with real-time seat availability, voucher/coupon system, loyalty points, referral program, and organizer analytics.
+
+Features
+User Authentication – JWT-based auth with email verification, password reset, and role-based access (Customer / Organizer)
+
+Event Management – Create, edit (soft delete), browse with advanced filters (category, location, price, date) and pagination
+
+Ticket Types – Support for multiple ticket tiers (General, VIP) with independent pricing and availability
+
+Transaction Flow – Create transaction → upload payment proof → organizer approval → ticket confirmation
+
+Discount System – Event‑specific vouchers and system‑wide coupons (percentage/fixed), single‑use
+
+Loyalty Points – Earn points on purchases (configurable multiplier), redeem points for future orders (max per transaction)
+
+Referral Program – Unique referral codes; referrer gets points, new user gets a discount coupon
+
+Event Reviews – Users can rate/comment on events they attended, with average rating display
+
+Organizer Dashboard – Revenue charts, ticket sales stats, attendee lists, voucher management
+
+Email Notifications – Verification, password reset, transaction acceptance/rejection (via Resend)
+
+File Uploads – Cloudinary integration for event images, profile pictures, payment proofs
+
+Modern Frontend – React 19, Tailwind CSS, Zustand state management, Recharts, Formik + Yup validation
+
+Tech Stack
+Backend
+
+Node.js + Express (TypeScript)
+
+Prisma ORM (PostgreSQL)
+
+JWT authentication (httpOnly cookies)
+
+Cloudinary (image hosting)
+
+Resend (email delivery)
+
+Zod (validation)
+
+Frontend
+
+React 19 with Vite
+
+Tailwind CSS 4
+
+Zustand (state)
+
+React Router v7
+
+Recharts (dashboard graphs)
+
+Formik + Yup (forms)
+
+Framer Motion (animations)
+
+Database – PostgreSQL (Prisma adapter)
+Deployment – Vercel (serverless functions + static frontend)
+
+Prerequisites
+Node.js v20+
+
+PostgreSQL database (local or cloud – e.g. Neon, Supabase)
+
+Cloudinary account (for image uploads)
+
+Resend API key (for email)
+
+Environment Variables
+Create .env files in both backend/ and frontend/ folders.
+
+Backend (.env)
+env
+DATABASE*URL="postgresql://..."
+JWT_SECRET="your-secret-key"
+FRONTEND_URL="http://localhost:5173"
+CLOUDINARY_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
+RESEND_API_KEY="re*..."
+PORT=8000
+NODE_ENV=development
+Frontend (.env)
+env
+VITE_API_URL="http://localhost:8000/api"
+Installation & Setup
+
+1. Clone repository
+   bash
+   git clone https://github.com/your-username/kinetix-events.git
+   cd kinetix-events
+2. Install dependencies (workspaces)
+   bash
+   npm install
+3. Configure database & Prisma
+   bash
+   cd backend
+   npx prisma migrate dev --name init
+   npx prisma generate
+4. Seed database (optional – creates sample data)
+   bash
+   npm run seed
+5. Start development servers
+   Backend (port 8000)
+
+bash
+cd backend
+npm run dev
+Frontend (port 5173)
+
+bash
+cd frontend
+npm run dev
+Project Structure
+text
+📁 backend/
+├── prisma/ – Schema & migrations
+├── src/
+│ ├── modules/ – Auth, events, transactions, points, discount
+│ ├── middleware/ – Auth, role, validation, rate limiting
+│ ├── utils/ – Email, file upload, cron jobs, helpers
+│ ├── templates/emails/ – Handlebars email templates
+│ ├── config/ – Prisma, Cloudinary, Resend, constants
+│ └── app.ts – Express app entry
+├── api/index.ts – Vercel serverless entry
+📁 frontend/
+├── src/
+│ ├── components/ – Reusable UI (checkout, dashboard, event, tickets)
+│ ├── pages/ – All route pages (Home, EventDetail, Dashboard, etc.)
+│ ├── stores/ – Zustand stores (auth, event, transaction, toast)
+│ ├── services/ – API service layer (axios)
+│ ├── hooks/ – Custom hooks (useCheckout, useCountdown)
+│ ├── lib/ – Formatters, constants, price calculator
+│ ├── types/ – TypeScript interfaces
+│ └── validation/ – Yup schemas
+├── public/ – Static assets
+├── index.html
+├── vite.config.ts
+└── package.json
+API Documentation (Overview)
+Endpoint Group Description
+/api/auth Register, login, logout, verify email, forgot/reset password, profile update
+/api/events List events, get by ID, create/delete (organizer), stats, attendees
+/api/transactions Create, view, upload proof, accept/reject, cancel
+/api/reviews CRUD reviews for events
+/api/points Get points history & active balance
+/api/events/check-voucher Validate event‑specific vouchers
+/api/events/coupons/validate Validate system‑wide coupons
+/api/events/my-vouchers Organizer voucher management
+Full API documentation can be generated with tools like Postman or Swagger – see backend/src/modules/\*/\*\*.route.ts for all routes.
+
+Key Business Logic
+Transaction expiry – WAITING_PAYMENT expires after 2 hours (cron job restores seats/points).
+
+Auto cancellation – WAITING_CONFIRMATION auto‑cancels after 3 days if organizer doesn't act.
+
+Points earning – 10% cashback (configurable) on final price, max 50,000 points per transaction.
+
+Referral reward – Referrer gets 10,000 points; new user receives a 10% discount coupon (valid 3 months).
+
+Voucher usage – Single‑use per transaction; usedCount incremented when transaction is DONE.
+
+Coupon – System‑wide, single‑use, deactivated after successful purchase.
+
+Deployment on Vercel
+Connect your GitHub repository to Vercel.
+
+Set the following environment variables in Vercel project settings (backend):
+
+DATABASE*URL, JWT_SECRET, CLOUDINARY*\*, RESEND_API_KEY, FRONTEND_URL (your Vercel frontend URL)
+
+Configure Vercel to use the vercel.json output.
+
+The api/index.ts file will handle all /api/\* requests using the Express app.
+
+Frontend will be served from frontend/dist.
+
+You may need to adjust the vercel.json build command to generate the needed output.
+
+Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+License
+MIT
+
+Made with ❤️ for the event industry
