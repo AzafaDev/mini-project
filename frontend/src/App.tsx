@@ -23,7 +23,6 @@ import { GuestRoute } from "./components/GuestRoute";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import OrganizerProfilePage from "./pages/OrganizerProfilePage";
 import CreateEventPage from "./pages/CreateEventPage";
-import EditEventPage from "./pages/EditEventPage";
 import PointsHistoryPage from "./pages/PointsHistoryPage";
 import EventAttendeesPage from "./pages/EventAttendeesPage";
 import { profileService, type Coupon } from "./services/api";
@@ -202,14 +201,7 @@ const App = () => {
                  </ProtectedRoute>
                }
              />
-             <Route
-               path="/events/:id/edit"
-               element={
-                 <ProtectedRoute requiredRole="ORGANIZER">
-                   <EditEventPage />
-                 </ProtectedRoute>
-               }
-             />
+
              <Route
                path="/events/:id/attendees"
                element={

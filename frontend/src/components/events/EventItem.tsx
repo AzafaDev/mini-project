@@ -12,7 +12,6 @@ interface EventItemProps {
   status: string;
   image: string;
   onStatsClick?: () => void;
-  onEdit?: () => void;
   onDelete?: () => void;
   onClick?: () => void;
 }
@@ -27,7 +26,6 @@ export const EventItem: React.FC<EventItemProps> = ({
   status,
   image,
   onStatsClick,
-  onEdit,
   onDelete,
   onClick,
 }) => {
@@ -43,11 +41,6 @@ export const EventItem: React.FC<EventItemProps> = ({
     } else if (id) {
       navigate(`/events/${id}`);
     }
-  };
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit?.();
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -103,18 +96,8 @@ export const EventItem: React.FC<EventItemProps> = ({
       <div className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase rounded border border-primary/20">
         {status}
       </div>
-      {(onEdit || onDelete) && (
+       {onDelete && (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          {onEdit && (
-            <button
-              onClick={handleEdit}
-              className="h-10 w-10 p-2 text-text-secondary hover:text-on-surface hover:bg-dark-card rounded transition-colors flex items-center justify-center"
-              title="Edit event"
-            >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
-            </button>
-          )}
-          {onDelete && (
             <button
               onClick={handleDelete}
               className="h-10 w-10 p-2 text-text-secondary hover:text-red-500 hover:bg-dark-card rounded transition-colors flex items-center justify-center"
@@ -122,7 +105,6 @@ export const EventItem: React.FC<EventItemProps> = ({
             >
               <span className="material-symbols-outlined text-[18px]">delete</span>
             </button>
-          )}
         </div>
       )}
     </div>

@@ -19,16 +19,4 @@ export type TicketInput = {
   quantity: number;
 };
 
-export type UpdateEvent = {
-  id?: string;
-  name?: string;
-  description?: string;
-  location?: string;
-  category?: string;
-  startDate?: string;
-  endDate?: string;
-  totalSeats?: string;
-  availableSeats?: string;
-  price?: string;
-  imageUrl?: string;
-};
+

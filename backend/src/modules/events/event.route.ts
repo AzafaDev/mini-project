@@ -5,7 +5,6 @@ import { isEventOwner } from "../../middleware/isEventOwner";
 import { validate } from "../../middleware/validate";
 import {
   createEventSchema,
-  updateEventSchema,
   getAllEventsQuerySchema,
 } from "./event.schema";
 
@@ -35,15 +34,7 @@ eventRouter.post(
   validate(createEventSchema),
   eventController.createEvent,
 );
-// Update event - Hanya pemilik event
-eventRouter.put(
-  "/:id",
-  authMiddleware.verifyAuthToken,
-  authMiddleware.isOrganizer,
-  isEventOwner,
-  validate(updateEventSchema),
-  eventController.updateEvent,
-);
+
 // Hapus event (soft delete) - Hanya pemilik event
 eventRouter.delete(
   "/:id",

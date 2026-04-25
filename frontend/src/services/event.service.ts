@@ -74,30 +74,6 @@ export const eventService = {
     return response.data;
   },
 
-  updateEvent: async (id: string, data: Partial<CreateEventRequest> & { imageFile?: File }): Promise<EventResponse> => {
-    const formData = new FormData();
-    
-    if (data.name) formData.append('name', data.name);
-    if (data.description) formData.append('description', data.description);
-    if (data.location) formData.append('location', data.location);
-    if (data.category) formData.append('category', data.category);
-    if (data.startDate) formData.append('startDate', data.startDate);
-    if (data.endDate) formData.append('endDate', data.endDate);
-    if (data.totalSeats !== undefined) formData.append('totalSeats', String(data.totalSeats));
-    if (data.price !== undefined) formData.append('price', String(data.price));
-    if (data.availableSeats !== undefined) {
-      formData.append('availableSeats', String(data.availableSeats));
-    }
-    if (data.imageFile) {
-      formData.append('imageFile', data.imageFile);
-    }
-    
-    const response = await axiosInstance.put(`/events/${id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  },
-
   deleteEvent: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await axiosInstance.delete(`/events/${id}`);
     return response.data;
