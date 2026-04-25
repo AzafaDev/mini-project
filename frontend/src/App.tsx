@@ -29,16 +29,24 @@ import EventAttendeesPage from "./pages/EventAttendeesPage";
 import { profileService, type Coupon } from "./services/api";
 import DashboardLayout from "./components/layout/DashboardLayout";
 
-const noNavbarRoutes = [
-  "/dashboard",
-  "/transactions/organizer",
-  "/events/create",
-  "/profile",
-  "/profile/points",
-];
-
 const isNoNavbarRoute = (pathname: string) => {
-  return noNavbarRoutes.some((route) => pathname.startsWith(route));
+  // Rute eksak (prefix)
+  const exactRoutes = [
+    "/dashboard",
+    "/transactions/organizer",
+    "/events/create",
+    "/profile",
+    "/profile/points",
+    "/my-tickets",
+    "/my-transactions",
+  ];
+  if (exactRoutes.some((route) => pathname.startsWith(route))) return true;
+
+  // Rute dinamis: edit event & attendees
+  if (/^\/events\/[^/]+\/edit$/.test(pathname)) return true;
+  if (/^\/events\/[^/]+\/attendees$/.test(pathname)) return true;
+
+  return false;
 };
 
 // Wrapper component for ProfilePage that fetches data first

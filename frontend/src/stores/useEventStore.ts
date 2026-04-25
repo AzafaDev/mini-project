@@ -421,7 +421,20 @@ export const useEventStore = create<EventStore>((set, get) => ({
     set({ loadingEventAttendees: true, error: null });
     try {
       const response = await eventService.getEventAttendees(eventId);
-      set({ eventAttendees: response.data, loadingEventAttendees: false });
+      // Transformasi data untuk memastikan format konsisten
+      const mappedAttendees = response.data.map((attendee: any) => ({
+        userId: attendee.userId,
+        fullName: attendee.fullName || attendee.userName || "",
+        email: attendee.email || attendee.userEmail || "",
+        profilePicture: attendee.profilePicture,
+        ticketId: attendee.ticketId,
+        ticketName: attendee.ticketName || attendee.ticketType || "General Admission",
+        quantity: attendee.quantity,
+        totalPrice: attendee.totalPrice,
+        purchaseDate: attendee.purchaseDate || attendee.paidAt || attendee.createdAt,
+        status: attendee.status,
+      }));
+      set({ eventAttendees: mappedAttendees, loadingEventAttendees: false });
     } catch (error: any) {
       set({
         error: error.message || "Failed to fetch event attendees",

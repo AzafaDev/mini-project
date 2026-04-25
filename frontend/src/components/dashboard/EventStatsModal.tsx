@@ -34,7 +34,7 @@ export function EventStatsModal({
   const ticketsSold = eventStats?.ticketsSold || 0;
   const availableSeats = eventStats?.availableSeats || 0;
   const totalSeats = ticketsSold + availableSeats;
-  const soldPercentage = totalSeats > 0 ? (ticketsSold / totalSeats) * 100 : 0;
+  const soldPercentage = eventStats?.soldPercentage ?? (totalSeats > 0 ? (ticketsSold / totalSeats) * 100 : 0);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4">
@@ -130,10 +130,22 @@ export function EventStatsModal({
         )}
 
         {/* Footer */}
-        <div className="p-6 border-t border-border-muted/10 flex-shrink-0">
+        <div className="p-6 border-t border-border-muted/10 flex-shrink-0 flex gap-3">
+          {/* New button */}
+          <button
+            onClick={() => {
+              window.location.href = `/events/${eventId}/attendees`;
+            }}
+            className="flex-1 py-3 bg-primary/10 text-primary rounded-lg font-medium hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">group</span>
+            View Attendee List
+          </button>
+
+          {/* Close button */}
           <button
             onClick={onClose}
-            className="w-full py-3 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
+            className="flex-1 py-3 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
           >
             Close
           </button>

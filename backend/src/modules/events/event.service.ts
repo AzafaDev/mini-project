@@ -477,27 +477,44 @@ export const eventService = {
 
     const event = await prisma.event.findUnique({
       where: { id: id, organizerId: organizerId, isDeleted: false },
+      select: {
+        name: true,
+        availableSeats: true,
+        totalSeats: true,
+      },
     });
 
     if (!event) {
       throw new AppError("Event not found", 404);
     }
 
-    const transactions = await prisma.transaction.findMany({
+    // Hitung total tiket terjual dari transaksi DONE
+    const soldResult = await prisma.transaction.aggregate({
+      where: { eventId: id, status: "DONE" },
+      _sum: { quantity: true },
+    });
+    const ticketsSold = soldResult._sum.quantity || 0;
+
+    // Hitung total revenue dari transaksi DONE
+    const revenueResult = await prisma.transaction.aggregate({
+      where: { eventId: id, status: "DONE" },
+      _sum: { finalPrice: true },
+    });
+    const totalRevenue = revenueResult._sum.finalPrice || 0;
+
+    // Hitung attendee count (jumlah transaksi unik, bukan jumlah tiket)
+    const attendeeCount = await prisma.transaction.count({
       where: { eventId: id, status: "DONE" },
     });
 
-    const totalRevenue = transactions.reduce((sum, tx) => sum + tx.finalPrice, 0);
-    const totalTicketsSold = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
-    const attendeeCount = transactions.length;
-
-    console.log("[DEBUG Event Service] getEventStats result:", { totalRevenue, totalTicketsSold, attendeeCount });
-
+    // Kirim semua data yang dibutuhkan frontend
     return {
       totalRevenue,
-      totalTicketsSold,
-      attendeeCount,
+      ticketsSold,               // ✅ tambahkan
+      availableSeats: event.availableSeats, // ✅ tambahkan
+      soldPercentage: event.totalSeats > 0 ? (ticketsSold / event.totalSeats) * 100 : 0, // ✅ hitung di backend
       eventName: event.name,
+      attendeeCount,
     };
   },
 
@@ -759,7 +776,6 @@ export const eventService = {
     const event = await prisma.event.findFirst({
       where: { id: eventId, organizerId, isDeleted: false },
     });
-
     if (!event) {
       throw new AppError("Event not found or unauthorized", 404);
     }
@@ -775,7 +791,11 @@ export const eventService = {
             id: true,
             fullName: true,
             email: true,
+            profilePicture: true,
           },
+        },
+        ticket: {
+          select: { type: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -783,12 +803,17 @@ export const eventService = {
 
     console.log("[DEBUG Event Service] getEventAttendees result count:", transactions.length);
 
+    // Mapping ke struktur yang diharapkan frontend
     return transactions.map((tx) => ({
       userId: tx.user.id,
-      userName: tx.user.fullName,
-      userEmail: tx.user.email,
+      fullName: tx.user.fullName,
+      email: tx.user.email,
+      profilePicture: tx.user.profilePicture,
+      ticketId: tx.ticketId,
+      ticketName: tx.ticket?.type || "General Admission",
       quantity: tx.quantity,
       totalPrice: tx.finalPrice,
+      purchaseDate: tx.paidAt || tx.createdAt,
       status: tx.status,
     }));
   },

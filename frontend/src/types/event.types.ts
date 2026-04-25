@@ -128,6 +128,7 @@ export interface EventAttendee {
   ticketName: string;
   quantity: number;
   purchaseDate: string;
+  totalPrice?: number;
 }
 
 export interface EventAttendeesResponse {
