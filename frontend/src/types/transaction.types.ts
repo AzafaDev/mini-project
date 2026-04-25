@@ -12,6 +12,11 @@ export interface TransactionEvent {
   imageUrl?: string;
   location?: string;
   startDate?: string;
+  organizer?: {
+    id: string;
+    fullName: string;
+    profilePicture?: string;
+  };
 }
 
 export interface TransactionTicket {

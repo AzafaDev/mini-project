@@ -420,7 +420,17 @@ export const transactionService = {
     const transaction = await prisma.transaction.findUnique({
       where: { id },
       include: {
-        event: true,
+        event: {
+          include: {
+            organizer: {
+              select: {
+                id: true,
+                fullName: true,
+                profilePicture: true,
+              },
+            },
+          },
+        },
         ticket: true,
         user: { select: { id: true, fullName: true, email: true } },
       },
