@@ -285,7 +285,41 @@ const TransactionDetailPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+           </div>
+
+          {/* Organizer Info Card */}
+          {currentTransaction.event?.organizer && (
+            <div className="bg-dark-surface rounded-xl p-8 shadow-xl">
+              <h3 className="text-lg font-bold text-text-light mb-6">Organizer</h3>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-dark-elevated flex-shrink-0">
+                  {currentTransaction.event.organizer.profilePicture ? (
+                    <img
+                      src={currentTransaction.event.organizer.profilePicture}
+                      alt={currentTransaction.event.organizer.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-3xl text-text-secondary">
+                        person
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Link
+                    to={`/organizer/${currentTransaction.event.organizer.id}`}
+                    className="text-xl font-bold text-text-light hover:text-primary transition-colors inline-flex items-center gap-2"
+                  >
+                    {currentTransaction.event.organizer.fullName}
+                    <span className="material-symbols-outlined text-base">open_in_new</span>
+                  </Link>
+                  <p className="text-text-muted text-sm mt-1">Event Organizer</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Transaction Details */}
           <div className="bg-dark-surface rounded-xl p-8 shadow-xl">
