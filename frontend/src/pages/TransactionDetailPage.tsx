@@ -264,9 +264,13 @@ const TransactionDetailPage: React.FC = () => {
                 )}
               </div>
               <div className="flex-grow">
-                <h2 className="text-2xl font-bold text-text-light mb-2">
+                <Link 
+                  to={`/events/${currentTransaction.event?.id}`}
+                  className="text-2xl font-bold text-text-light mb-2 hover:text-primary transition-colors inline-flex items-center gap-2"
+                >
                   {currentTransaction.event?.name}
-                </h2>
+                  <span className="material-symbols-outlined text-base">open_in_new</span>
+                </Link>
                 <div className="flex flex-wrap gap-6 text-text-muted">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">location_on</span>

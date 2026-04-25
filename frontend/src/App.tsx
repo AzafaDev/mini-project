@@ -31,7 +31,6 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 
 const noNavbarRoutes = [
   "/dashboard",
-  "/transactions",
   "/transactions/organizer",
   "/events/create",
   "/profile",
