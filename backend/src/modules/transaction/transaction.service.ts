@@ -67,17 +67,20 @@ export const transactionService = {
       throw new AppError("Points used cannot be negative", 400);
     }
 
-    // Cek apakah ada transaksi pending yang sama dalam 5 menit terakhir
-    // Ini mencegah user yang double klik create transaksi berkali-kali
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const existingPending = await prisma.transaction.findFirst({
-      where: {
-        userId,
-        eventId,
-        status: TransactionStatus.WAITING_PAYMENT,
-        createdAt: { gte: fiveMinutesAgo },
-      },
-    });
+     // Cek apakah ada transaksi pending (belum selesai) untuk event yang sama
+     // Mencegah user memiliki lebih dari satu transaksi aktif untuk event yang sama
+     const existingPending = await prisma.transaction.findFirst({
+       where: {
+         userId,
+         eventId,
+         status: {
+           in: [
+             TransactionStatus.WAITING_PAYMENT,
+             TransactionStatus.WAITING_CONFIRMATION,
+           ],
+         },
+       },
+     });
 
     if (existingPending) {
       console.log(
@@ -216,6 +219,7 @@ export const transactionService = {
               in: [
                 TransactionStatus.DONE,
                 TransactionStatus.WAITING_CONFIRMATION,
+                TransactionStatus.WAITING_PAYMENT,
               ],
             },
           },
@@ -243,13 +247,14 @@ export const transactionService = {
       }
     }
 
-    const pricing = ticketPricingService.calculateFinalPrice(
-      ticket.price * quantity,
-      discount,
-      pointsUsed,
-    );
-    const totalPrice = pricing.totalPrice;
-    const finalPrice = pricing.finalPrice;
+     const pointsDiscount = pointsUsed * 100; // 1 poin = Rp100
+     const pricing = ticketPricingService.calculateFinalPrice(
+       ticket.price * quantity,
+       discount,
+       pointsDiscount,
+     );
+     const totalPrice = pricing.totalPrice;
+     const finalPrice = pricing.finalPrice;
 
     console.log("[DEBUG Transaction Service] pricing:", {
       totalPrice,
@@ -343,16 +348,24 @@ export const transactionService = {
         },
       });
 
-      // If free event, mark as paid immediately
-      if (finalPrice === 0) {
-        await tx.transaction.update({
-          where: { id: transaction.id },
-          data: {
-            status: TransactionStatus.DONE,
-            paidAt: new Date(),
-          },
-        });
-      }
+       // If free event, mark as paid immediately
+       if (finalPrice === 0) {
+         await tx.transaction.update({
+           where: { id: transaction.id },
+           data: {
+             status: TransactionStatus.DONE,
+             paidAt: new Date(),
+           },
+         });
+
+         // Deactivate coupon if used (single-use)
+         if (couponId) {
+           await tx.coupon.update({
+             where: { id: couponId },
+             data: { isActive: false },
+           });
+         }
+       }
 
       console.log(
         "[DEBUG Transaction Service] transaction created:",
@@ -363,24 +376,29 @@ export const transactionService = {
       // Semua operasi ini berjalan di level database
       // Tidak ada celah waktu antara cek ketersediaan dan update
       // Sehingga dua user tidak bisa mendapatkan tiket yang sama secara bersamaan
-      try {
-        if (ticketId === "default-ticket") {
-          // Untuk tiket default, kurangi availableSeats di event
-          await tx.event.update({
-            where: { id: eventId },
-            data: { availableSeats: { decrement: quantity } },
-          });
-        } else {
-          // Untuk tiket custom, kurangi available di ticket dengan pengecekan di database
-          await tx.ticket.update({
-            where: {
-              id: ticketId,
-              available: { gte: quantity },
-            },
-            data: { available: { decrement: quantity } },
-          });
-        }
-      } catch (error: any) {
+       try {
+         if (ticketId === "default-ticket") {
+           // Untuk tiket default, kurangi availableSeats di event
+           await tx.event.update({
+             where: { id: eventId },
+             data: { availableSeats: { decrement: quantity } },
+           });
+         } else {
+           // Untuk tiket custom, kurangi available di ticket
+           await tx.ticket.update({
+             where: {
+               id: ticketId,
+               available: { gte: quantity },
+             },
+             data: { available: { decrement: quantity } },
+           });
+           // Juga kurangi availableSeats di event untuk sinkronisasi
+           await tx.event.update({
+             where: { id: eventId },
+             data: { availableSeats: { decrement: quantity } },
+           });
+         }
+       } catch (error: any) {
         // Error code P2025 = record tidak ditemukan / kondisi tidak terpenuhi
         if (error.code === "P2025") {
           throw new AppError("Not enough tickets available", 400);
@@ -776,17 +794,25 @@ export const transactionService = {
       earnedPoints,
     });
 
-    const updated = await prisma.$transaction(async (tx) => {
-      console.log("[DEBUG Transaction Service] accepting transaction in DB");
-      const result = await tx.transaction.update({
-        where: { id },
-        data: {
-          status: TransactionStatus.DONE,
-          paidAt: new Date(),
-        },
-      });
+     const updated = await prisma.$transaction(async (tx) => {
+       console.log("[DEBUG Transaction Service] accepting transaction in DB");
+       const result = await tx.transaction.update({
+         where: { id },
+         data: {
+           status: TransactionStatus.DONE,
+           paidAt: new Date(),
+         },
+       });
 
-      if (earnedPoints > 0) {
+       // Deactivate coupon if used (single-use)
+       if (transaction.couponId) {
+         await tx.coupon.update({
+           where: { id: transaction.couponId },
+           data: { isActive: false },
+         });
+       }
+
+       if (earnedPoints > 0) {
         console.log(
           "[DEBUG Transaction Service] adding earned points:",
           earnedPoints,

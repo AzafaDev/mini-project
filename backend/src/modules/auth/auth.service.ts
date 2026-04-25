@@ -2,13 +2,14 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 import { prisma } from "../../config/prisma";
-import {
-  VERIFICATION_TOKEN_EXPIRY_HOURS,
-  RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
-  POINTS_EXPIRATION_MONTHS,
-  COUPON_EXPIRATION_MONTHS,
-  PHONE_NUMBER_REGEX,
-} from "../../config/constants";
+ import {
+   VERIFICATION_TOKEN_EXPIRY_HOURS,
+   RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
+   POINTS_EXPIRATION_MONTHS,
+   COUPON_EXPIRATION_MONTHS,
+   PHONE_NUMBER_REGEX,
+   REFERRAL_POINT_REWARD,
+ } from "../../config/constants";
 import { Role } from "@prisma/client";
 import { AuthRegister, Login, VerifyEmail } from "./auth.type";
 import {
@@ -19,7 +20,7 @@ import { sendEmail } from "../../utils/sendEmail";
 import { AppError } from "../../utils/AppError";
 
 const DISCOUNT_PERCENTAGE = 10;
-const REFERRAL_POINT = 10000;
+// Referral reward points (use constant from config)
 
 // Menghapus field sensitif dari object user sebelum dikirim ke client
 // Agar password, token, dan data sensitif tidak pernah keluar dari server
@@ -103,14 +104,14 @@ export const authService = {
       // Jika ada referrer yang valid, berikan bonus referral
       if (referrer) {
         // Buat record riwayat poin untuk referrer
-        await tx.pointTransaction.create({
-          data: {
-            userId: referrer.id,
-            amount: REFERRAL_POINT,
-            reason: `Referral bonus: ${newUser.fullName} registered`,
-            expiresAt: new Date(Date.now() + POINTS_EXPIRATION_MONTHS * 30 * 24 * 60 * 60 * 1000),
-          },
-        });
+         await tx.pointTransaction.create({
+           data: {
+             userId: referrer.id,
+             amount: REFERRAL_POINT_REWARD,
+             reason: `Referral bonus: ${newUser.fullName} registered`,
+             expiresAt: new Date(Date.now() + POINTS_EXPIRATION_MONTHS * 30 * 24 * 60 * 60 * 1000),
+           },
+         });
 
         // Buat coupon diskon untuk user baru
         const couponCode = crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -126,12 +127,12 @@ export const authService = {
         });
 
         // Tambahkan poin ke saldo referrer
-        await tx.user.update({
-          where: { id: referrer.id },
-          data: {
-            points: { increment: REFERRAL_POINT },
-          },
-        });
+         await tx.user.update({
+           where: { id: referrer.id },
+           data: {
+             points: { increment: REFERRAL_POINT_REWARD },
+           },
+         });
       }
 
       return { newUser };
