@@ -50,6 +50,7 @@ export interface ValidateVoucherResponse {
   valid: boolean;
   discount?: number;
   discountType?: "PERCENTAGE" | "FIXED";
+  discountValue?: number;
   message?: string;
 }
 

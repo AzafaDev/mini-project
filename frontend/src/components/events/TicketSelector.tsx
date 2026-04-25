@@ -11,12 +11,17 @@ interface TicketSelectorProps {
     general: number;
     architect: number;
   };
+  available: {
+    general: number;
+    architect: number;
+  };
 }
 
 export const TicketSelector: React.FC<TicketSelectorProps> = ({
   tickets,
   onUpdateTicket,
   prices,
+  available,
 }) => {
   return (
     <div className="space-y-4">
@@ -37,11 +42,18 @@ export const TicketSelector: React.FC<TicketSelectorProps> = ({
             {formatIDR(prices.general)}
           </span>
         </div>
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-xs text-[#ffdad6] bg-error/30 px-2 py-0.5 rounded">
-            Low Stock
-          </span>
-          <div className="flex items-center gap-4 bg-dark-card px-3 py-1 rounded-full">
+         <div className="flex items-center justify-between mt-4">
+           {available.general > 0 && available.general < 10 && (
+             <span className="text-xs text-[#ffdad6] bg-error/30 px-2 py-0.5 rounded">
+               Low Stock
+             </span>
+           )}
+           {available.general === 0 && (
+             <span className="text-xs text-text-muted bg-zinc-800 px-2 py-0.5 rounded">
+               Sold Out
+             </span>
+           )}
+           <div className="flex items-center gap-4 bg-dark-card px-3 py-1 rounded-full">
             <button
               onClick={() => onUpdateTicket("general", -1)}
               className="text-text-muted hover:text-primary"
@@ -87,11 +99,18 @@ export const TicketSelector: React.FC<TicketSelectorProps> = ({
             {formatIDR(prices.architect)}
           </span>
         </div>
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded">
-            Most Popular
-          </span>
-          <div className="flex items-center gap-4 bg-dark-card px-3 py-1 rounded-full">
+         <div className="flex items-center justify-between mt-4">
+           {available.architect > 0 && available.architect < 10 && (
+             <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded">
+               Low Stock
+             </span>
+           )}
+           {available.architect === 0 && (
+             <span className="text-xs text-text-muted bg-zinc-800 px-2 py-0.5 rounded">
+               Sold Out
+             </span>
+           )}
+           <div className="flex items-center gap-4 bg-dark-card px-3 py-1 rounded-full">
             <button
               onClick={() => onUpdateTicket("architect", -1)}
               className="text-text-muted hover:text-primary"

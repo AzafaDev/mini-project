@@ -4,17 +4,16 @@ import { useEventStore } from "../stores/useEventStore";
 import { useTransactionStore } from "../stores/useTransactionStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToastStore } from "../stores/useToastStore";
-import { calculateSubtotal, calculateFinalPrice } from "../lib/priceCalculator";
+import { calculateSubtotal, calculateFinalPrice, calculateVoucherDiscount } from "../lib/priceCalculator";
+import { POINTS_CONFIG } from "../lib/constants";
+import { reviewsVouchersService } from "../services/api";
 
-interface SelectedTickets {
-  general: number;
-  vip: number;
-}
+
 
 export function useCheckout() {
   const { id: eventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const { currentEvent, fetchEventById, clearCurrentEvent } = useEventStore();
@@ -23,19 +22,25 @@ export function useCheckout() {
   const { addToast } = useToastStore();
 
   // State untuk ticket selection
-  const [selectedTickets, setSelectedTickets] = useState<SelectedTickets>({
-    general: 0,
-    vip: 0,
-  });
+  const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
 
-  // State untuk voucher
-  const [voucherCode, setVoucherCode] = useState("");
+  // State untuk unified promo code (voucher + coupon)
+  const [promoCode, setPromoCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState(0);
-  const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
+  const [promoType, setPromoType] = useState<"voucher" | "coupon" | null>(null);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
 
-  // State untuk coupon
+  // State untuk menyimpan promo aktif
+  const [activePromo, setActivePromo] = useState<{
+    code: string;
+    type: "voucher" | "coupon";
+    discountType: "PERCENTAGE" | "FIXED";
+    discountValue: number;
+  } | null>(null);
+
+  // Separate states for backend payload (internal)
+  const [voucherCode, setVoucherCode] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCouponDiscount, setAppliedCouponDiscount] = useState(0);
 
   // State untuk points
   const [pointsToUse, setPointsToUse] = useState(0);
@@ -44,143 +49,173 @@ export function useCheckout() {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get prices from event tickets using type field
-  const generalTicket = currentEvent?.tickets?.find((t) => t.type === "GENERAL");
-  const vipTicket = currentEvent?.tickets?.find((t) => t.type === "VIP");
-  const eventBasePrice = currentEvent?.price || 450000;
-  
-  const priceGeneral = generalTicket?.price ?? eventBasePrice;
-  const priceVIP = vipTicket?.price ?? eventBasePrice * 2.5;
-  
-  const pointsDiscount = pointsToUse; // 1 poin = 1 IDR
+  // Get tickets from current event
+  const tickets = currentEvent?.tickets ?? [];
 
-  // Hitung totals menggunakan priceCalculator
-  const ticketPrices = [
-    { price: priceGeneral, quantity: selectedTickets.general },
-    { price: priceVIP, quantity: selectedTickets.vip },
-  ];
-  const subtotal = calculateSubtotal(ticketPrices);
-  const total = calculateFinalPrice(subtotal, appliedDiscount, appliedCouponDiscount, pointsDiscount);
+  const pointsDiscount = pointsToUse * POINTS_CONFIG.POINT_VALUE; // 1 poin = Rp1
 
-  const handleUpdateTicket = (type: "general" | "vip", delta: number) => {
-    const ticket = type === "general" ? generalTicket : vipTicket;
-    const availableQuantity = ticket?.availableQuantity ?? currentEvent?.availableSeats ?? 0;
-    
-    setSelectedTickets((prev): SelectedTickets => {
-      const currentQuantity = prev[type];
-      const newQuantity = currentQuantity + delta;
-      
+  // Hitung subtotal dinamis berdasarkan tiket yang dipilih
+  const subtotal = Object.entries(selectedTickets).reduce((sum, [ticketId, qty]) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    return sum + (ticket?.price ?? 0) * qty;
+  }, 0);
+  const total = calculateFinalPrice(subtotal, appliedDiscount, 0, pointsDiscount);
+
+  const handleUpdateTicket = (ticketId: string, delta: number) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    setSelectedTickets(prev => {
+      const currentQty = prev[ticketId] || 0;
+      const newQty = currentQty + delta;
+
       // Validate: tidak boleh kurang dari 0
-      if (newQuantity < 0) return prev;
-      
+      if (newQty < 0) return prev;
+
       // Validate: tidak boleh lebih dari available
-      if (newQuantity > availableQuantity) {
-        addToast("error", `Maksimal ${availableQuantity} tiket tersedia`);
+      if (newQty > ticket.availableQuantity) {
+        addToast("error", `Maksimal ${ticket.availableQuantity} tiket tersedia`);
         return prev;
       }
-      
-      return { ...prev, [type]: newQuantity };
+
+      // Enforce single ticket type: jika quantity > 0, reset tiket lain
+      if (newQty > 0) {
+        return { [ticketId]: newQty };
+      } else {
+        const { [ticketId]: _, ...rest } = prev;
+        return rest;
+      }
     });
   };
 
-  const handleApplyVoucher = async () => {
-    if (!voucherCode.trim() || !eventId) return;
-    
-    // Abort previous request if exists
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim() || !eventId) return;
+
+    const totalQuantity = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
+    if (totalQuantity === 0) {
+      addToast("error", "Please select at least one ticket first");
+      return;
     }
-    
-    abortControllerRef.current = new AbortController();
-    
-    setIsApplyingVoucher(true);
-    
+
+    // Unit price dari tiket yang dipilih (ambil tiket pertama yang dipilih)
+    const selectedTicketId = Object.keys(selectedTickets).find(id => selectedTickets[id] > 0);
+    const selectedTicket = tickets.find(t => t.id === selectedTicketId);
+    const unitPrice = selectedTicket?.price ?? 0;
+
+    setIsApplyingPromo(true);
     try {
-      // Call voucher validation API
-      const { validateVoucher } = useEventStore.getState();
-      const discount = await validateVoucher(
-        eventId,
-        voucherCode,
-        subtotal,
-        selectedTickets.general + selectedTickets.vip
-      );
-
-      if (discount > 0) {
-        setAppliedDiscount(discount);
-        addToast("success", "Voucher applied successfully!");
-      } else {
-        addToast("error", "Invalid or expired voucher");
+      // 1. Coba Voucher (event-specific)
+      try {
+        const { validateVoucher } = useEventStore.getState();
+        const result = await validateVoucher(eventId, promoCode, unitPrice, totalQuantity);
+        if (result.discount > 0) {
+          setActivePromo({
+            code: promoCode,
+            type: "voucher",
+            discountType: result.discountType!,
+            discountValue: result.discountValue!,
+          });
+          setPromoType("voucher");
+          setVoucherCode(promoCode); // untuk payload backend
+          addToast("success", "Voucher applied successfully!");
+          return;
+        }
+      } catch (err) {
+        // ignore, lanjut ke coupon
       }
+
+      // 2. Fallback ke Coupon (system-wide)
+      try {
+        const response = await reviewsVouchersService.validateCoupon(promoCode, unitPrice, totalQuantity);
+        if (response.success && response.valid && response.discount! > 0) {
+          setActivePromo({
+            code: promoCode,
+            type: "coupon",
+            discountType: response.discountType!,
+            discountValue: response.discountValue!,
+          });
+          setPromoType("coupon");
+          setCouponCode(promoCode); // untuk payload backend
+          addToast("success", "Coupon applied successfully!");
+          return;
+        }
+      } catch (err) {
+        // both failed
+      }
+
+      addToast("error", "Invalid promo code");
+      setAppliedDiscount(0);
+      setPromoType(null);
     } finally {
-      setIsApplyingVoucher(false);
-      abortControllerRef.current = null;
+      setIsApplyingPromo(false);
     }
   };
 
-  const handleRemoveVoucher = () => {
+  const handleRemovePromo = () => {
+    setPromoCode("");
+    setActivePromo(null);
+    setPromoType(null);
     setVoucherCode("");
-    setAppliedDiscount(0);
+    setCouponCode("");
+    // appliedDiscount akan di-reset oleh useEffect
   };
 
-   const handleProceedToPayment = async () => {
-     if (!isAuthenticated) {
-       addToast("error", "Please login to continue");
-       const fromPath = window.location.pathname;
-       const navOptions = { state: { from: fromPath } };
-       navigate("/login", navOptions);
-       return;
-     }
+  const handleProceedToPayment = async () => {
+    if (!isAuthenticated) {
+      addToast("error", "Please login to continue");
+      const fromPath = window.location.pathname;
+      const navOptions = { state: { from: fromPath } };
+      navigate("/login", navOptions);
+      return;
+    }
 
-     if (!eventId) {
-       addToast("error", "Event not found");
-       return;
-     }
+    if (!eventId) {
+      addToast("error", "Event not found");
+      return;
+    }
 
-     const totalQuantity = selectedTickets.general + selectedTickets.vip;
-     if (totalQuantity === 0) {
-       addToast("error", "Please select at least 1 ticket");
-       return;
-     }
+    const totalQuantity = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
+    if (totalQuantity === 0) {
+      addToast("error", "Please select at least 1 ticket");
+      return;
+    }
 
-     // Validate points before proceeding
-     if (pointsToUse > 0) {
-       if (pointsToUse > userPoints) {
-         addToast("error", "Saldo poin tidak cukup");
-         return;
-       }
-       if (pointsToUse > 50000) {
-         addToast("error", "Maksimal 50.000 poin per transaksi");
-         return;
-       }
-     }
+    // Validate points before proceeding
+    if (pointsToUse > 0) {
+      if (pointsToUse > userPoints) {
+        addToast("error", "Saldo poin tidak cukup");
+        return;
+      }
+      if (pointsToUse > POINTS_CONFIG.MAX_PER_TRANSACTION) {
+        addToast("error", `Maksimal ${POINTS_CONFIG.MAX_PER_TRANSACTION.toLocaleString()} poin per transaksi`);
+        return;
+      }
+    }
 
-     // Determine ticket ID based on ticket type selected
-     const ticketId = currentEvent?.tickets 
-       ? (selectedTickets.vip > 0 
-           ? vipTicket?.id 
-           : generalTicket?.id) || "default"
-       : "default";
+    // Determine ticket ID from selected tickets (single tier enforced)
+    const selectedTicketId = Object.keys(selectedTickets).find(id => selectedTickets[id] > 0);
+    const ticketId = selectedTicketId || "default-ticket";
 
-     try {
-       const transaction = await createTransaction({
-         eventId,
-         ticketId,
-         quantity: totalQuantity,
-         voucherCode: appliedDiscount > 0 ? voucherCode : undefined,
-         couponCode: appliedCouponDiscount > 0 ? couponCode : undefined,
-         pointsUsed: pointsToUse > 0 ? pointsToUse : undefined,
-       });
+    try {
+      const transaction = await createTransaction({
+        eventId,
+        ticketId: ticketId || "default-ticket",
+        quantity: totalQuantity,
+        voucherCode: activePromo?.type === "voucher" ? activePromo.code : undefined,
+        couponCode: activePromo?.type === "coupon" ? activePromo.code : undefined,
+        pointsUsed: pointsToUse > 0 ? pointsToUse : undefined,
+      });
 
-       if (transaction) {
-         addToast("success", "Transaction created! Redirecting...");
-         navigate(`/transactions/${transaction.id}`);
-       } else {
-         addToast("error", "Failed to create transaction");
-       }
-     } catch (err) {
-       addToast("error", "Failed to create transaction");
-     }
-   };
+      if (transaction) {
+        addToast("success", "Transaction created! Redirecting...");
+        navigate(`/transactions/${transaction.id}`);
+      } else {
+        addToast("error", "Failed to create transaction");
+      }
+    } catch (err) {
+      addToast("error", "Failed to create transaction");
+    }
+  };
 
   useEffect(() => {
     if (eventId) {
@@ -201,30 +236,58 @@ export function useCheckout() {
     }
   }, [user]);
 
+  // Recalculate discount whenever ticket selection changes AND promo is active
+  useEffect(() => {
+    if (!activePromo) {
+      setAppliedDiscount(0);
+      return;
+    }
+
+    const totalQuantity = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
+    if (totalQuantity === 0) {
+      setAppliedDiscount(0);
+      return;
+    }
+
+    // Get the selected ticket's price (assuming only one ticket type allowed)
+    const selectedTicketId = Object.keys(selectedTickets).find(id => selectedTickets[id] > 0);
+    const selectedTicket = tickets.find(t => t.id === selectedTicketId);
+    if (!selectedTicket) {
+      setAppliedDiscount(0);
+      return;
+    }
+
+    const subtotal = selectedTicket.price * totalQuantity;
+    const newDiscount = calculateVoucherDiscount(
+      subtotal,
+      activePromo.discountValue,
+      activePromo.discountType
+    );
+    setAppliedDiscount(newDiscount);
+  }, [selectedTickets, tickets, activePromo]);
+
   return {
     eventId,
     currentEvent,
     isLoading,
     selectedTickets,
-    voucherCode,
+    tickets,
+    promoCode,
     appliedDiscount,
-    isApplyingVoucher,
-    couponCode,
-    appliedCouponDiscount,
+    promoType,
+    isApplyingPromo,
+    activePromo,
     pointsToUse,
     userPoints,
-    priceGeneral,
-    priceVIP,
     pointsDiscount,
     subtotal,
     total,
     transactionLoading,
     handleUpdateTicket,
-    handleApplyVoucher,
-    handleRemoveVoucher,
+    handleApplyPromoCode,
+    handleRemovePromo,
     handleProceedToPayment,
     setPointsToUse,
-    setVoucherCode,
-    setCouponCode,
+    setPromoCode,
   };
 }

@@ -247,7 +247,7 @@ export const transactionService = {
       }
     }
 
-     const pointsDiscount = pointsUsed * 100; // 1 poin = Rp100
+     const pointsDiscount = pointsUsed; // 1 poin = Rp1
      const pricing = ticketPricingService.calculateFinalPrice(
        ticket.price * quantity,
        discount,

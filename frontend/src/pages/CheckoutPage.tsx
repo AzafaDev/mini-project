@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { formatIDR, formatDate } from "../lib/formatters";
+import { POINTS_CONFIG } from "../lib/constants";
 import { useCheckout } from "../hooks/useCheckout";
 
 const CheckoutPage: React.FC = () => {
@@ -9,22 +10,23 @@ const CheckoutPage: React.FC = () => {
     currentEvent,
     isLoading,
     selectedTickets,
-    voucherCode,
+    tickets,
+    promoCode,
     appliedDiscount,
-    isApplyingVoucher,
+    promoType,
+    isApplyingPromo,
     pointsToUse,
     userPoints,
-    priceGeneral,
-    priceVIP,
     pointsDiscount,
+    subtotal,
     total,
     transactionLoading,
     handleUpdateTicket,
-    handleApplyVoucher,
-    handleRemoveVoucher,
+    handleApplyPromoCode,
+    handleRemovePromo,
     handleProceedToPayment,
     setPointsToUse,
-    setVoucherCode,
+    setPromoCode,
   } = useCheckout();
 
   if (isLoading) {
@@ -123,9 +125,9 @@ const CheckoutPage: React.FC = () => {
                     confirmation_number
                   </span>
                   <div>
-                    <p className="text-text-light font-semibold text-sm">
-                      {selectedTickets.general + selectedTickets.vip} Tickets Reserved
-                    </p>
+                     <p className="text-text-light font-semibold text-sm">
+                       {Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0)} Tickets Reserved
+                     </p>
                     <p className="text-text-muted text-xs">
                       {currentEvent?.availableSeats ? `${currentEvent.availableSeats} seats left` : 'Limited availability'}
                     </p>
@@ -137,213 +139,191 @@ const CheckoutPage: React.FC = () => {
             {/* Ticket Selection Area */}
             <section className="space-y-6">
               <h3 className="text-xl font-bold tracking-tight text-text-light">
-                Select Ticket Tiers
+                Select Tickets
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* General Tier */}
-                <div className={`bg-dark-elevated border-2 ${selectedTickets.general > 0 ? "border-accent/40" : "border-transparent"} hover:border-accent/40 p-6 rounded-xl transition-all group`}>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="text-lg font-bold text-text-light">
-                        General Admission
-                      </h4>
-                      <p className="text-text-muted text-sm mt-1">
-                        Full access to main arena and outdoor gallery.
-                      </p>
-                    </div>
-                    <span className="bg-dark-card px-2 py-1 rounded text-xs text-text-muted">
-                      Available
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-xl font-black text-text-light">
-                      {formatIDR(priceGeneral)}
-                    </span>
-                    <div className="flex items-center gap-4 bg-dark-darker rounded-full px-4 py-2">
-                      <button
-                        onClick={() => handleUpdateTicket("general", -1)}
-                        disabled={selectedTickets.general === 0}
-                        className="material-symbols-outlined text-text-muted hover:text-primary disabled:opacity-30"
-                      >
-                        remove
-                      </button>
-                      <span className="font-bold w-4 text-center">
-                        {selectedTickets.general}
-                      </span>
-                      <button
-                        onClick={() => handleUpdateTicket("general", 1)}
-                        className="material-symbols-outlined text-text-muted hover:text-primary"
-                      >
-                        add
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                {tickets.map((ticket) => {
+                  const quantity = selectedTickets[ticket.id] || 0;
+                  const isSelected = quantity > 0;
+                  const isVip = ticket.type === 'VIP';
 
-                {/* VIP Tier */}
-                <div className={`bg-dark-elevated border-2 ${selectedTickets.vip > 0 ? "border-primary p-6 rounded-xl relative shadow-[0_0_20px_rgba(192,193,255,0.1)]" : "border-transparent"} p-6 rounded-xl`}>
-                  {selectedTickets.vip > 0 && (
-                    <div className="absolute -top-3 left-6 bg-primary px-3 py-1 rounded-full text-[10px] font-bold text-primary-dark">
-                      MOST POPULAR
+                  return (
+                    <div
+                      key={ticket.id}
+                      className={`bg-dark-elevated border-2 ${
+                        isSelected ? 'border-primary' : 'border-transparent'
+                      } hover:border-accent/40 p-6 rounded-xl transition-all relative ${
+                        isVip ? 'shadow-[0_0_20px_rgba(192,193,255,0.1)]' : ''
+                      }`}
+                    >
+                      {isVip && (
+                        <div className="absolute -top-3 left-6 bg-primary px-3 py-1 rounded-full text-[10px] font-bold text-primary-dark">
+                          VIP
+                        </div>
+                      )}
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="text-lg font-bold text-text-light">
+                            {ticket.type === 'GENERAL' ? 'General Admission' : 'VIP Experience'}
+                          </h4>
+                          <p className="text-text-muted text-sm mt-1">
+                            {ticket.type === 'GENERAL'
+                              ? 'Full access to event'
+                              : 'Priority access + exclusive perks'}
+                          </p>
+                        </div>
+                        <span className="bg-dark-card px-2 py-1 rounded text-xs text-text-muted">
+                          {ticket.availableQuantity} left
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <span className="text-xl font-black text-text-light">
+                          {formatIDR(ticket.price)}
+                        </span>
+                        <div className="flex items-center gap-4 bg-dark-darker rounded-full px-4 py-2">
+                          <button
+                            onClick={() => handleUpdateTicket(ticket.id, -1)}
+                            disabled={quantity === 0}
+                            className="material-symbols-outlined text-text-muted hover:text-primary disabled:opacity-30"
+                          >
+                            remove
+                          </button>
+                          <span className="font-bold w-4 text-center">{quantity}</span>
+                          <button
+                            onClick={() => handleUpdateTicket(ticket.id, 1)}
+                            disabled={quantity >= ticket.availableQuantity}
+                            className="material-symbols-outlined text-text-muted hover:text-primary"
+                          >
+                            add
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="text-lg font-bold text-text-light">
-                        VIP Experience
-                      </h4>
-                      <p className="text-text-muted text-sm mt-1">
-                        Priority entry, VIP lounge, and kit.
-                      </p>
-                    </div>
-                    <span className="bg-primary/20 text-primary px-2 py-1 rounded text-xs">
-                      Active
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-xl font-black text-text-light">
-                      {formatIDR(priceVIP)}
-                    </span>
-                    <div className="flex items-center gap-4 bg-dark-darker rounded-full px-4 py-2 border border-primary/30">
-                      <button
-                        onClick={() => handleUpdateTicket("vip", -1)}
-                        disabled={selectedTickets.vip === 0}
-                        className="material-symbols-outlined text-text-muted hover:text-primary disabled:opacity-30"
-                      >
-                        remove
-                      </button>
-                      <span className="font-bold w-4 text-center">
-                        {selectedTickets.vip}
-                      </span>
-                      <button
-                        onClick={() => handleUpdateTicket("vip", 1)}
-                        className="material-symbols-outlined text-text-muted hover:text-primary"
-                      >
-                        add
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             </section>
 
-            {/* Vouchers and Points */}
+            {/* Grid wrapper for Promo + Points */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-dark-surface p-6 rounded-xl space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-warning">
-                    confirmation_number
-                  </span>
-                  <h3 className="font-bold text-text-light">Voucher Code</h3>
-                </div>
-                {appliedDiscount > 0 ? (
-                  <div className="flex items-center justify-between bg-success-dark border border-green-500/30 p-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-green-400">
-                        check_circle
-                      </span>
-                      <span className="text-green-400 font-medium">
-                        -{formatIDR(appliedDiscount)} applied
-                      </span>
-                    </div>
-                    <button
-                      onClick={handleRemoveVoucher}
-                      className="text-green-400 hover:text-green-300"
-                    >
-                      <span className="material-symbols-outlined text-lg">close</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      className="bg-dark-darker border-none text-text-light placeholder:text-zinc-600 rounded-lg px-4 py-3 flex-grow focus:ring-1 focus:ring-primary outline-none"
-                      placeholder="ENTER CODE"
-                      type="text"
-                      value={voucherCode}
-                      onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                    />
-                    <button 
-                      onClick={handleApplyVoucher}
-                      disabled={!voucherCode.trim() || isApplyingVoucher}
-                      className="bg-dark-card text-text-light px-6 py-3 rounded-lg font-bold hover:bg-dark-card-hover transition-all active:scale-95 disabled:opacity-50"
-                    >
-                      {isApplyingVoucher ? (
-                        <span className="material-symbols-outlined animate-spin">sync</span>
-                      ) : "Apply"}
-                    </button>
-                  </div>
-                )}
-                <p className="text-[10px] text-text-muted uppercase tracking-widest">
-                  Only one voucher per transaction
-                </p>
+              {/* Promo Code Card */}
+            <div className="bg-dark-surface p-6 rounded-xl space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-warning">
+                  local_offer
+                </span>
+                <h3 className="font-bold text-text-light">Promo Code</h3>
               </div>
 
-              <div className="bg-dark-surface p-6 rounded-xl space-y-4">
-                <div className="flex justify-between items-center">
+              {appliedDiscount > 0 && promoType ? (
+                <div className="flex items-center justify-between bg-success-dark border border-green-500/30 p-3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary">
-                      stars
+                    <span className="material-symbols-outlined text-green-400">
+                      check_circle
                     </span>
-                    <h3 className="font-bold text-text-light">Loyalty Points</h3>
+                    <span className="text-green-400 font-medium">
+                      -{formatIDR(appliedDiscount)} applied
+                      <span className="text-xs ml-2 opacity-70">
+                        ({promoType === "voucher" ? "Voucher" : "Coupon"})
+                      </span>
+                    </span>
+                  </div>
+                  <button onClick={handleRemovePromo} className="text-green-400 hover:text-green-300">
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    className="bg-dark-darker border-none text-text-light placeholder:text-zinc-600 rounded-lg px-4 py-3 flex-grow focus:ring-1 focus:ring-primary outline-none"
+                    placeholder="ENTER PROMO CODE"
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  />
+                  <button
+                    onClick={handleApplyPromoCode}
+                    disabled={!promoCode.trim() || isApplyingPromo}
+                    className="bg-dark-card text-text-light px-6 py-3 rounded-lg font-bold hover:bg-dark-card-hover transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isApplyingPromo ? (
+                      <span className="material-symbols-outlined animate-spin">sync</span>
+                    ) : "Apply"}
+                  </button>
+                </div>
+              )}
+              <p className="text-[10px] text-text-muted uppercase tracking-widest">
+                Works with event vouchers & system coupons
+              </p>
+            </div>
+
+            {/* Loyalty Points Card */}
+            <div className="bg-dark-surface p-6 rounded-xl space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">
+                    stars
+                  </span>
+                  <h3 className="font-bold text-text-light">Loyalty Points</h3>
+                </div>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">
+                  {userPoints.toLocaleString()} pts
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center bg-dark-darker p-4 rounded-lg">
+                  <div>
+                    <p className="text-sm font-semibold text-text-light">
+                      Saldo Anda
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      {userPoints.toLocaleString()} poin tersedia
+                    </p>
                   </div>
                   <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">
-                    {userPoints.toLocaleString()} pts
+                    Maks redeem: {Math.min(userPoints, POINTS_CONFIG.MAX_PER_TRANSACTION).toLocaleString()}
                   </span>
                 </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center bg-dark-darker p-4 rounded-lg">
-                    <div>
-                      <p className="text-sm font-semibold text-text-light">
-                        Saldo Anda
-                      </p>
-                      <p className="text-xs text-text-muted">
-                        {userPoints.toLocaleString()} poin tersedia
-                      </p>
-                    </div>
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">
-                      Maks redeem: {Math.min(userPoints, 50000).toLocaleString()}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-text-light mb-2">
-                      Jumlah Poin yang Digunakan
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={Math.min(userPoints, 50000)}
-                      value={pointsToUse}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 0;
-                        setPointsToUse(Math.min(val, Math.min(userPoints, 50000)));
-                      }}
-                      className="w-full bg-dark-darker border border-border-muted/30 text-text-light rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                      placeholder="Masukkan poin (0 - maks)"
-                    />
-                    <div className="flex justify-between mt-2">
-                      <button
-                        type="button"
-                        onClick={() => setPointsToUse(0)}
-                        className="text-xs text-text-muted hover:text-primary"
-                      >
-                        Bersihkan
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPointsToUse(Math.min(userPoints, 50000))}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Gunakan Maks ({Math.min(userPoints, 50000).toLocaleString()})
-                      </button>
-                    </div>
+                <div>
+                  <label className="block text-sm font-semibold text-text-light mb-2">
+                    Jumlah Poin yang Digunakan
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={Math.min(userPoints, POINTS_CONFIG.MAX_PER_TRANSACTION)}
+                    value={pointsToUse}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setPointsToUse(Math.min(val, Math.min(userPoints, POINTS_CONFIG.MAX_PER_TRANSACTION)));
+                    }}
+                    className="w-full bg-dark-darker border border-border-muted/30 text-text-light rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    placeholder="Masukkan poin (0 - maks)"
+                  />
+                  <div className="flex justify-between mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setPointsToUse(0)}
+                      className="text-xs text-text-muted hover:text-primary"
+                    >
+                      Bersihkan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPointsToUse(Math.min(userPoints, POINTS_CONFIG.MAX_PER_TRANSACTION))}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Gunakan Maks ({Math.min(userPoints, POINTS_CONFIG.MAX_PER_TRANSACTION).toLocaleString()})
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          </div>
 
-          {/* Right Column: Order Summary (Sticky) */}
+           {/* Right Column: Order Summary (Sticky) */}
           <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
             <div className="bg-dark-elevated rounded-xl p-8 shadow-2xl relative overflow-hidden">
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[100px] rounded-full"></div>
@@ -352,27 +332,21 @@ const CheckoutPage: React.FC = () => {
               </h3>
 
               <div className="space-y-4 border-b border-border-muted/15 pb-8 mb-8">
-                {selectedTickets.general > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-muted">
-                      General Admission ({selectedTickets.general}x)
-                    </span>
-                    <span className="text-text-light font-medium">
-                      {formatIDR(selectedTickets.general * priceGeneral)}
-                    </span>
-                  </div>
-                )}
-                {selectedTickets.vip > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-muted">
-                      VIP Experience ({selectedTickets.vip}x)
-                    </span>
-                    <span className="text-text-light font-medium">
-                      {formatIDR(selectedTickets.vip * priceVIP)}
-                    </span>
-                  </div>
-                )}
-                {selectedTickets.general + selectedTickets.vip === 0 && (
+                {Object.entries(selectedTickets).map(([ticketId, qty]) => {
+                  const ticket = tickets.find(t => t.id === ticketId);
+                  if (!ticket || qty === 0) return null;
+                  return (
+                    <div key={ticketId} className="flex justify-between text-sm">
+                      <span className="text-text-muted">
+                        {ticket.type === 'GENERAL' ? 'General Admission' : 'VIP Experience'} ({qty}x)
+                      </span>
+                      <span className="text-text-light font-medium">
+                        {formatIDR(ticket.price * qty)}
+                      </span>
+                    </div>
+                  );
+                })}
+                {Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0) === 0 && (
                   <p className="text-text-muted text-sm">No tickets selected</p>
                 )}
               </div>
@@ -382,12 +356,14 @@ const CheckoutPage: React.FC = () => {
                   {appliedDiscount > 0 && (
                     <div className="flex justify-between text-sm items-center">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-xs text-error-light">
-                          confirmation_number
+                        <span className="material-symbols-outlined text-xs text-warning">
+                          local_offer
                         </span>
-                        <span className="text-text-muted">Voucher Applied</span>
+                        <span className="text-text-muted">
+                          {promoType === "voucher" ? "Voucher" : "Coupon"} Applied
+                        </span>
                       </div>
-                      <span className="text-error-light font-medium">
+                      <span className="text-warning font-medium">
                         - {formatIDR(appliedDiscount)}
                       </span>
                     </div>
@@ -420,11 +396,11 @@ const CheckoutPage: React.FC = () => {
                 <p className="text-[10px] text-text-muted">incl. VAT 11%</p>
               </div>
 
-              <button 
-                onClick={handleProceedToPayment}
-                disabled={transactionLoading || selectedTickets.general + selectedTickets.vip === 0}
-                className="w-full bg-gradient-to-br from-primary to-accent text-primary-dark py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_25px_rgba(75,77,216,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+               <button
+                 onClick={handleProceedToPayment}
+                 disabled={transactionLoading || Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0) === 0}
+                 className="w-full bg-gradient-to-br from-primary to-accent text-primary-dark py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_25px_rgba(75,77,216,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+               >
                 {transactionLoading ? (
                   <span className="material-symbols-outlined animate-spin">sync</span>
                 ) : (
