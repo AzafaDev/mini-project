@@ -8,6 +8,7 @@ import { EventStatsModal } from "../components/dashboard/EventStatsModal";
 import { DashboardTab } from "../components/dashboard/DashboardTab";
 import { EventsTab } from "../components/dashboard/EventsTab";
 import { VouchersTab } from "../components/dashboard/VouchersTab";
+import type { OrganizerProfile } from "../types";
 
 // --- Types ---
 interface EventItemProps {
@@ -19,6 +20,12 @@ interface EventItemProps {
   capacity: number;
   status: string;
   image: string;
+}
+
+interface EventRating {
+  eventName: string;
+  rating: number;
+  reviewCount: number;
 }
 
 // --- Sub-Components ---
@@ -233,12 +240,23 @@ export default function OrganizerDashboard() {
   // Each field is subscribed individually - only re-render when that specific field changes
   const myEvents = useEventStore((s) => s.myEvents);
   const organizerStats = useEventStore((s) => s.organizerStats);
+  const organizerProfile = useEventStore((s) => s.organizerProfile);
   const loadingMyEvents = useEventStore((s) => s.loadingMyEvents);
   const loadingOrganizerStats = useEventStore((s) => s.loadingOrganizerStats);
   const fetchMyEvents = useEventStore((s) => s.fetchMyEvents);
   const fetchOrganizerStats = useEventStore((s) => s.fetchOrganizerStats);
+  const fetchOrganizerProfile = useEventStore((s) => s.fetchOrganizerProfile);
   const error = useEventStore((s) => s.error);
   const clearError = useEventStore((s) => s.clearError);
+
+  // State for event ratings
+  const [eventRatings, setEventRatings] = useState<EventRating[]>([]);
+
+  // State for review detail modal
+  const [selectedEventReviews, setSelectedEventReviews] = useState<{
+    eventName: string;
+    reviews: OrganizerProfile['reviews'];
+  } | null>(null);
 
   // Handle query params for tab switching
   // FIX: Extract values SEBELUM useEffect - stable references
@@ -260,6 +278,46 @@ export default function OrganizerDashboard() {
     fetchMyEvents();
     fetchOrganizerStats(new Date().getFullYear());
   }, [fetchMyEvents, fetchOrganizerStats]);
+
+  // Fetch organizer profile when user is available
+  useEffect(() => {
+    if (user?.id && user.role === "ORGANIZER") {
+      fetchOrganizerProfile(user.id);
+    }
+  }, [user?.id, fetchOrganizerProfile]);
+
+  // Calculate event ratings from organizer profile reviews
+  useEffect(() => {
+    if (organizerProfile?.reviews) {
+      // Group reviews by eventName
+      const grouped = organizerProfile.reviews.reduce(
+        (acc, review) => {
+          const key = review.eventName;
+          if (!acc[key]) {
+            acc[key] = { totalRating: 0, count: 0 };
+          }
+          acc[key].totalRating += review.rating;
+          acc[key].count += 1;
+          return acc;
+        },
+        {} as Record<string, { totalRating: number; count: number }>,
+      );
+
+      const ratingsArray = Object.entries(grouped).map(
+        ([eventName, { totalRating, count }]) => ({
+          eventName,
+          rating: totalRating / count,
+          reviewCount: count,
+        }),
+      );
+      setEventRatings(ratingsArray);
+    }
+  }, [organizerProfile]);
+
+  const openReviewModal = (eventName: string) => {
+    const filtered = organizerProfile?.reviews.filter(r => r.eventName === eventName) || [];
+    setSelectedEventReviews({ eventName, reviews: filtered });
+  };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -349,16 +407,119 @@ export default function OrganizerDashboard() {
           {activeTab === "vouchers" && <VouchersTab />}
         </div>
 
-        {/* Event Stats Modal */}
-        {showStatsModal && selectedEvent && (
-          <EventStatsModal
-            eventId={selectedEvent.id}
-            eventName={selectedEvent.name}
-            onClose={() => {
-              setShowStatsModal(false);
-              setSelectedEvent(null);
-            }}
-          />
+          {/* Event Stats Modal */}
+          {showStatsModal && selectedEvent && (
+            <EventStatsModal
+              eventId={selectedEvent.id}
+              eventName={selectedEvent.name}
+              onClose={() => {
+                setShowStatsModal(false);
+                setSelectedEvent(null);
+              }}
+            />
+          )}
+
+          {/* Modal Detail Review per Event */}
+          {selectedEventReviews && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[90] p-4">
+              <div className="bg-dark-surface rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-border-muted/10">
+                  <h3 className="text-lg font-bold text-text-light">
+                    Reviews for "{selectedEventReviews.eventName}"
+                  </h3>
+                  <button
+                    onClick={() => setSelectedEventReviews(null)}
+                    className="text-text-muted hover:text-white transition-colors"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                {/* Daftar Review */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {selectedEventReviews.reviews.length === 0 ? (
+                    <p className="text-text-muted text-center">No reviews yet</p>
+                  ) : (
+                    selectedEventReviews.reviews.map((review) => (
+                      <div key={review.id} className="bg-dark-elevated rounded-lg p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-dark-card flex items-center justify-center overflow-hidden">
+                              {review.userImage ? (
+                                <img src={review.userImage} alt={review.userName} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="material-symbols-outlined text-sm text-text-muted">person</span>
+                              )}
+                            </div>
+                            <span className="font-medium text-text-light">{review.userName}</span>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className={`material-symbols-outlined text-sm ${
+                                  star <= review.rating ? "text-primary" : "text-dark-card"
+                                }`}
+                              >
+                                star
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-text-muted text-sm">{review.comment}</p>
+                        <p className="text-text-secondary text-xs">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-border-muted/10">
+                  <button
+                    onClick={() => setSelectedEventReviews(null)}
+                    className="w-full py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Rating Per Event Section */}
+        {eventRatings.length > 0 && activeTab === "dashboard" && (
+          <div className="mt-8 bg-dark-surface rounded-lg p-6">
+            <h3 className="text-lg font-bold mb-4">Event Ratings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {eventRatings.map((ev) => (
+                <div
+                  key={ev.eventName}
+                  onClick={() => openReviewModal(ev.eventName)}
+                  className="bg-dark-elevated rounded-lg p-4 flex justify-between items-center cursor-pointer hover:bg-dark-card-hover transition-all border border-transparent hover:border-primary/30"
+                >
+                  <span className="font-medium truncate">{ev.eventName}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                          key={star}
+                          className={`material-symbols-outlined text-sm ${
+                            star <= Math.round(ev.rating) ? "text-primary" : "text-dark-card"
+                          }`}
+                        >
+                          star
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-text-muted text-xs">({ev.reviewCount})</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
