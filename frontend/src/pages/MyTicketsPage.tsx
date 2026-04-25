@@ -26,19 +26,19 @@ const StatCard = ({
   border = "",
 }: StatCardProps) => (
   <div
-    className={`bg-dark-surface p-6 rounded-xl flex flex-col justify-between ${border}`}
+    className={`bg-dark-surface p-4 sm:p-6 rounded-xl flex flex-col justify-between ${border}`}
   >
     <div>
-      <span className={`material-symbols-outlined ${colorClass} mb-4`}>
+      <span className={`material-symbols-outlined ${colorClass} mb-3`}>
         {icon}
       </span>
       <h3 className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
         {label}
       </h3>
-      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-2xl sm:text-3xl font-bold">{value}</p>
     </div>
     <p
-      className={`text-xs mt-4 ${colorClass === "text-tertiary" ? "text-tertiary" : "text-text-muted"}`}
+      className={`text-xs mt-3 ${colorClass === "text-tertiary" ? "text-tertiary" : "text-text-muted"}`}
     >
       {subtext}
     </p>
@@ -92,7 +92,7 @@ const TicketCard = ({
             : "bg-dark-surface"
       } rounded-xl overflow-hidden flex flex-col md:flex-row group transition-all duration-300`}
     >
-      <div className="md:w-64 h-48 md:h-auto relative overflow-hidden">
+      <div className="md:w-48 h-40 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
           className={`w-full h-full object-cover transition-all duration-500 ${
             isPast ? "grayscale" : "group-hover:scale-110"
@@ -100,9 +100,9 @@ const TicketCard = ({
           src={image}
           alt={title}
         />
-        <div className="absolute top-4 left-4">
+        <div className="absolute top-3 left-3">
           <span
-            className={`px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md border ${
+            className={`px-2 py-1 rounded-full text-[10px] font-bold backdrop-blur-md border ${
               isPending
                 ? "bg-warning-dark/30 text-warning border-warning-dark/50"
                 : isPast
@@ -115,30 +115,41 @@ const TicketCard = ({
         </div>
       </div>
 
-      <div className="flex-1 p-6 flex flex-col justify-between">
+      <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
         <div className="flex justify-between items-start">
-          <div>
-            <Link
-              to={`/events/${eventId}`}
-              className={`text-2xl font-bold tracking-tight mb-1 hover:text-primary transition-colors ${
-                isPast ? "text-text-muted" : "text-text-light"
-              }`}
-            >
-              {title}
-            </Link>
-            <div className="flex items-center gap-4 text-text-muted text-sm">
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">
-                  calendar_month
-                </span>{" "}
-                {date}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">
-                  location_on
-                </span>{" "}
-                {location}
-              </span>
+            <div>
+              <Link
+                to={`/events/${eventId}`}
+                className={`text-lg sm:text-xl font-bold tracking-tight mb-1 hover:text-primary transition-colors ${
+                  isPast ? "text-text-muted" : "text-text-light"
+                }`}
+              >
+                {title}
+              </Link>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-text-muted text-xs sm:text-sm">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">
+                    calendar_month
+                  </span>{" "}
+                  {date}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">
+                    location_on
+                  </span>{" "}
+                  {location}
+                </span>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-text-muted mb-1">{orderId}</p>
+              <p
+                className={`text-lg sm:text-xl font-black ${
+                  isPending ? "text-warning" : "text-primary"
+                }`}
+              >
+                {price}
+              </p>
             </div>
           </div>
           <div className="text-right">
@@ -190,8 +201,7 @@ const TicketCard = ({
             )}
           </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
   );
 };
 
@@ -340,24 +350,24 @@ export const MyTickets = () => {
   }
 
   return (
-    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
-      <main className="pt-24 pb-20 px-4 md:px-12 max-w-7xl mx-auto">
-        <section className="mb-12">
+    <div className="bg-dark text-text-light font-sans selection:bg-primary/30">
+      <main className=" pb-12 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
+        <section className="mb-8 sm:mb-12">
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-4xl md:text-5xl font-black tracking-tighter mb-4"
+            className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter mb-3 sm:mb-4"
           >
             My Tickets
           </motion.h1>
-          <p className="text-text-muted max-w-2xl leading-relaxed">
+          <p className="text-text-muted max-w-2xl leading-relaxed text-sm sm:text-base">
             Manage your event registrations, access your digital passes, and
             finalize pending payments for upcoming experiences.
           </p>
         </section>
 
         {/* Bento Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
           <StatCard
             icon="confirmation_number"
             label="Upcoming"
@@ -382,24 +392,24 @@ export const MyTickets = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-8 mb-8 border-b border-border-muted/20">
+        <div className="flex gap-4 sm:gap-8 mb-6 sm:mb-8 border-b border-border-muted/20 overflow-x-auto">
           <button
-            className={`pb-4 ${activeTab === "upcoming" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
+            className={`pb-3 sm:pb-4 whitespace-nowrap ${activeTab === "upcoming" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
             onClick={() => setActiveTab("upcoming")}
           >
             Upcoming
           </button>
           <button
-            className={`pb-4 ${activeTab === "pending" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
+            className={`pb-3 sm:pb-4 whitespace-nowrap ${activeTab === "pending" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
             onClick={() => setActiveTab("pending")}
           >
             Pending Payment
           </button>
           <button
-            className={`pb-4 ${activeTab === "past" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
+            className={`pb-3 sm:pb-4 whitespace-nowrap ${activeTab === "past" ? "text-primary border-b-2 border-primary font-bold" : "text-text-muted hover:text-white transition-colors"}`}
             onClick={() => setActiveTab("past")}
           >
-            Past Events
+            Past
           </button>
         </div>
 

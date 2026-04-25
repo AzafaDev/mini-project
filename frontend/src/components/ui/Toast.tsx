@@ -18,25 +18,26 @@ export function Toast() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+    <div className="fixed bottom-6 left-6 right-6 z-50 flex flex-col gap-3 items-end md:left-auto md:right-6">
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={`
             flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg
-            animate-slide-in min-w-[280px] max-w-[400px]
+            animate-slide-in min-w-[280px] max-w-[400px] w-full md:w-auto
             ${toastStyles[toast.type]}
           `}
         >
-          <span className="material-symbols-outlined text-xl">
+          <span className="material-symbols-outlined text-xl flex-shrink-0">
             {toastIcons[toast.type]}
           </span>
-          <span className="text-sm font-medium flex-1 text-text-light">
+          <span className="text-sm font-medium flex-1 text-text-light break-words">
             {toast.message}
           </span>
           <button
             onClick={() => removeToast(toast.id)}
-            className="text-text-muted hover:text-text-light transition-colors p-1"
+            className="text-text-muted hover:text-text-light transition-colors p-1 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close notification"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
@@ -44,4 +45,5 @@ export function Toast() {
       ))}
     </div>
   );
+
 }

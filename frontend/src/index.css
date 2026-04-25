@@ -33,6 +33,15 @@ body {
   overflow-x: hidden;
 }
 
+/* Touch-friendly interactive elements */
+button,
+a,
+input,
+select,
+textarea {
+  min-height: 44px;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -57,4 +66,3 @@ body {
 .animate-slide-in {
   animation: slide-in 0.3s ease-out forwards;
 }
-

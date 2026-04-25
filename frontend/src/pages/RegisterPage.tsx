@@ -8,7 +8,14 @@ const RegistrationPage: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = React.useState(false);
-  const { register, isLoading, error, clearError, isRegistered, clearRegistered } = useAuthStore();
+  const {
+    register,
+    isLoading,
+    error,
+    clearError,
+    isRegistered,
+    clearRegistered,
+  } = useAuthStore();
 
   const formik = useFormik({
     initialValues: {
@@ -50,8 +57,6 @@ const RegistrationPage: React.FC = () => {
       navigate("/verify-email");
     }
   }, [isRegistered, clearRegistered, navigate]);
-
-
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -143,7 +148,9 @@ const RegistrationPage: React.FC = () => {
                     disabled={isLoading}
                   />
                   {formik.touched.fullName && formik.errors.fullName && (
-                    <p className="text-red-400 text-xs ml-1">{formik.errors.fullName}</p>
+                    <p className="text-red-400 text-xs ml-1">
+                      {formik.errors.fullName}
+                    </p>
                   )}
                 </div>
 
@@ -168,34 +175,38 @@ const RegistrationPage: React.FC = () => {
                     disabled={isLoading}
                   />
                   {formik.touched.email && formik.errors.email && (
-                    <p className="text-red-400 text-xs ml-1">{formik.errors.email}</p>
+                    <p className="text-red-400 text-xs ml-1">
+                      {formik.errors.email}
+                    </p>
                   )}
                 </div>
 
-                 {/* Phone Number */}
-                 <div className="space-y-1.5">
-                   <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
-                     Phone Number
-                   </label>
-                   <input
-                     id="phoneNumber"
-                     name="phoneNumber"
-                     type="tel"
-                     value={formik.values.phoneNumber}
-                     onChange={formik.handleChange}
-                     onBlur={formik.handleBlur}
-                     className={`w-full bg-dark-darker border-none ring-1 focus:ring-primary text-text-light px-4 py-3 rounded-lg placeholder:text-dark-card text-sm transition-all outline-none ${
-                       formik.touched.phoneNumber && formik.errors.phoneNumber
-                         ? "ring-red-500/50 focus:ring-red-500/50"
-                         : "ring-border-muted/30"
-                     }`}
-                     placeholder="+62xxxxxxxxxx"
-                     disabled={isLoading}
-                   />
-                   {formik.touched.phoneNumber && formik.errors.phoneNumber && (
-                     <p className="text-red-400 text-xs ml-1">{formik.errors.phoneNumber}</p>
-                   )}
-                 </div>
+                {/* Phone Number */}
+                <div className="space-y-1.5">
+                  <label className="block text-[0.75rem] font-medium text-text-muted ml-1">
+                    Phone Number
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    value={formik.values.phoneNumber}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full bg-dark-darker border-none ring-1 focus:ring-primary text-text-light px-4 py-3 rounded-lg placeholder:text-dark-card text-sm transition-all outline-none ${
+                      formik.touched.phoneNumber && formik.errors.phoneNumber
+                        ? "ring-red-500/50 focus:ring-red-500/50"
+                        : "ring-border-muted/30"
+                    }`}
+                    placeholder="+62xxxxxxxxxx"
+                    disabled={isLoading}
+                  />
+                  {formik.touched.phoneNumber && formik.errors.phoneNumber && (
+                    <p className="text-red-400 text-xs ml-1">
+                      {formik.errors.phoneNumber}
+                    </p>
+                  )}
+                </div>
 
                 {/* Role Selection */}
                 <div className="space-y-1.5">
@@ -229,7 +240,9 @@ const RegistrationPage: React.FC = () => {
                     </button>
                   </div>
                   {formik.touched.role && formik.errors.role && (
-                    <p className="text-red-400 text-xs ml-1">{formik.errors.role}</p>
+                    <p className="text-red-400 text-xs ml-1">
+                      {formik.errors.role}
+                    </p>
                   )}
                 </div>
 
@@ -265,7 +278,9 @@ const RegistrationPage: React.FC = () => {
                     </button>
                   </div>
                   {formik.touched.password && formik.errors.password && (
-                    <p className="text-red-400 text-xs ml-1">{formik.errors.password}</p>
+                    <p className="text-red-400 text-xs ml-1">
+                      {formik.errors.password}
+                    </p>
                   )}
                 </div>
 
@@ -315,7 +330,9 @@ const RegistrationPage: React.FC = () => {
                 >
                   {isLoading ? (
                     <>
-                      <span className="material-symbols-outlined animate-spin">sync</span>
+                      <span className="material-symbols-outlined animate-spin">
+                        sync
+                      </span>
                       Creating Account...
                     </>
                   ) : (

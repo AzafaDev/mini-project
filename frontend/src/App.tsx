@@ -90,9 +90,9 @@ const App = () => {
   }, []); // Empty deps - run only once on mount
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       {shouldShowNavbar && <Navbar />}
-      <main>
+      <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route
@@ -119,104 +119,104 @@ const App = () => {
 
            {/* Protected routes - require authentication */}
            <Route
-             path="/checkout/:id"
-             element={
-               <ProtectedRoute>
-                 <CheckoutPage />
-               </ProtectedRoute>
-             }
-           />
-            <Route
-              path="/transactions/:id"
+              path="/checkout/:id"
               element={
                 <ProtectedRoute>
-                  <TransactionDetailPage />
+                  <CheckoutPage />
                 </ProtectedRoute>
               }
             />
-
-            {/* Protected routes - require ORGANIZER role - wrapped in DashboardLayout */}
-           <Route element={<DashboardLayout />}>
              <Route
-               path="/dashboard"
-               element={
-                 <ProtectedRoute requiredRole="ORGANIZER">
-                   <DashboardPage />
-                 </ProtectedRoute>
-               }
-             />
-             <Route
-               path="/transactions"
-               element={
-                 <ProtectedRoute requiredRole="ORGANIZER">
-                   <TransactionsPage />
-                 </ProtectedRoute>
-               }
-             />
-             <Route
-               path="/transactions/organizer"
-               element={
-                 <ProtectedRoute requiredRole="ORGANIZER">
-                   <TransactionsPage />
-                 </ProtectedRoute>
-               }
-             />
-             <Route
-               path="/profile"
+               path="/transactions/:id"
                element={
                  <ProtectedRoute>
-                   <ProfilePageWrapper />
-                 </ProtectedRoute>
-               }
-             />
-              <Route
-                path="/profile/points"
-                element={
-                  <ProtectedRoute>
-                    <PointsHistoryPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-tickets"
-                element={
-                  <ProtectedRoute>
-                    <MyTickets />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-transactions"
-                element={
-                  <ProtectedRoute>
-                    <MyTransactionsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-               path="/events/create"
-               element={
-                 <ProtectedRoute requiredRole="ORGANIZER">
-                   <CreateEventPage />
+                   <TransactionDetailPage />
                  </ProtectedRoute>
                }
              />
 
-             <Route
-               path="/events/:id/attendees"
+             {/* Protected routes - require ORGANIZER role - wrapped in DashboardLayout */}
+            <Route element={<DashboardLayout />}>
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="ORGANIZER">
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/transactions"
+                element={
+                  <ProtectedRoute requiredRole="ORGANIZER">
+                    <TransactionsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/transactions/organizer"
+                element={
+                  <ProtectedRoute requiredRole="ORGANIZER">
+                    <TransactionsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePageWrapper />
+                  </ProtectedRoute>
+                }
+              />
+               <Route
+                 path="/profile/points"
+                 element={
+                   <ProtectedRoute>
+                     <PointsHistoryPage />
+                   </ProtectedRoute>
+                 }
+               />
+               <Route
+               path="/my-tickets"
                element={
-                 <ProtectedRoute requiredRole="ORGANIZER">
-                   <EventAttendeesPage />
+                 <ProtectedRoute>
+                   <MyTickets />
                  </ProtectedRoute>
                }
              />
-           </Route>
-        </Routes>
-      </main>
+               <Route
+               path="/my-transactions"
+               element={
+                 <ProtectedRoute>
+                   <MyTransactionsPage />
+                 </ProtectedRoute>
+               }
+             />
+               <Route
+                path="/events/create"
+                element={
+                  <ProtectedRoute requiredRole="ORGANIZER">
+                    <CreateEventPage />
+                  </ProtectedRoute>
+                }
+              />
 
-      {shouldShowFooter && <Footer />}
-      <Toast />
-    </div>
+              <Route
+                path="/events/:id/attendees"
+                element={
+                  <ProtectedRoute requiredRole="ORGANIZER">
+                    <EventAttendeesPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+         </Routes>
+       </main>
+
+       {shouldShowFooter && <Footer />}
+       <Toast />
+     </div>
   );
 };
 

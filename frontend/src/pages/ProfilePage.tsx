@@ -17,11 +17,9 @@ import {
 interface ProfilePageProps {
   user?: User;
   initialCoupons?: Coupon[];
-
 }
 
-// --- Loading Skeleton Components ---
-
+// --- Loading Skeleton Component ---
 const ProfileSkeleton = () => (
   <div className="bg-dark text-text-light min-h-screen font-sans">
     <main className="lg:ml-64 pt-24 pb-12 px-6 md:px-12">
@@ -30,9 +28,7 @@ const ProfileSkeleton = () => (
           <div className="h-10 w-48 bg-dark-elevated rounded animate-pulse mb-2" />
           <div className="h-5 w-72 bg-dark-elevated rounded animate-pulse" />
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Profile Card Skeleton */}
           <section className="md:col-span-8 bg-dark-surface rounded-xl p-8">
             <div className="flex flex-col md:flex-row gap-8">
               <div className="w-32 h-32 rounded-full bg-dark-elevated animate-pulse" />
@@ -55,8 +51,6 @@ const ProfileSkeleton = () => (
               </div>
             </div>
           </section>
-
-          {/* Points Card Skeleton */}
           <section className="md:col-span-4 bg-dark-surface rounded-xl p-8">
             <div className="space-y-4">
               <div className="h-3 w-24 bg-dark-elevated rounded animate-pulse" />
@@ -64,8 +58,6 @@ const ProfileSkeleton = () => (
               <div className="h-4 w-48 bg-dark-elevated rounded animate-pulse" />
             </div>
           </section>
-
-          {/* Security Section Skeleton */}
           <section className="md:col-span-12 bg-dark-surface rounded-xl p-8">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-6 h-6 bg-dark-elevated rounded animate-pulse" />
@@ -80,8 +72,6 @@ const ProfileSkeleton = () => (
               ))}
             </div>
           </section>
-
-          {/* Coupons Section Skeleton */}
           <section className="md:col-span-12 bg-dark-surface rounded-xl p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-6 h-6 bg-dark-elevated rounded animate-pulse" />
@@ -102,25 +92,24 @@ const ProfileSkeleton = () => (
   </div>
 );
 
-// --- Main Page Component ---
-
-export default function ProfilePage({ user: propsUser, initialCoupons = [] }: ProfilePageProps) {
+// --- Main Profile Page Component ---
+export default function ProfilePage({
+  user: propsUser,
+  initialCoupons = [],
+}: ProfilePageProps) {
   const { fetchCurrentUser } = useAuthStore();
   const addToast = useToastStore((state) => state.addToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get user from props or fallback to store
-  // Auth store's /auth/me already includes ownedCoupons
   const storeUser = useAuthStore((state) => state.user);
   const user = propsUser || storeUser;
 
-  // Points and coupons are now available directly from user object
   const points = user?.points ?? 0;
   const coupons = user?.ownedCoupons || initialCoupons;
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Profile form with Formik - initialize with user data directly
+  // Profile form
   const profileFormik = useFormik({
     initialValues: {
       fullName: user?.fullName ?? "",
@@ -133,9 +122,7 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
           fullName: values.fullName,
           phoneNumber: values.phoneNumber || undefined,
         };
-
         const response = await profileService.updateProfile(updateData);
-
         if (response.success) {
           await fetchCurrentUser();
           addToast("success", "Profile updated successfully");
@@ -153,7 +140,7 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
     },
   });
 
-  // Password change form with Formik
+  // Password change form
   const passwordFormik = useFormik({
     initialValues: {
       currentPassword: "",
@@ -163,13 +150,10 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
     validationSchema: changePasswordSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
-        const passwordDataReq: ChangePasswordRequest = {
+        const response = await profileService.changePassword({
           currentPassword: values.currentPassword,
           newPassword: values.newPassword,
-        };
-
-        const response = await profileService.changePassword(passwordDataReq);
-
+        });
         if (response.success) {
           resetForm();
           addToast("success", "Password changed successfully");
@@ -187,7 +171,7 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
     },
   });
 
-  // Profile picture upload states
+  // Profile picture upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -195,35 +179,27 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     const validTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!validTypes.includes(file.type)) {
       addToast("error", "Please select a JPG, PNG, or WebP image");
       return;
     }
-
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       addToast("error", "Image must be less than 5MB");
       return;
     }
 
     setSelectedFile(file);
-    // Create preview URL
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
-    };
+    reader.onload = (e) => setPreviewUrl(e.target?.result as string);
     reader.readAsDataURL(file);
   };
 
   const handleProfilePictureUpload = async () => {
     if (!selectedFile) return;
-
     setUploading(true);
     try {
       const response = await profileService.uploadProfilePicture(selectedFile);
-
       if (response.success) {
         await fetchCurrentUser();
         setSelectedFile(null);
@@ -248,9 +224,7 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
   const cancelUpload = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleNavigate = (page: string) => {
@@ -261,21 +235,18 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
       Events: "/dashboard",
     };
     const route = routeMap[page];
-    if (route) {
-      window.location.href = route;
-    }
+    if (route) window.location.href = route;
   };
 
-  if (loading) {
-    return <ProfileSkeleton />;
-  }
+  if (loading) return <ProfileSkeleton />;
 
+  // --- MAIN JSX (FIXED STRUCTURE) ---
   return (
-    <div className="bg-dark text-text-light min-h-screen font-sans selection:bg-primary/30">
-      <div className="p-4 md:p-8 pt-20 md:pt-8">
+    <div className="bg-dark text-text-light min-h-screen font-sans">
+      <main className=" pb-12 px-4 sm:px-6 md:px-12">
         <div className="max-w-6xl mx-auto">
-          {/* Header Section */}
-          <div className="mb-12">
+          {/* Header */}
+          <div className="mb-8 sm:mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-text-light mb-2">
               Account Settings
             </h1>
@@ -284,13 +255,13 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
             </p>
           </div>
 
-          {/* Bento Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
             {/* Profile Identity Card */}
             <section className="md:col-span-8 bg-dark-surface rounded-xl p-8 flex flex-col md:flex-row gap-8 items-center md:items-start relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
 
-              {/* Profile Picture Section */}
+              {/* Avatar */}
               <div className="relative group">
                 <div
                   className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-dark-elevated relative cursor-pointer transition-transform duration-300 hover:scale-105"
@@ -305,7 +276,6 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                     }
                     alt="Profile"
                   />
-                  {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <span className="material-symbols-outlined text-white text-3xl">
                       photo_camera
@@ -313,7 +283,6 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                   </div>
                 </div>
 
-                {/* Hidden file input */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -322,7 +291,6 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                   className="hidden"
                 />
 
-                {/* Upload preview */}
                 {selectedFile && (
                   <div className="mt-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
@@ -355,6 +323,7 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                 )}
               </div>
 
+              {/* Profile Form */}
               <form
                 className="flex-1 space-y-6 w-full relative z-10"
                 onSubmit={profileFormik.handleSubmit}
@@ -572,16 +541,21 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
             {/* Referral Code Section */}
             <section className="md:col-span-4 bg-dark-surface rounded-xl p-8 border border-primary/20 relative overflow-hidden">
               <div className="absolute -right-4 -top-4 opacity-10">
-                <span className="material-symbols-outlined text-7xl">share</span>
+                <span className="material-symbols-outlined text-7xl">
+                  share
+                </span>
               </div>
-              <h4 className="text-sm font-bold text-primary uppercase tracking-widest mb-4">Refer & Earn</h4>
-              <p className="text-xs text-text-muted mb-4">Share your code with friends to earn 10,000 points!</p>
-              
+              <h4 className="text-sm font-bold text-primary uppercase tracking-widest mb-4">
+                Refer & Earn
+              </h4>
+              <p className="text-xs text-text-muted mb-4">
+                Share your code with friends to earn 10,000 points!
+              </p>
               <div className="flex items-center gap-2 bg-dark-darker p-1 rounded-lg border border-white/5">
                 <div className="flex-1 px-3 py-2 font-mono font-bold text-center text-text-light">
                   {user?.referralCode || "NOCODE"}
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     if (user?.referralCode) {
                       navigator.clipboard.writeText(user.referralCode);
@@ -590,7 +564,9 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                   }}
                   className="bg-primary text-primary-dark p-2 rounded-md hover:brightness-110 transition-all"
                 >
-                  <span className="material-symbols-outlined text-sm">content_copy</span>
+                  <span className="material-symbols-outlined text-sm">
+                    content_copy
+                  </span>
                 </button>
               </div>
             </section>
@@ -603,71 +579,36 @@ export default function ProfilePage({ user: propsUser, initialCoupons = [] }: Pr
                 </span>
                 <h2 className="text-xl font-bold">My Coupons</h2>
               </div>
-
               {coupons.length === 0 ? (
                 <p className="text-text-muted">No active coupons</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                   {coupons.map((coupon: Coupon) => (
-                     <div
-                       key={coupon.id}
-                       className="bg-dark-darker rounded-lg p-4"
-                     >
-                       <div className="flex justify-between items-start mb-2">
-                         <span className="text-primary font-mono font-bold">
-                           {coupon.code}
-                         </span>
-                         <span className="text-xs text-text-muted">
-                           {coupon.discountType === "PERCENTAGE"
-                             ? `${coupon.discountValue}% OFF`
-                             : `Rp ${coupon.discountValue.toLocaleString()} OFF`}
-                         </span>
-                       </div>
-                       <div className="text-xs text-text-muted">
-                         Exp: {new Date(coupon.endDate).toLocaleDateString()}
-                       </div>
-                     </div>
-                   ))}
+                  {coupons.map((coupon: Coupon) => (
+                    <div
+                      key={coupon.id}
+                      className="bg-dark-darker rounded-lg p-4"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-primary font-mono font-bold">
+                          {coupon.code}
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {coupon.discountType === "PERCENTAGE"
+                            ? `${coupon.discountValue}% OFF`
+                            : `Rp ${coupon.discountValue.toLocaleString()} OFF`}
+                        </span>
+                      </div>
+                      <div className="text-xs text-text-muted">
+                        Exp: {new Date(coupon.endDate).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-               )}
-             </section>
-           </div>
-         </div>
-
-        {/* Mobile Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full bg-dark-surface h-16 flex items-center justify-around z-50 border-t border-border-muted/10">
-        <button
-          onClick={() =>
-            handleNavigate(
-              user?.role === "ORGANIZER" ? "Dashboard" : "My Tickets",
-            )
-          }
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="material-symbols-outlined text-text-muted">
-            {user?.role === "ORGANIZER" ? "dashboard" : "confirmation_number"}
-          </span>
-        </button>
-        <button
-          onClick={() => handleNavigate("Transactions")}
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="material-symbols-outlined text-text-muted">
-            receipt_long
-          </span>
-        </button>
-        <button className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-primary">
-            account_circle
-          </span>
-        </button>
-        <button className="flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-text-muted">
-            settings
-          </span>
-        </button>
-      </div>
+              )}
+            </section>
+          </div>
+        </div>
+      </main>
     </div>
-  </div>
   );
 }

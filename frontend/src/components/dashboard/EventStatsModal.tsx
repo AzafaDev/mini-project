@@ -38,16 +38,17 @@ export function EventStatsModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4">
-      <div className="bg-dark-surface rounded-lg w-full max-w-md max-h-[90vh] flex flex-col border border-border-muted/10">
+      <div className="bg-dark-surface rounded-xl w-full max-w-md max-h-[90vh] flex flex-col border border-border-muted/10">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border-muted/10">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border-muted/10">
           <div>
             <h2 className="text-lg font-bold">Event Stats</h2>
             <p className="text-sm text-text-muted mt-1">{eventName}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-white transition-colors"
+            className="text-text-muted hover:text-white transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
+            aria-label="Close modal"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -55,7 +56,7 @@ export function EventStatsModal({
 
         {/* Content */}
         {loadingEventStats ? (
-          <div className="p-6 flex-shrink-0">
+          <div className="p-4 sm:p-6 flex-shrink-0">
             <div className="animate-pulse space-y-4">
               <div className="h-20 bg-dark-elevated rounded-lg"></div>
               <div className="h-20 bg-dark-elevated rounded-lg"></div>
@@ -63,7 +64,7 @@ export function EventStatsModal({
             </div>
           </div>
         ) : (
-          <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
             {/* Total Revenue */}
             <div className="bg-dark-elevated rounded-lg p-4">
               <div className="flex items-center gap-3 mb-2">
@@ -84,7 +85,7 @@ export function EventStatsModal({
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {/* Tickets Sold */}
               <div className="bg-dark-elevated rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">

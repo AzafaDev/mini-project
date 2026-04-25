@@ -46,14 +46,14 @@ export const TicketSelection: React.FC<TicketSelectionProps> = ({
       ];
 
   return (
-    <div className="space-y-6 sticky top-24 self-start">
-      <h2 className="text-2xl font-bold text-text-light">Select Tickets</h2>
+    <div className="space-y-4 sm:space-y-6 sticky top-20 sm:top-24 self-start">
+      <h2 className="text-xl sm:text-2xl font-bold text-text-light">Select Tickets</h2>
 
       {/* Tickets */}
       {tickets.map((ticket) => (
         <div
           key={ticket.id}
-          className={`bg-dark-elevated border-2 border-transparent hover:border-accent/40 p-6 rounded-xl transition-all group relative overflow-hidden ${
+          className={`bg-dark-elevated border-2 border-transparent hover:border-accent/40 p-4 sm:p-6 rounded-xl transition-all group relative overflow-hidden ${
             ticket.type === 'VIP' ? 'bg-gradient-to-br from-dark-elevated to-dark-surface border-accent/30' : ''
           }`}
         >
@@ -63,17 +63,17 @@ export const TicketSelection: React.FC<TicketSelectionProps> = ({
           )}
 
           {ticket.type === 'VIP' && (
-            <div className="absolute -top-3 left-6 bg-gradient-to-r from-primary to-accent px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg">
+            <div className="absolute -top-3 left-4 sm:left-6 bg-gradient-to-r from-primary to-accent px-3 sm:px-4 py-1 rounded-full text-[10px] sm:text-xs font-bold text-white shadow-lg">
               <span className="material-symbols-outlined text-sm mr-1">star</span>
               VIP EXCLUSIVE
             </div>
           )}
 
-          <div className="flex items-center justify-between relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
             <div className="flex-1">
-              <h3 className="font-bold text-lg text-text-light mb-2">{ticket.name}</h3>
+              <h3 className="font-bold text-lg text-text-light mb-1 sm:mb-2">{ticket.name}</h3>
               {ticket.description && (
-                <p className="text-text-muted text-sm mb-3">{ticket.description}</p>
+                <p className="text-text-muted text-sm mb-2 sm:mb-3">{ticket.description}</p>
               )}
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
@@ -90,8 +90,8 @@ export const TicketSelection: React.FC<TicketSelectionProps> = ({
                 </span>
               </div>
             </div>
-            <div className="text-right ml-4">
-              <p className="text-2xl font-bold text-primary mb-1">{formatIDR(ticket.price)}</p>
+            <div className="text-right">
+              <p className="text-xl sm:text-2xl font-bold text-primary mb-1">{formatIDR(ticket.price)}</p>
               {ticket.type === 'VIP' && (
                 <p className="text-xs text-accent font-medium">Premium Experience</p>
               )}

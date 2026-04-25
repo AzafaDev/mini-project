@@ -1,5 +1,15 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { useEventStore } from "../../stores/useEventStore";
 import { formatIDR, formatDate } from "../../lib/formatters";
 import { getEventStatus } from "../../lib/eventUtils";
@@ -17,6 +27,26 @@ interface DashboardTabProps {
   onTimeRangeChange?: (year?: number, month?: number, day?: number) => void;
 }
 
+// Custom tooltip dengan tema gelap
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-dark-elevated border border-border-muted/15 rounded-lg p-3 shadow-xl">
+        <p className="text-text-muted text-xs mb-1">{label}</p>
+        <p className="text-primary font-bold text-sm">
+          Revenue: {formatIDR(payload[0].value)}
+        </p>
+        {payload[0]?.payload?.tickets !== undefined && (
+          <p className="text-text-light text-xs">
+            Tickets: {payload[0].payload.tickets}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function DashboardTab({
   onNavigateToEvents,
   onStatsClick,
@@ -25,13 +55,11 @@ export function DashboardTab({
   onTimeRangeChange,
 }: DashboardTabProps) {
   const navigate = useNavigate();
-
   const [timeRange, setTimeRange] = useState<TimeRange>("12M");
 
   const loadingOrganizerStats = useEventStore.getState().loadingOrganizerStats;
   const fetchOrganizerStats = useEventStore.getState().fetchOrganizerStats;
 
-  // Manual fetch function - only called when user changes timeRange
   const handleTimeRangeChange = (newRange: TimeRange) => {
     setTimeRange(newRange);
 
@@ -72,7 +100,61 @@ export function DashboardTab({
     }
   };
 
-  // Data sudah dari props, tidak perlu ambil dari store
+  // Data chart dengan properti dinamis untuk menghindari error tipe
+  const chartData: {
+    data: any[];
+    label: string;
+    xKey: string;
+    dataKey: string;
+  } | null = useMemo(() => {
+    if (!stats) return null;
+
+    switch (timeRange) {
+      case "7D":
+      case "30D":
+        return {
+          data: stats.dailyStats || [],
+          label: "Daily Revenue",
+          xKey: "day",
+          dataKey: "revenue",
+        };
+      case "12M":
+      case "1Y":
+        return {
+          data: stats.monthlyStats || [],
+          label: "Monthly Revenue",
+          xKey: "month",
+          dataKey: "revenue",
+        };
+      case "ALL":
+        return {
+          data: stats.yearlyStats || [],
+          label: "Yearly Revenue",
+          xKey: "year",
+          dataKey: "revenue",
+        };
+      default:
+        return null;
+    }
+  }, [stats, timeRange]);
+
+  const revenueLabel = useMemo(() => {
+    switch (timeRange) {
+      case "7D":
+        return "Revenue (Last 7 Days)";
+      case "30D":
+        return "Revenue (Current Month)";
+      case "12M":
+        return "Revenue (Current Year)";
+      case "1Y":
+        return "Revenue (Last Year)";
+      case "ALL":
+        return "Total Revenue (All Time)";
+      default:
+        return "Revenue";
+    }
+  }, [timeRange]);
+
   const totalRevenue = stats?.totalRevenue || 0;
   const ticketsSold = stats?.totalTicketsSold || 0;
   const totalEvents = stats?.totalEvents || 0;
@@ -97,56 +179,11 @@ export function DashboardTab({
     }).length;
   }, [myEvents]);
 
-  const chartData = useMemo(() => {
-    if (!stats) return null;
-
-    switch (timeRange) {
-      case "7D":
-      case "30D":
-        return {
-          data: stats.dailyStats || [],
-          label: "Daily Revenue",
-          getLabel: (d: any) => d.day,
-        };
-      case "12M":
-      case "1Y":
-        return {
-          data: stats.monthlyStats || [],
-          label: "Monthly Revenue",
-          getLabel: (d: any) => d.month,
-        };
-      case "ALL":
-        return {
-          data: stats.yearlyStats || [],
-          label: "Yearly Revenue",
-          getLabel: (d: any) => String(d.year),
-        };
-      default:
-        return null;
-    }
-  }, [stats, timeRange]);
-
-  const revenueLabel = useMemo(() => {
-    switch (timeRange) {
-      case "7D":
-        return "Revenue (Last 7 Days)";
-      case "30D":
-        return "Revenue (Current Month)";
-      case "12M":
-        return "Revenue (Current Year)";
-      case "1Y":
-        return "Revenue (Last Year)";
-      case "ALL":
-        return "Total Revenue (All Time)";
-      default:
-        return "Revenue";
-    }
-  }, [timeRange]);
-
   const activeEventsList = myEvents.filter((e) => !e.isDeleted).slice(0, 5);
 
   return (
     <>
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="sm:col-span-2 p-4 md:p-6 bg-dark-surface rounded-lg flex flex-col justify-between border border-border-muted/10">
           <div>
@@ -164,26 +201,6 @@ export function DashboardTab({
               </span>
               <span className="text-xs text-text-muted">total</span>
             </div>
-            {chartData && chartData.data.length > 0 && (
-              <div className="flex items-baseline gap-1 h-12">
-                {chartData.data.slice(-7).map((d: any, i: number) => {
-                  const maxRevenue = Math.max(
-                    ...(chartData.data?.map((s: any) => s.revenue) || [1]),
-                  );
-                  const height = Math.min((d.revenue / maxRevenue) * 100, 100);
-                  return (
-                    <div
-                      key={i}
-                      className="w-1.5 bg-primary rounded-full"
-                      style={{
-                        height: `${Math.max(height, 10)}px`,
-                        opacity: 0.2 + i * 0.1,
-                      }}
-                    ></div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
 
@@ -205,13 +222,14 @@ export function DashboardTab({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-           {chartData && chartData.data.length > 0 ? (
-            <div className="bg-dark-surface rounded-lg p-4 md:p-8 h-[350px] md:h-[400px] flex flex-col border border-border-muted/10">
-              <div className="flex items-center justify-between mb-8">
+          {/* Chart Section dengan Recharts */}
+          {chartData && chartData.data.length > 0 ? (
+            <div className="bg-dark-surface rounded-lg p-4 md:p-8 flex flex-col border border-border-muted/10">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h4 className="text-lg font-bold tracking-tight">
                   {chartData.label}
                 </h4>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {(["7D", "30D", "12M", "1Y", "ALL"] as TimeRange[]).map(
                     (t) => (
                       <button
@@ -229,44 +247,46 @@ export function DashboardTab({
                   )}
                 </div>
               </div>
-              <div className="flex-1 overflow-x-auto scrollbar-hide -mx-4 px-4">
-                <div className="flex items-end gap-2 md:gap-3 h-full min-w-[550px] pb-8">
-                {chartData.data
-                  .slice(
-                    -(timeRange === "ALL" ? 5 : timeRange === "7D" ? 7 : 12),
-                  )
-                  .map((d: any, i: number) => {
-                    const maxRevenue = Math.max(
-                      ...(chartData.data?.map((s: any) => s.revenue) || [1]),
-                    );
-                    const height = (d.revenue / maxRevenue) * 100;
-                    return (
-                      <div
-                        key={i}
-                        className={`flex-1 rounded-t-lg transition-all relative group ${
-                          i === (chartData.data?.length || 0) - 1
-                            ? "bg-primary shadow-[0_0_20px_rgba(192,193,255,0.2)]"
-                            : "bg-accent/30"
-                        }`}
-                        style={{ height: `${Math.max(height, 10)}%` }}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-dark-card text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                          {formatIDR(d.revenue)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="flex justify-between pt-4 border-t border-border-muted/10 text-[10px] text-text-muted font-medium uppercase tracking-widest">
-                {chartData.data
-                  .slice(
-                    -(timeRange === "ALL" ? 5 : timeRange === "7D" ? 7 : 12),
-                  )
-                  .map((d: any, i: number) => (
-                    <span key={i}>{chartData.getLabel(d)}</span>
-                  ))}
-              </div>
+
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={chartData.data}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#2a2a2a"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey={chartData.xKey}
+                    tick={{ fill: "#C7C4D8", fontSize: 12 }}
+                    axisLine={{ stroke: "#464555" }}
+                    tickLine={{ stroke: "#464555" }}
+                  />
+                  <YAxis
+                    tick={{ fill: "#C7C4D8", fontSize: 12 }}
+                    tickFormatter={(value) => formatIDR(value)}
+                    axisLine={{ stroke: "#464555" }}
+                    tickLine={{ stroke: "#464555" }}
+                  />
+                  <Tooltip
+                    content={<CustomTooltip />}
+                    cursor={{ fill: "#2a2a2a" }}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: "#C7C4D8", fontSize: 12 }}
+                    iconType="circle"
+                  />
+                  <Bar
+                    dataKey={chartData.dataKey}
+                    name="Revenue"
+                    fill="#C0C1FF"
+                    radius={[4, 4, 0, 0]}
+                    animationDuration={800}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           ) : (
             <div className="bg-dark-surface rounded-lg p-8 h-[400px] flex flex-col border border-border-muted/10 items-center justify-center">
@@ -282,6 +302,7 @@ export function DashboardTab({
             </div>
           )}
 
+          {/* Active Events List */}
           <section>
             <div className="flex items-center justify-between mb-6">
               <h4 className="text-lg font-bold tracking-tight">
@@ -308,7 +329,7 @@ export function DashboardTab({
                       event.endDate,
                     )}`}
                     location={event.location}
-                    sold={event.sold ?? (event.totalSeats - event.availableSeats)}
+                    sold={event.sold ?? event.totalSeats - event.availableSeats}
                     capacity={event.totalSeats}
                     status={getEventStatus(event)}
                     image={event.imageUrl || ""}
@@ -335,6 +356,7 @@ export function DashboardTab({
           </section>
         </div>
 
+        {/* Right Sidebar: Quick Stats & Actions */}
         <div className="space-y-8">
           <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
             <h4 className="text-sm font-bold uppercase tracking-widest text-text-muted mb-6">

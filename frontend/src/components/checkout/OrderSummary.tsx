@@ -19,13 +19,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   total,
 }) => {
   return (
-    <div className="bg-dark-elevated rounded-xl p-8 shadow-2xl relative overflow-hidden">
+    <div className="bg-dark-elevated rounded-xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[100px] rounded-full"></div>
-      <h3 className="text-xl font-bold tracking-tight text-text-light mb-8">
+      <h3 className="text-xl font-bold tracking-tight text-text-light mb-6 sm:mb-8">
         Order Summary
       </h3>
 
-      <div className="space-y-4 border-b border-border-muted/15 pb-8 mb-8">
+      <div className="space-y-3 sm:space-y-4 border-b border-border-muted/15 pb-6 sm:pb-8 mb-6 sm:mb-8">
         {items.map((item, idx) => (
           <div key={idx} className="flex justify-between text-sm">
             <span className="text-text-muted">

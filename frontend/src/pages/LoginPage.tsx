@@ -16,7 +16,10 @@ const LoginPage: React.FC = () => {
     validationSchema: loginSchema,
     onSubmit: async (values) => {
       clearError();
-      const result = await login({ email: values.email, password: values.password });
+      const result = await login({
+        email: values.email,
+        password: values.password,
+      });
       if (result?.success) {
         if (result.requiresVerification) {
           navigate("/verify-email");
@@ -28,7 +31,7 @@ const LoginPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-dark text-text-light font-['Inter',sans-serif]">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-dark text-text-light font-['Inter',sans-serif] pt-20">
       {/* Subtle Ambient Background Accents */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-accent/10 blur-[120px] rounded-full"></div>
@@ -89,7 +92,9 @@ const LoginPage: React.FC = () => {
                 />
               </div>
               {formik.touched.email && formik.errors.email && (
-                <p className="text-red-400 text-xs ml-1">{formik.errors.email}</p>
+                <p className="text-red-400 text-xs ml-1">
+                  {formik.errors.email}
+                </p>
               )}
             </div>
 
@@ -130,7 +135,9 @@ const LoginPage: React.FC = () => {
                 />
               </div>
               {formik.touched.password && formik.errors.password && (
-                <p className="text-red-400 text-xs ml-1">{formik.errors.password}</p>
+                <p className="text-red-400 text-xs ml-1">
+                  {formik.errors.password}
+                </p>
               )}
             </div>
 
@@ -142,7 +149,9 @@ const LoginPage: React.FC = () => {
             >
               {isLoading ? (
                 <>
-                  <span className="material-symbols-outlined animate-spin">sync</span>
+                  <span className="material-symbols-outlined animate-spin">
+                    sync
+                  </span>
                   Signing In...
                 </>
               ) : (

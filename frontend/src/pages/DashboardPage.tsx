@@ -255,7 +255,7 @@ export default function OrganizerDashboard() {
   // State for review detail modal
   const [selectedEventReviews, setSelectedEventReviews] = useState<{
     eventName: string;
-    reviews: OrganizerProfile['reviews'];
+    reviews: OrganizerProfile["reviews"];
   } | null>(null);
 
   // Handle query params for tab switching
@@ -315,7 +315,8 @@ export default function OrganizerDashboard() {
   }, [organizerProfile]);
 
   const openReviewModal = (eventName: string) => {
-    const filtered = organizerProfile?.reviews.filter(r => r.eventName === eventName) || [];
+    const filtered =
+      organizerProfile?.reviews.filter((r) => r.eventName === eventName) || [];
     setSelectedEventReviews({ eventName, reviews: filtered });
   };
 
@@ -325,8 +326,9 @@ export default function OrganizerDashboard() {
 
   // Smart Skeleton: hanya tampilkan skeleton saat initial load (data kosong)
   // Saat update filter (loading tapi data sudah ada), jangan unmount child
-  const isInitialLoading = (loadingMyEvents && myEvents.length === 0) || 
-                             (loadingOrganizerStats && !organizerStats);
+  const isInitialLoading =
+    (loadingMyEvents && myEvents.length === 0) ||
+    (loadingOrganizerStats && !organizerStats);
 
   if (isInitialLoading) {
     return (
@@ -348,9 +350,8 @@ export default function OrganizerDashboard() {
 
   return (
     <div className="bg-dark text-text-light antialiased min-h-screen font-['Inter'] selection:bg-accent selection:text-[#D9D8FF]">
-
       {/* Main Area */}
-      <div className="pt-16">
+      <div>
         {/* Header */}
         <div className="pt-4 pb-4 px-4 md:px-8 border-b border-white/5">
           <div className="flex items-center justify-between">
@@ -407,89 +408,104 @@ export default function OrganizerDashboard() {
           {activeTab === "vouchers" && <VouchersTab />}
         </div>
 
-          {/* Event Stats Modal */}
-          {showStatsModal && selectedEvent && (
-            <EventStatsModal
-              eventId={selectedEvent.id}
-              eventName={selectedEvent.name}
-              onClose={() => {
-                setShowStatsModal(false);
-                setSelectedEvent(null);
-              }}
-            />
-          )}
+        {/* Event Stats Modal */}
+        {showStatsModal && selectedEvent && (
+          <EventStatsModal
+            eventId={selectedEvent.id}
+            eventName={selectedEvent.name}
+            onClose={() => {
+              setShowStatsModal(false);
+              setSelectedEvent(null);
+            }}
+          />
+        )}
 
-          {/* Modal Detail Review per Event */}
-          {selectedEventReviews && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[90] p-4">
-              <div className="bg-dark-surface rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-border-muted/10">
-                  <h3 className="text-lg font-bold text-text-light">
-                    Reviews for "{selectedEventReviews.eventName}"
-                  </h3>
-                  <button
-                    onClick={() => setSelectedEventReviews(null)}
-                    className="text-text-muted hover:text-white transition-colors"
-                  >
-                    <span className="material-symbols-outlined">close</span>
-                  </button>
-                </div>
+        {/* Modal Detail Review per Event */}
+        {selectedEventReviews && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[90] p-4">
+            <div className="bg-dark-surface rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-border-muted/10">
+                <h3 className="text-lg font-bold text-text-light">
+                  Reviews for "{selectedEventReviews.eventName}"
+                </h3>
+                <button
+                  onClick={() => setSelectedEventReviews(null)}
+                  className="text-text-muted hover:text-white transition-colors"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
 
-                {/* Daftar Review */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {selectedEventReviews.reviews.length === 0 ? (
-                    <p className="text-text-muted text-center">No reviews yet</p>
-                  ) : (
-                    selectedEventReviews.reviews.map((review) => (
-                      <div key={review.id} className="bg-dark-elevated rounded-lg p-4 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-dark-card flex items-center justify-center overflow-hidden">
-                              {review.userImage ? (
-                                <img src={review.userImage} alt={review.userName} className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="material-symbols-outlined text-sm text-text-muted">person</span>
-                              )}
-                            </div>
-                            <span className="font-medium text-text-light">{review.userName}</span>
-                          </div>
-                          <div className="flex gap-0.5">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span
-                                key={star}
-                                className={`material-symbols-outlined text-sm ${
-                                  star <= review.rating ? "text-primary" : "text-dark-card"
-                                }`}
-                              >
-                                star
+              {/* Daftar Review */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {selectedEventReviews.reviews.length === 0 ? (
+                  <p className="text-text-muted text-center">No reviews yet</p>
+                ) : (
+                  selectedEventReviews.reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="bg-dark-elevated rounded-lg p-4 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-dark-card flex items-center justify-center overflow-hidden">
+                            {review.userImage ? (
+                              <img
+                                src={review.userImage}
+                                alt={review.userName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="material-symbols-outlined text-sm text-text-muted">
+                                person
                               </span>
-                            ))}
+                            )}
                           </div>
+                          <span className="font-medium text-text-light">
+                            {review.userName}
+                          </span>
                         </div>
-                        <p className="text-text-muted text-sm">{review.comment}</p>
-                        <p className="text-text-secondary text-xs">
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </p>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              className={`material-symbols-outlined text-sm ${
+                                star <= review.rating
+                                  ? "text-primary"
+                                  : "text-dark-card"
+                              }`}
+                            >
+                              star
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
+                      <p className="text-text-muted text-sm">
+                        {review.comment}
+                      </p>
+                      <p className="text-text-secondary text-xs">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
 
-                {/* Footer */}
-                <div className="p-6 border-t border-border-muted/10">
-                  <button
-                    onClick={() => setSelectedEventReviews(null)}
-                    className="w-full py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
+              {/* Footer */}
+              <div className="p-6 border-t border-border-muted/10">
+                <button
+                  onClick={() => setSelectedEventReviews(null)}
+                  className="w-full py-2 bg-dark-card hover:bg-dark-card-hover rounded-lg font-medium transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Rating Per Event Section */}
+        {/* Rating Per Event Section */}
         {eventRatings.length > 0 && activeTab === "dashboard" && (
           <div className="mt-8 bg-dark-surface rounded-lg p-6">
             <h3 className="text-lg font-bold mb-4">Event Ratings</h3>
@@ -507,14 +523,18 @@ export default function OrganizerDashboard() {
                         <span
                           key={star}
                           className={`material-symbols-outlined text-sm ${
-                            star <= Math.round(ev.rating) ? "text-primary" : "text-dark-card"
+                            star <= Math.round(ev.rating)
+                              ? "text-primary"
+                              : "text-dark-card"
                           }`}
                         >
                           star
                         </span>
                       ))}
                     </div>
-                    <span className="text-text-muted text-xs">({ev.reviewCount})</span>
+                    <span className="text-text-muted text-xs">
+                      ({ev.reviewCount})
+                    </span>
                   </div>
                 </div>
               ))}
