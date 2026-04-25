@@ -50,10 +50,6 @@ export const EventHero: React.FC<EventHeroProps> = ({ event, eventStatus, averag
             </div>
           )}
         </div>
-
-        <p className="text-text-muted mt-4 max-w-3xl">
-          {event.description}
-        </p>
       </div>
     </div>
   );
