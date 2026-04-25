@@ -147,7 +147,7 @@ export default function KinetixEvents() {
                   value={locationQuery}
                 />
               </div>
-              <button className="bg-primary text-primary-darker font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all w-full text-sm md:text-base">
+              <button className="bg-primary text-primary-darker font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all w-full text-sm md:text-base flex justify-center">
                 <span className="material-symbols-outlined">search</span> Search Events
               </button>
             </motion.div>
