@@ -77,9 +77,7 @@ app.use("/api/transactions", transactionRouter);
 app.use(errorHandler);
 
 // Menjalankan semua cron job otomatis (pembersihan poin expired, dll)
-if (process.env.NODE_ENV !== 'production') {
-  // startCronJobs();
-}
+startCronJobs();
 
 // Menjalankan server pada port yang ditentukan
 if (process.env.NODE_ENV !== 'production') {

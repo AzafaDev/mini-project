@@ -13,7 +13,6 @@ import {
   type EventAttendee,
   type CreateEventRequest,
   type CreateVoucherRequest,
-  type UpdateVoucherRequest,
   type VoucherWithEvent,
 } from "../services/api";
 
@@ -92,7 +91,6 @@ interface EventStore {
   deleteEvent: (id: string) => Promise<boolean>;
   fetchMyVouchers: () => Promise<void>;
   createVoucher: (data: CreateVoucherRequest) => Promise<boolean>;
-  updateVoucher: (id: string, data: UpdateVoucherRequest) => Promise<boolean>;
   deleteVoucher: (id: string) => Promise<boolean>;
   
   // --- Method Helper & Reset State ---
@@ -533,32 +531,6 @@ export const useEventStore = create<EventStore>((set, get) => ({
     } catch (error: any) {
       set({
         error: error.message || "Failed to create voucher",
-        loadingEventAction: false,
-      });
-      return false;
-    }
-  },
-
-  /**
-   * Memperbarui data voucher yang sudah ada
-   * @param id - ID voucher yang akan diupdate
-   * @param data - Data voucher yang akan diubah
-   * @returns Status keberhasilan update voucher
-   */
-  updateVoucher: async (id: string, data: UpdateVoucherRequest) => {
-    set({ loadingEventAction: true, error: null });
-    try {
-      const response = await reviewsVouchersService.updateVoucher(id, data);
-      if (response.success) {
-        await get().fetchMyVouchers();
-        set({ loadingEventAction: false });
-        return true;
-      }
-      set({ error: response.message || "Failed to update voucher", loadingEventAction: false });
-      return false;
-    } catch (error: any) {
-      set({
-        error: error.message || "Failed to update voucher",
         loadingEventAction: false,
       });
       return false;

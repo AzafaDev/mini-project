@@ -1,6 +1,19 @@
 import { prisma } from "../../config/prisma";
 import { Prisma } from "@prisma/client";
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 import { AppError } from "../../utils/AppError";
 import { CreateEvent, UpdateEvent } from "./event.type";
 
@@ -56,7 +69,20 @@ export const eventService = {
       totalPages: number;
     };
   }> => {
-    console.log("[DEBUG Event Service] getAllEvents input:", { search, category, location, startDate, endDate, minPrice, maxPrice, page, limit, sortBy, sortOrder, includePast });
+    console.log("[DEBUG Event Service] getAllEvents input:", {
+      search,
+      category,
+      location,
+      startDate,
+      endDate,
+      minPrice,
+      maxPrice,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      includePast,
+    });
 
     const currentPage = Math.max(1, page || 1);
     const currentLimit = Math.max(1, Math.min(100, limit || 10));
@@ -86,7 +112,10 @@ export const eventService = {
       where.endDate = { gte: new Date() };
     }
 
-    console.log("[DEBUG Event Service] getAllEvents where clause:", JSON.stringify(where));
+    console.log(
+      "[DEBUG Event Service] getAllEvents where clause:",
+      JSON.stringify(where),
+    );
 
     const orderBy: Prisma.EventOrderByWithRelationInput = {};
     const validSortFields = ["name", "startDate", "price", "createdAt"];
@@ -119,8 +148,18 @@ export const eventService = {
       },
     });
 
-    console.log("[DEBUG Event Service] getAllEvents fetched events:", events.length);
-    console.log("[DEBUG] Event tickets:", events.map(e => ({ id: e.id, name: e.name, tickets: e.tickets.map(t => ({ type: t.type, price: t.price })) })));
+    console.log(
+      "[DEBUG Event Service] getAllEvents fetched events:",
+      events.length,
+    );
+    console.log(
+      "[DEBUG] Event tickets:",
+      events.map((e) => ({
+        id: e.id,
+        name: e.name,
+        tickets: e.tickets.map((t) => ({ type: t.type, price: t.price })),
+      })),
+    );
 
     return {
       data: events,
@@ -155,7 +194,7 @@ export const eventService = {
               select: {
                 id: true,
                 fullName: true,
-            email: true,
+                email: true,
                 profilePicture: true,
               },
             },
@@ -172,7 +211,10 @@ export const eventService = {
     });
 
     console.log("[DEBUG Event Service] getEventById result:", !!event);
-    console.log("[DEBUG] Event tickets:", event?.tickets.map(t => ({ id: t.id, type: t.type, price: t.price })));
+    console.log(
+      "[DEBUG] Event tickets:",
+      event?.tickets.map((t) => ({ id: t.id, type: t.type, price: t.price })),
+    );
 
     if (!event) throw new AppError("Event not found", 404);
     const averageRating =
@@ -212,7 +254,12 @@ export const eventService = {
       user: undefined,
     }));
 
-    return { ...event, reviews: transformedReviews, averageRating, organizer: transformedOrganizer };
+    return {
+      ...event,
+      reviews: transformedReviews,
+      averageRating,
+      organizer: transformedOrganizer,
+    };
   },
 
   createEvent: async ({
@@ -229,23 +276,46 @@ export const eventService = {
     organizerId,
     tickets,
   }: CreateEvent) => {
-    console.log("[DEBUG Event Service] createEvent input:", { name, description, location, category, totalSeats, price, availableSeats, organizerId, hasImage: !!imageUrl, hasTickets: !!tickets });
+    console.log("[DEBUG Event Service] createEvent input:", {
+      name,
+      description,
+      location,
+      category,
+      totalSeats,
+      price,
+      availableSeats,
+      organizerId,
+      hasImage: !!imageUrl,
+      hasTickets: !!tickets,
+    });
 
-    if (!name?.trim() || !description?.trim() || !location?.trim() || !category?.trim()) {
+    if (
+      !name?.trim() ||
+      !description?.trim() ||
+      !location?.trim() ||
+      !category?.trim()
+    ) {
       throw new AppError("All fields are required", 400);
     }
 
-    const parsedStartDate = typeof startDate === 'string' ? parseDate(startDate, "startDate") : startDate;
-    const parsedEndDate = typeof endDate === 'string' ? parseDate(endDate, "endDate") : endDate;
+    const parsedStartDate =
+      typeof startDate === "string"
+        ? parseDate(startDate, "startDate")
+        : startDate;
+    const parsedEndDate =
+      typeof endDate === "string" ? parseDate(endDate, "endDate") : endDate;
 
-    console.log("[DEBUG Event Service] createEvent parsed dates:", { parsedStartDate, parsedEndDate });
+    console.log("[DEBUG Event Service] createEvent parsed dates:", {
+      parsedStartDate,
+      parsedEndDate,
+    });
 
     if (parsedStartDate > parsedEndDate) {
       throw new AppError("startDate must be before endDate", 400);
     }
 
     const parsedTotalSeats = parseNumber(totalSeats, "totalSeats");
-    const parsedPrice = parseNumber(price, "price");
+    let parsedPrice = parseNumber(price, "price");
 
     let eventTotalSeats = parsedTotalSeats;
     let eventAvailableSeats = availableSeats
@@ -271,12 +341,20 @@ export const eventService = {
 
       eventTotalSeats = tickets.reduce((sum, t) => sum + t.quantity, 0);
       eventAvailableSeats = eventTotalSeats;
+
+      // 🔹 Synchronize event price with cheapest custom ticket
+      const minTicketPrice = Math.min(...tickets.map((t) => t.price));
+      parsedPrice = minTicketPrice;
     }
 
-    console.log("[DEBUG Event Service] createEvent parsed numbers:", { eventTotalSeats, parsedPrice, eventAvailableSeats });
+    console.log("[DEBUG Event Service] createEvent parsed numbers:", {
+      eventTotalSeats,
+      parsedPrice,
+      eventAvailableSeats,
+    });
 
     console.log("[DEBUG Event Service] creating event in DB with $transaction");
-    
+
     const newEvent = await prisma.$transaction(async (tx) => {
       const event = await tx.event.create({
         data: {
@@ -296,7 +374,10 @@ export const eventService = {
         },
       });
 
-      console.log("[DEBUG Event Service] createEvent success, eventId:", event.id);
+      console.log(
+        "[DEBUG Event Service] createEvent success, eventId:",
+        event.id,
+      );
 
       if (tickets && tickets.length > 0) {
         console.log("[DEBUG Event Service] creating custom tickets");
@@ -316,7 +397,7 @@ export const eventService = {
         await tx.ticket.create({
           data: {
             eventId: event.id,
-            type: 'GENERAL',
+            type: "GENERAL",
             price: parsedPrice,
             quantity: eventTotalSeats,
             available: eventAvailableSeats,
@@ -376,16 +457,28 @@ export const eventService = {
           ...event,
           sold: transactions._sum.quantity || 0,
         };
-      })
+      }),
     );
 
-    console.log("[DEBUG Event Service] getMyEvents result count:", eventsWithSold.length);
+    console.log(
+      "[DEBUG Event Service] getMyEvents result count:",
+      eventsWithSold.length,
+    );
 
     return eventsWithSold;
   },
 
-  getEventStats: async ({ id, organizerId }: { id: string; organizerId: string }) => {
-    console.log("[DEBUG Event Service] getEventStats input:", { id, organizerId });
+  getEventStats: async ({
+    id,
+    organizerId,
+  }: {
+    id: string;
+    organizerId: string;
+  }) => {
+    console.log("[DEBUG Event Service] getEventStats input:", {
+      id,
+      organizerId,
+    });
 
     const event = await prisma.event.findUnique({
       where: { id: id, organizerId: organizerId, isDeleted: false },
@@ -422,16 +515,32 @@ export const eventService = {
     // Kirim semua data yang dibutuhkan frontend
     return {
       totalRevenue,
-      ticketsSold,               // ✅ tambahkan
+      ticketsSold, // ✅ tambahkan
       availableSeats: event.availableSeats, // ✅ tambahkan
-      soldPercentage: event.totalSeats > 0 ? (ticketsSold / event.totalSeats) * 100 : 0, // ✅ hitung di backend
+      soldPercentage:
+        event.totalSeats > 0 ? (ticketsSold / event.totalSeats) * 100 : 0, // ✅ hitung di backend
       eventName: event.name,
       attendeeCount,
     };
   },
 
-  getOrganizerStats: async ({ organizerId, year, month, day }: { organizerId: string; year?: number; month?: number; day?: number }) => {
-    console.log("[DEBUG Event Service] getOrganizerStats input:", { organizerId, year, month, day });
+  getOrganizerStats: async ({
+    organizerId,
+    year,
+    month,
+    day,
+  }: {
+    organizerId: string;
+    year?: number;
+    month?: number;
+    day?: number;
+  }) => {
+    console.log("[DEBUG Event Service] getOrganizerStats input:", {
+      organizerId,
+      year,
+      month,
+      day,
+    });
 
     const currentYear = year || new Date().getFullYear();
     const currentMonth = month;
@@ -446,7 +555,7 @@ export const eventService = {
       select: { id: true, startDate: true, endDate: true },
     });
 
-    const allEventIds = allOrganizerEvents.map(e => e.id);
+    const allEventIds = allOrganizerEvents.map((e) => e.id);
 
     // Get all transactions for these events
     const allTransactions = await prisma.transaction.findMany({
@@ -460,40 +569,53 @@ export const eventService = {
     let filteredTransactions = allTransactions;
     if (currentYear && currentMonth && currentDay) {
       // Specific day
-      filteredTransactions = allTransactions.filter(tx => {
+      filteredTransactions = allTransactions.filter((tx) => {
         const txDate = new Date(tx.createdAt);
-        return txDate.getDate() === currentDay &&
-               (txDate.getMonth() + 1) === currentMonth &&
-               txDate.getFullYear() === currentYear;
+        return (
+          txDate.getDate() === currentDay &&
+          txDate.getMonth() + 1 === currentMonth &&
+          txDate.getFullYear() === currentYear
+        );
       });
     } else if (currentYear && currentMonth) {
       // Specific month
-      filteredTransactions = allTransactions.filter(tx => {
+      filteredTransactions = allTransactions.filter((tx) => {
         const txDate = new Date(tx.createdAt);
-        return (txDate.getMonth() + 1) === currentMonth &&
-               txDate.getFullYear() === currentYear;
+        return (
+          txDate.getMonth() + 1 === currentMonth &&
+          txDate.getFullYear() === currentYear
+        );
       });
     } else if (currentYear) {
       // Specific year
-      filteredTransactions = allTransactions.filter(tx => {
+      filteredTransactions = allTransactions.filter((tx) => {
         const txDate = new Date(tx.createdAt);
         return txDate.getFullYear() === currentYear;
       });
     }
 
-    const totalRevenue = filteredTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0);
-    const totalTicketsSold = filteredTransactions.reduce((sum, tx) => sum + tx.quantity, 0);
+    const totalRevenue = filteredTransactions.reduce(
+      (sum, tx) => sum + tx.finalPrice,
+      0,
+    );
+    const totalTicketsSold = filteredTransactions.reduce(
+      (sum, tx) => sum + tx.quantity,
+      0,
+    );
     const totalAttendees = filteredTransactions.length;
 
     // Calculate total events (filtered by period if needed)
     let filteredEvents = allOrganizerEvents;
     if (currentYear && currentMonth) {
-      filteredEvents = allOrganizerEvents.filter(e => {
+      filteredEvents = allOrganizerEvents.filter((e) => {
         const startDate = new Date(e.startDate);
-        return startDate.getFullYear() === currentYear && (startDate.getMonth() + 1) === currentMonth;
+        return (
+          startDate.getFullYear() === currentYear &&
+          startDate.getMonth() + 1 === currentMonth
+        );
       });
     } else if (currentYear) {
-      filteredEvents = allOrganizerEvents.filter(e => {
+      filteredEvents = allOrganizerEvents.filter((e) => {
         const startDate = new Date(e.startDate);
         return startDate.getFullYear() === currentYear;
       });
@@ -501,14 +623,15 @@ export const eventService = {
     const totalEvents = filteredEvents.length;
 
     // Monthly stats (for current year)
-    const monthlyStats: { month: string; revenue: number; tickets: number }[] = [];
-    const yearTransactions = allTransactions.filter(tx => {
+    const monthlyStats: { month: string; revenue: number; tickets: number }[] =
+      [];
+    const yearTransactions = allTransactions.filter((tx) => {
       const txDate = new Date(tx.createdAt);
       return txDate.getFullYear() === currentYear;
     });
 
     for (let m = 1; m <= 12; m++) {
-      const monthTransactions = yearTransactions.filter(tx => {
+      const monthTransactions = yearTransactions.filter((tx) => {
         const txDate = new Date(tx.createdAt);
         return txDate.getMonth() + 1 === m;
       });
@@ -524,13 +647,16 @@ export const eventService = {
     const dailyStats: { day: string; revenue: number; tickets: number }[] = [];
     if (currentMonth) {
       const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-      const monthTransactions = allTransactions.filter(tx => {
+      const monthTransactions = allTransactions.filter((tx) => {
         const txDate = new Date(tx.createdAt);
-        return (txDate.getMonth() + 1) === currentMonth && txDate.getFullYear() === currentYear;
+        return (
+          txDate.getMonth() + 1 === currentMonth &&
+          txDate.getFullYear() === currentYear
+        );
       });
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const dayTransactions = monthTransactions.filter(tx => {
+        const dayTransactions = monthTransactions.filter((tx) => {
           const txDate = new Date(tx.createdAt);
           return txDate.getDate() === d;
         });
@@ -544,29 +670,33 @@ export const eventService = {
     }
 
     // Yearly stats (last 5 years)
-    const yearlyStats: { year: number; revenue: number; tickets: number }[] = [];
+    const yearlyStats: { year: number; revenue: number; tickets: number }[] =
+      [];
     const currentFullYear = new Date().getFullYear();
     for (let y = currentFullYear - 4; y <= currentFullYear; y++) {
-      const yearTransactionsData = allTransactions.filter(tx => {
+      const yearTransactionsData = allTransactions.filter((tx) => {
         const txDate = new Date(tx.createdAt);
         return txDate.getFullYear() === y;
       });
 
       yearlyStats.push({
         year: y,
-        revenue: yearTransactionsData.reduce((sum, tx) => sum + tx.finalPrice, 0),
+        revenue: yearTransactionsData.reduce(
+          (sum, tx) => sum + tx.finalPrice,
+          0,
+        ),
         tickets: yearTransactionsData.reduce((sum, tx) => sum + tx.quantity, 0),
       });
     }
 
-    console.log("[DEBUG Event Service] getOrganizerStats result:", { 
-      totalRevenue, 
-      totalTicketsSold, 
-      totalEvents, 
-      totalAttendees, 
-      monthlyStats: monthlyStats.length, 
+    console.log("[DEBUG Event Service] getOrganizerStats result:", {
+      totalRevenue,
+      totalTicketsSold,
+      totalEvents,
+      totalAttendees,
+      monthlyStats: monthlyStats.length,
       dailyStats: dailyStats.length,
-      yearlyStats: yearlyStats.length 
+      yearlyStats: yearlyStats.length,
     });
 
     return {
@@ -581,7 +711,9 @@ export const eventService = {
   },
 
   getOrganizerProfile: async ({ organizerId }: { organizerId: string }) => {
-    console.log("[DEBUG Event Service] getOrganizerProfile input:", { organizerId });
+    console.log("[DEBUG Event Service] getOrganizerProfile input:", {
+      organizerId,
+    });
 
     const organizer = await prisma.user.findUnique({
       where: { id: organizerId },
@@ -674,8 +806,17 @@ export const eventService = {
       })),
     };
   },
-  getEventAttendees: async ({ eventId, organizerId }: { eventId: string; organizerId: string }) => {
-    console.log("[DEBUG Event Service] getEventAttendees input:", { eventId, organizerId });
+  getEventAttendees: async ({
+    eventId,
+    organizerId,
+  }: {
+    eventId: string;
+    organizerId: string;
+  }) => {
+    console.log("[DEBUG Event Service] getEventAttendees input:", {
+      eventId,
+      organizerId,
+    });
 
     if (!eventId) {
       throw new AppError("Event ID is required", 400);
@@ -713,7 +854,10 @@ export const eventService = {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("[DEBUG Event Service] getEventAttendees result count:", transactions.length);
+    console.log(
+      "[DEBUG Event Service] getEventAttendees result count:",
+      transactions.length,
+    );
 
     // Mapping ke struktur yang diharapkan frontend
     return transactions.map((tx) => ({

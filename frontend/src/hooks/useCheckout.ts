@@ -192,19 +192,23 @@ export function useCheckout() {
       }
     }
 
-    // Determine ticket ID from selected tickets (single tier enforced)
-    const selectedTicketId = Object.keys(selectedTickets).find(id => selectedTickets[id] > 0);
-    const ticketId = selectedTicketId || "default-ticket";
+     // Determine ticket ID from selected tickets (single tier enforced)
+     const selectedTicketId = Object.keys(selectedTickets).find(id => selectedTickets[id] > 0);
+     if (!selectedTicketId) {
+       addToast("error", "Please select a ticket type");
+       return;
+     }
+     const ticketId = selectedTicketId;
 
     try {
-      const transaction = await createTransaction({
-        eventId,
-        ticketId: ticketId || "default-ticket",
-        quantity: totalQuantity,
-        voucherCode: activePromo?.type === "voucher" ? activePromo.code : undefined,
-        couponCode: activePromo?.type === "coupon" ? activePromo.code : undefined,
-        pointsUsed: pointsToUse > 0 ? pointsToUse : undefined,
-      });
+       const transaction = await createTransaction({
+         eventId,
+         ticketId: ticketId,
+         quantity: totalQuantity,
+         voucherCode: activePromo?.type === "voucher" ? activePromo.code : undefined,
+         couponCode: activePromo?.type === "coupon" ? activePromo.code : undefined,
+         pointsUsed: pointsToUse > 0 ? pointsToUse : undefined,
+       });
 
       if (transaction) {
         addToast("success", "Transaction created! Redirecting...");

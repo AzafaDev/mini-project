@@ -3,6 +3,7 @@ import { useEventStore } from "../../stores/useEventStore";
 import { useToastStore } from "../../stores/useToastStore";
 import { formatDate } from "../../lib/formatters";
 import type { VoucherWithEvent } from "../../services/api";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
 
 export function VouchersTab() {
   // FIX: Use Zustand selectors to prevent unnecessary re-renders
@@ -13,7 +14,6 @@ export function VouchersTab() {
   const loadingEventAction = useEventStore((s) => s.loadingEventAction);
   const fetchMyVouchers = useEventStore((s) => s.fetchMyVouchers);
   const createVoucher = useEventStore((s) => s.createVoucher);
-  const updateVoucher = useEventStore((s) => s.updateVoucher);
   const deleteVoucher = useEventStore((s) => s.deleteVoucher);
   const error = useEventStore((s) => s.error);
   const clearError = useEventStore((s) => s.clearError);
@@ -21,8 +21,9 @@ export function VouchersTab() {
   const { addToast } = useToastStore();
 
   const [showModal, setShowModal] = useState(false);
-  const [editingVoucher, setEditingVoucher] = useState<VoucherWithEvent | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [voucherToDelete, setVoucherToDelete] = useState<VoucherWithEvent | null>(null);
   const [formData, setFormData] = useState({
     eventId: "",
     code: "",
@@ -30,6 +31,7 @@ export function VouchersTab() {
     discountValue: 10,
     startDate: "",
     endDate: "",
+    maxUsage: "",
   });
 
 // Fetch data if not already loaded
@@ -45,33 +47,23 @@ export function VouchersTab() {
     }));
   };
 
-  const openCreateModal = () => {
-    setEditingVoucher(null);
-    setFormData({
-      eventId: myEvents[0]?.id || "",
-      code: "",
-      discountType: "PERCENTAGE",
-      discountValue: 10,
-      startDate: "",
-      endDate: "",
-    });
-    setLocalError(null);
-    setShowModal(true);
-  };
-
-  const openEditModal = (voucher: VoucherWithEvent) => {
-    setEditingVoucher(voucher);
-    setFormData({
-      eventId: voucher.event.id,
-      code: voucher.code,
-      discountType: voucher.discountType,
-      discountValue: voucher.discountValue,
-      startDate: voucher.startDate.slice(0, 16),
-      endDate: voucher.endDate.slice(0, 16),
-    });
-    setLocalError(null);
-    setShowModal(true);
-  };
+    const openCreateModal = () => {
+      if (myEvents.length === 0) {
+        addToast("error", "You need to create an event before adding vouchers");
+        return;
+      }
+      setFormData({
+        eventId: myEvents[0]?.id || "",
+        code: "",
+        discountType: "PERCENTAGE",
+        discountValue: 10,
+        startDate: "",
+        endDate: "",
+        maxUsage: "",
+      });
+      setLocalError(null);
+      setShowModal(true);
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,57 +95,40 @@ export function VouchersTab() {
     }
 
     try {
-      let success = false;
-      if (editingVoucher) {
-        const updateData = {
-          code: formData.code,
-          discountType: formData.discountType,
-          discountValue: formData.discountValue,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-        };
-        success = await updateVoucher(editingVoucher.id, updateData);
-        if (success) {
-          addToast("success", "Voucher updated successfully!");
-        }
-      } else {
-        success = await createVoucher(formData);
-        if (success) {
-          addToast("success", "Voucher created successfully!");
-        }
-      }
-
+      const submitData = {
+        ...formData,
+        maxUsage: formData.maxUsage ? Number(formData.maxUsage) : undefined,
+      };
+      const success = await createVoucher(submitData);
       if (success) {
+        addToast("success", "Voucher created successfully!");
         setShowModal(false);
       } else {
-        setLocalError(error || "Failed to save voucher");
+        setLocalError(error || "Failed to create voucher");
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to save voucher";
+      const errorMessage = err instanceof Error ? err.message : "Failed to create voucher";
       setLocalError(errorMessage);
     }
   };
 
-  const handleDelete = async (voucher: VoucherWithEvent) => {
-    if (!confirm(`Are you sure you want to delete voucher "${voucher.code}"?`)) {
-      return;
-    }
+  const handleDelete = (voucher: VoucherWithEvent) => {
+    setVoucherToDelete(voucher);
+    setIsDeleteConfirmOpen(true);
+  };
 
-    const success = await deleteVoucher(voucher.id);
+  const confirmDelete = async () => {
+    if (!voucherToDelete) return;
+
+    const success = await deleteVoucher(voucherToDelete.id);
     if (success) {
       addToast("success", "Voucher deleted successfully!");
     } else {
       addToast("error", error || "Failed to delete voucher");
     }
-  };
 
-  const handleToggleActive = async (voucher: VoucherWithEvent) => {
-    const success = await updateVoucher(voucher.id, { isActive: !voucher.isActive });
-    if (success) {
-      addToast("success", `Voucher ${voucher.isActive ? "deactivated" : "activated"}!`);
-    } else {
-      addToast("error", error || "Failed to update voucher status");
-    }
+    setIsDeleteConfirmOpen(false);
+    setVoucherToDelete(null);
   };
 
   const formatDiscount = (voucher: VoucherWithEvent) => {
@@ -184,6 +159,7 @@ export function VouchersTab() {
         <button
           onClick={openCreateModal}
           disabled={myEvents.length === 0}
+          title={myEvents.length === 0 ? "Create an event first" : undefined}
           className="bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
         >
           <span className="material-symbols-outlined">add</span>
@@ -253,40 +229,23 @@ export function VouchersTab() {
                       {formatDate(voucher.startDate)} - {formatDate(voucher.endDate)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleActive(voucher)}
-                      className={`px-3 py-1 text-xs font-bold rounded-full border transition-colors ${
-                        voucher.isActive
-                          ? "bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20"
-                          : "bg-gray-500/10 text-gray-400 border-gray-500/20 hover:bg-gray-500/20"
-                      }`}
-                    >
-                      {voucher.isActive ? "Active" : "Inactive"}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(voucher)}
-                        className="p-2 text-text-muted hover:text-white hover:bg-dark-card rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          edit
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(voucher)}
-                        className="p-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          delete
-                        </span>
-                      </button>
-                    </div>
-                  </td>
+                   <td className="px-6 py-4">
+                     <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                       voucher.isActive
+                         ? "bg-green-500/10 text-green-400"
+                         : "bg-gray-500/10 text-gray-400"
+                     }`}>
+                       {voucher.isActive ? "Active" : "Inactive"}
+                     </span>
+                   </td>
+                   <td className="px-6 py-4 text-right">
+                     <button
+                       onClick={() => handleDelete(voucher)}
+                       className="p-2 text-text-muted hover:text-red-400"
+                     >
+                       <span className="material-symbols-outlined text-[18px]">delete</span>
+                     </button>
+                   </td>
                 </tr>
               ))}
             </tbody>
@@ -322,7 +281,7 @@ export function VouchersTab() {
           <div className="bg-dark-surface rounded-lg w-full max-w-md border border-border-muted/10">
             <div className="flex items-center justify-between p-6 border-b border-border-muted/10">
               <h2 className="text-lg font-bold">
-                {editingVoucher ? "Edit Voucher" : "Create Voucher"}
+                Create Voucher
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -338,9 +297,8 @@ export function VouchersTab() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {!editingVoucher && (
-                <div>
+             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+               <div>
                   <label className="block text-sm font-medium text-text-muted mb-2">
                     Event *
                   </label>
@@ -356,11 +314,10 @@ export function VouchersTab() {
                         {event.name}
                       </option>
                     ))}
-                  </select>
-                </div>
-              )}
+                   </select>
+                 </div>
 
-              <div>
+               <div>
                 <label className="block text-sm font-medium text-text-muted mb-2">
                   Voucher Code *
                 </label>
@@ -432,9 +389,27 @@ export function VouchersTab() {
                     className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
-              </div>
+               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4">
+               <div>
+                 <label className="block text-sm font-medium text-text-muted mb-2">
+                   Max Usage (Optional)
+                 </label>
+                 <input
+                   type="number"
+                   name="maxUsage"
+                   value={formData.maxUsage}
+                   onChange={handleChange}
+                   min={1}
+                   placeholder="Unlimited"
+                   className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
+                 />
+                 <p className="text-xs text-text-muted mt-1">
+                   Leave empty for unlimited usage
+                 </p>
+               </div>
+
+               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -454,18 +429,32 @@ export function VouchersTab() {
                       </span>
                       Saving...
                     </>
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-[18px]">save</span>
-                      {editingVoucher ? "Update" : "Create"}
-                    </>
-                  )}
+                   ) : (
+                     <>
+                       <span className="material-symbols-outlined text-[18px]">save</span>
+                       Create
+                     </>
+                   )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+         </div>
+       )}
+
+       <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setVoucherToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Voucher"
+        message={`Are you sure you want to delete voucher "${voucherToDelete?.code ?? ''}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+      />
+     </div>
+   );
+ }

@@ -1,152 +1,49 @@
 import { prisma } from "../config/prisma";
 import { TransactionStatus } from "@prisma/client";
 import { sendEmail } from "./sendEmail";
-import {
-  restoreTicketAvailability,
-  restoreUserPoints,
-  restoreVoucher,
-  restoreCoupon,
-} from "./transactionHelpers";
+import { transactionService } from "../modules/transaction/transaction.service";
 
 const EXPIRATION_HOURS = 2;
 const AUTO_CANCEL_DAYS = 3;
 
 async function processExpiredTransactions() {
   console.log("[CRON] Running processExpiredTransactions...");
-
   const expiredTransactions = await prisma.transaction.findMany({
     where: {
       status: TransactionStatus.WAITING_PAYMENT,
       expiresAt: { lte: new Date() },
     },
-    include: {
-      user: { select: { email: true, fullName: true } },
-      event: { select: { name: true } },
-      ticket: true,
-      voucher: true,
-      coupon: true,
-    },
+    select: { id: true },
   });
-
-  console.log("[CRON] Found expired transactions:", expiredTransactions.length);
 
   for (const tx of expiredTransactions) {
     try {
-      console.log("[CRON] Expiring transaction:", tx.id);
-
-      await prisma.$transaction(async (txx) => {
-        // Update status to EXPIRED
-        await txx.transaction.update({
-          where: { id: tx.id },
-          data: { status: TransactionStatus.EXPIRED },
-        });
-
-        // Restore all resources
-        await restoreTicketAvailability(txx, {
-          ticketId: tx.ticketId,
-          eventId: tx.eventId,
-          quantity: tx.quantity,
-        });
-
-        await restoreUserPoints(txx, {
-          userId: tx.userId,
-          pointsUsed: tx.pointsUsed,
-        });
-
-        if (tx.voucherId) {
-          await restoreVoucher(txx, { voucherId: tx.voucherId });
-        }
-
-        if (tx.couponId) {
-          await restoreCoupon(txx, { couponId: tx.couponId });
-        }
-      });
-
+      await transactionService.expireTransaction({ id: tx.id });
       console.log("[CRON] Transaction expired:", tx.id);
     } catch (error) {
       console.error("[CRON] Error expiring transaction:", tx.id, error);
     }
   }
-
-  console.log("[CRON] processExpiredTransactions completed");
 }
 
 async function processAutoCancelTransactions() {
   console.log("[CRON] Running processAutoCancelTransactions...");
-
   const autoCancelTransactions = await prisma.transaction.findMany({
     where: {
       status: TransactionStatus.WAITING_CONFIRMATION,
       autoCancelAt: { lte: new Date() },
     },
-    include: {
-      user: { select: { email: true, fullName: true } },
-      event: { select: { name: true } },
-      ticket: true,
-      voucher: true,
-      coupon: true,
-    },
+    select: { id: true },
   });
-
-  console.log(
-    "[CRON] Found auto-cancel transactions:",
-    autoCancelTransactions.length,
-  );
 
   for (const tx of autoCancelTransactions) {
     try {
-      console.log("[CRON] Auto-canceling transaction:", tx.id);
-
-      await prisma.$transaction(async (txx) => {
-        // Update status to CANCELED
-        await txx.transaction.update({
-          where: { id: tx.id },
-          data: { status: TransactionStatus.CANCELED },
-        });
-
-        // Restore all resources
-        await restoreTicketAvailability(txx, {
-          ticketId: tx.ticketId,
-          eventId: tx.eventId,
-          quantity: tx.quantity,
-        });
-
-        await restoreUserPoints(txx, {
-          userId: tx.userId,
-          pointsUsed: tx.pointsUsed,
-        });
-
-        if (tx.voucherId) {
-          await restoreVoucher(txx, { voucherId: tx.voucherId });
-        }
-
-        if (tx.couponId) {
-          await restoreCoupon(txx, { couponId: tx.couponId });
-        }
-      });
-
-      // Send email notification (non-blocking)
-      if (tx.user && tx.event) {
-        sendEmail
-          .transactionRejected({
-            email: tx.user.email,
-            username: tx.user.fullName,
-            eventName: tx.event.name,
-            finalPrice: tx.finalPrice,
-            quantity: tx.quantity,
-          })
-          .catch((err) =>
-            console.log("[CRON] Email send failed:", err.message),
-          );
-      }
-
+      await transactionService.cancelTransaction({ id: tx.id });
       console.log("[CRON] Transaction auto-canceled:", tx.id);
     } catch (error) {
       console.error("[CRON] Error auto-canceling transaction:", tx.id, error);
     }
   }
-
-  console.log("[CRON] processAutoCancelTransactions completed");
 }
 
 async function cleanupExpiredPoints() {

@@ -186,15 +186,23 @@ export const transactionController = {
     });
   }),
 
-  cancelTransaction: catchAsync<AuthRequest>(async (req, res) => {
-    const id = req.params.id as string;
+   cancelTransaction: catchAsync<AuthRequest>(async (req, res) => {
+     const id = req.params.id as string;
 
-    const transaction = await transactionService.cancelTransaction({ id });
+     const transaction = await transactionService.cancelTransaction({ id });
 
-    res.status(200).json({
-      success: true,
-      message: "Transaction cancelled",
-      data: transaction,
-    });
-  }),
+     res.status(200).json({
+       success: true,
+       message: "Transaction cancelled",
+       data: transaction,
+     });
+   }),
+
+   checkUserPurchase: catchAsync<AuthRequest>(async (req, res) => {
+     const eventId = req.params.eventId as string;
+     const userId = req.userId;
+
+     const hasPurchased = await transactionService.hasUserPurchased({ userId, eventId });
+     res.json({ success: true, hasPurchased });
+   }),
 };

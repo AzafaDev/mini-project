@@ -53,10 +53,13 @@ export async function restoreUserPoints(tx: any, { userId, pointsUsed }: Pick<Re
 /**
  * Restores voucher usage count after transaction is rejected/expired/canceled.
  */
-export async function restoreVoucher(tx: any, { voucherId }: Pick<RestoreResourcesParams, "voucherId">) {
+export async function restoreVoucher(
+  tx: any,
+  { voucherId }: Pick<RestoreResourcesParams, "voucherId">,
+) {
   if (voucherId) {
-    await tx.voucher.update({
-      where: { id: voucherId },
+    await tx.voucher.updateMany({
+      where: { id: voucherId, usedCount: { gt: 0 } },
       data: { usedCount: { decrement: 1 } },
     });
   }

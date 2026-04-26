@@ -133,6 +133,14 @@ export const voucherService = {
       throw new AppError("Voucher code already exists for this event", 400);
     }
 
+    // Validate discount value
+    if (discountValue <= 0) {
+      throw new AppError("Discount value must be a positive number", 400);
+    }
+    if (discountType === DiscountType.PERCENTAGE && discountValue > 100) {
+      throw new AppError("Percentage discount cannot exceed 100%", 400);
+    }
+
     const voucher = await prisma.voucher.create({
       data: {
         eventId,
@@ -148,61 +156,6 @@ export const voucherService = {
 
     console.log("[DEBUG Voucher Service] createVoucher success:", voucher.id);
     return voucher;
-  },
-
-  /**
-   * Update a voucher
-   */
-  updateVoucher: async ({
-    id,
-    organizerId,
-    code,
-    discountType,
-    discountValue,
-    startDate,
-    endDate,
-    maxUsage,
-    isActive,
-  }: {
-    id: string;
-    organizerId: string;
-    code?: string;
-    discountType?: DiscountType;
-    discountValue?: number;
-    startDate?: Date;
-    endDate?: Date;
-    maxUsage?: number;
-    isActive?: boolean;
-  }) => {
-    console.log("[DEBUG Voucher Service] updateVoucher input:", {
-      id,
-      organizerId,
-    });
-
-    const voucher = await prisma.voucher.findFirst({
-      where: { id },
-      include: { event: { select: { organizerId: true } } },
-    });
-
-    if (!voucher || voucher.event.organizerId !== organizerId) {
-      throw new AppError("Unauthorized", 403);
-    }
-
-    const updated = await prisma.voucher.update({
-      where: { id },
-      data: {
-        ...(code && { code }),
-        ...(discountType && { discountType }),
-        ...(discountValue && { discountValue }),
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate }),
-        ...(maxUsage !== undefined && { maxUsage }),
-        ...(isActive !== undefined && { isActive }),
-      },
-    });
-
-    console.log("[DEBUG Voucher Service] updateVoucher success:", updated.id);
-    return updated;
   },
 
   /**

@@ -79,4 +79,11 @@ transactionRouter.put(
   transactionController.cancelTransaction,
 );
 
+// Cek apakah user sudah membeli tiket untuk event tertentu
+transactionRouter.get(
+  "/check-purchase/:eventId",
+  authMiddleware.verifyAuthToken,
+  transactionController.checkUserPurchase,
+);
+
 export default transactionRouter;
