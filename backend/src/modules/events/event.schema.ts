@@ -17,8 +17,8 @@ const preprocessTickets = z.preprocess((val) => {
   if (typeof val === "string") {
     try {
       return JSON.parse(val);
-    } catch {
-      return undefined;
+    } catch (e) {
+      throw new Error("Invalid JSON format for tickets field");
     }
   }
   return val;

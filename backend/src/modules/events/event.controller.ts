@@ -5,6 +5,7 @@ import { UploadedFile } from "express-fileupload";
 import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
 import { catchAsync } from "../../utils/catchAsync";
+import { AppError } from "../../utils/AppError";
 
 export const eventController = {
   getAllEvents: catchAsync(async (req: Request, res: Response) => {
@@ -60,20 +61,27 @@ export const eventController = {
       availableSeats,
       tickets,
     } = req.body as CreateEvent;
-    
+
     const organizerId = req.userId;
     if (!organizerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const imageUrl = await getUploadUrl(req.files?.imageFile as UploadedFile, "events-image");
+    // 🔹 Validasi: gambar wajib ada
+    if (!req.files || !req.files.imageFile) {
+      throw new AppError("Event image is required", 400);
+    }
+
+    const imageUrl = await getUploadUrl(req.files.imageFile as UploadedFile, "events-image");
 
     let parsedTickets: { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[] | undefined;
     if (tickets) {
       if (typeof tickets === 'string') {
         try {
           parsedTickets = JSON.parse(tickets);
-        } catch (e) {}
+        } catch (e) {
+          throw new AppError("Invalid JSON format for tickets field", 400);
+        }
       } else {
         parsedTickets = tickets as unknown as { type: 'GENERAL' | 'VIP'; price: number; quantity: number }[];
       }

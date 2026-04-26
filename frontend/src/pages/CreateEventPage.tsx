@@ -75,6 +75,12 @@ export default function CreateEventPage() {
     e.preventDefault();
     setLocalError(null);
 
+    // 🔹 Validasi gambar wajib
+    if (!imageFile) {
+      setLocalError("Event image is required");
+      return;
+    }
+
     // Validate custom tickets if enabled
     if (useCustomTickets) {
       if (tickets.length === 0) {
@@ -142,7 +148,9 @@ export default function CreateEventPage() {
         <form onSubmit={handleFormSubmit} className="space-y-8">
           {/* Image Upload - RESPONSIVE FIX */}
           <div className="bg-dark-surface rounded-lg p-6 border border-border-muted/10">
-            <h3 className="text-lg font-bold mb-4">Event Image</h3>
+            <h3 className="text-lg font-bold mb-4">
+              Event Image <span className="text-red-400 text-sm">*</span>
+            </h3>
             {/* Layout: column di mobile, row di tablet/desktop */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               {/* Preview Image */}
@@ -167,6 +175,7 @@ export default function CreateEventPage() {
                   onChange={handleImageChange}
                   className="hidden"
                   id="event-image"
+                  required
                 />
                 <label
                   htmlFor="event-image"
@@ -398,9 +407,9 @@ export default function CreateEventPage() {
                       {formik.errors.price}
                     </p>
                   )}
-                </div>
-              )}
-            </div>
+                 </div>
+               )}
+             </div>
 
             {/* Custom Ticket Types Toggle */}
             <div className="mt-6 pt-6 border-t border-border-muted/10">
