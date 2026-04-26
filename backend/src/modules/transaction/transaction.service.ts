@@ -67,20 +67,25 @@ export const transactionService = {
       throw new AppError("Points used cannot be negative", 400);
     }
 
-     // Cek apakah ada transaksi pending (belum selesai) untuk event yang sama
-     // Mencegah user memiliki lebih dari satu transaksi aktif untuk event yang sama
-     const existingPending = await prisma.transaction.findFirst({
-       where: {
-         userId,
-         eventId,
-         status: {
-           in: [
-             TransactionStatus.WAITING_PAYMENT,
-             TransactionStatus.WAITING_CONFIRMATION,
-           ],
-         },
-       },
-     });
+    // Prevent using both voucher and coupon simultaneously
+    if (voucherCode && couponCode) {
+      throw new AppError("Cannot use both voucher and coupon simultaneously", 400);
+    }
+
+    // Cek apakah ada transaksi pending (belum selesai) untuk event yang sama
+    // Mencegah user memiliki lebih dari satu transaksi aktif untuk event yang sama
+    // Hanya mengambil transaksi yang belum expired/terlalu batas waktu
+    const now = new Date();
+    const existingPending = await prisma.transaction.findFirst({
+      where: {
+        userId,
+        eventId,
+        OR: [
+          { status: TransactionStatus.WAITING_PAYMENT, expiresAt: { gt: now } },
+          { status: TransactionStatus.WAITING_CONFIRMATION, autoCancelAt: { gt: now } },
+        ],
+      },
+    });
 
     if (existingPending) {
       console.log(
@@ -101,12 +106,12 @@ export const transactionService = {
       throw new AppError("Event not found", 404);
     }
 
-    // Validasi: Cek apakah event sudah berakhir
-    // Mencegah pembelian tiket untuk event yang sudah lewat
-    const now = new Date();
-    if (now > event.endDate) {
-      throw new AppError("This event has already ended and tickets are no longer available", 400);
-    }
+     // Validasi: Cek apakah event sudah berakhir
+     // Mencegah pembelian tiket untuk event yang sudah lewat
+     // (now already declared above for pending check)
+     if (now > event.endDate) {
+       throw new AppError("This event has already ended and tickets are no longer available", 400);
+     }
 
     // Organizer tidak diperbolehkan membeli tiket event mereka sendiri
     // Mencegah manipulasi statistik dan penjualan palsu
@@ -174,23 +179,36 @@ export const transactionService = {
         voucher?.id,
       );
 
-      if (voucher) {
-        voucherId = voucher.id;
-        const calculatedDiscount = discountCalculatorService.calculateDiscount(
-          ticket.price,
-          quantity,
-          voucher.discountType as DiscountType,
-          voucher.discountValue,
-        );
-        discount += calculatedDiscount;
-        console.log(
-          "[DEBUG Transaction Service] voucher discountValue:",
-          voucher.discountValue,
-          "discountType:",
-          voucher.discountType,
-        );
-        console.log("[DEBUG Transaction Service] voucher discount:", discount);
+      if (!voucher) {
+        throw new AppError("Invalid voucher code", 404);
       }
+
+      // Validate eligibility (date range, maxUsage)
+      const eligibility = discountCalculatorService.validateDiscountEligibility(
+        voucher.startDate,
+        voucher.endDate,
+        voucher.maxUsage,
+        voucher.usedCount,
+      );
+      if (!eligibility.valid) {
+        throw new AppError(eligibility.error || "Voucher is not eligible", 400);
+      }
+
+      voucherId = voucher.id;
+      const calculatedDiscount = discountCalculatorService.calculateDiscount(
+        ticket.price,
+        quantity,
+        voucher.discountType as DiscountType,
+        voucher.discountValue,
+      );
+      discount += calculatedDiscount;
+      console.log(
+        "[DEBUG Transaction Service] voucher discountValue:",
+        voucher.discountValue,
+        "discountType:",
+        voucher.discountType,
+      );
+      console.log("[DEBUG Transaction Service] voucher discount:", discount);
     }
 
     if (couponCode) {
@@ -367,12 +385,43 @@ export const transactionService = {
          }
        }
 
-      console.log(
-        "[DEBUG Transaction Service] transaction created:",
-        transaction.id,
-      );
+       console.log(
+         "[DEBUG Transaction Service] transaction created:",
+         transaction.id,
+       );
 
-      // Cek dan update ketersediaan tiket dalam satu operasi atomic
+       // Increment voucher usedCount if voucher was used (within atomic transaction)
+       // Re-fetch to prevent race conditions and validate before increment
+       if (voucherId) {
+         const currentVoucher = await tx.voucher.findUnique({
+           where: { id: voucherId },
+         });
+         if (!currentVoucher) {
+           throw new AppError("Voucher not found", 404);
+         }
+         const eligibility = discountCalculatorService.validateDiscountEligibility(
+           currentVoucher.startDate,
+           currentVoucher.endDate,
+           currentVoucher.maxUsage,
+           currentVoucher.usedCount,
+         );
+         if (!eligibility.valid) {
+           throw new AppError(
+             eligibility.error || "Voucher is not eligible",
+             400,
+           );
+         }
+         await tx.voucher.update({
+           where: { id: voucherId },
+           data: { usedCount: { increment: 1 } },
+         });
+         console.log(
+           "[DEBUG Transaction Service] voucher usedCount incremented:",
+          voucherId,
+         );
+       }
+
+       // Cek dan update ketersediaan tiket dalam satu operasi atomic
       // Semua operasi ini berjalan di level database
       // Tidak ada celah waktu antara cek ketersediaan dan update
       // Sehingga dua user tidak bisa mendapatkan tiket yang sama secara bersamaan
@@ -442,64 +491,12 @@ export const transactionService = {
       transaction?.id,
     );
 
-    if (!transaction) {
-      return null;
-    }
+     if (!transaction) {
+       return null;
+     }
 
-    const txStatus = transaction.status as TransactionStatus;
-    const txId = transaction.id as string;
-
-    // Cek apakah transaksi sudah melewati waktu kadaluarsa
-    // Hanya berlaku untuk transaksi yang masih menunggu pembayaran
-    const shouldExpire =
-      txStatus === TransactionStatus.WAITING_PAYMENT &&
-      new Date() > transaction.expiresAt;
-
-    console.log(
-      "[DEBUG Transaction Service] shouldExpire check:",
-      shouldExpire,
-      "status:",
-      txStatus,
-      "expiresAt:",
-      transaction.expiresAt,
-    );
-
-    // Jika sudah expired, otomatis jalankan expire logic dan kembalikan status terbaru
-    if (shouldExpire) {
-      console.log(
-        "[DEBUG Transaction Service] transaction expired, expiring...",
-      );
-      const expiredTx = await transactionService.expireTransaction({
-        id: txId,
-      });
-      return expiredTx;
-    }
-
-    // Cek apakah transaksi menunggu konfirmasi terlalu lama
-    // Auto cancel setelah waktu yang ditentukan jika organizer tidak merespon
-    const shouldCancel =
-      txStatus === TransactionStatus.WAITING_CONFIRMATION &&
-      transaction.autoCancelAt != null &&
-      new Date() > transaction.autoCancelAt;
-
-    console.log(
-      "[DEBUG Transaction Service] shouldCancel check:",
-      shouldCancel,
-      "autoCancelAt:",
-      transaction.autoCancelAt,
-    );
-
-    // Jika sudah lewat batas waktu, otomatis batalkan transaksi
-    if (shouldCancel) {
-      console.log("[DEBUG Transaction Service] transaction auto-canceling...");
-      const canceledTx = await transactionService.cancelTransaction({
-        id: txId,
-      });
-      return canceledTx;
-    }
-
-    return transaction;
-  },
+     return transaction;
+   },
 
   getUserTransactions: async ({
     userId,

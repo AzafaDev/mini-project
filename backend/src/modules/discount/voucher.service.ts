@@ -133,6 +133,14 @@ export const voucherService = {
       throw new AppError("Voucher code already exists for this event", 400);
     }
 
+    // Validate discount value
+    if (discountValue <= 0) {
+      throw new AppError("Discount value must be a positive number", 400);
+    }
+    if (discountType === DiscountType.PERCENTAGE && discountValue > 100) {
+      throw new AppError("Percentage discount cannot exceed 100%", 400);
+    }
+
     const voucher = await prisma.voucher.create({
       data: {
         eventId,

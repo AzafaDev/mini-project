@@ -31,6 +31,7 @@ export function VouchersTab() {
     discountValue: 10,
     startDate: "",
     endDate: "",
+    maxUsage: "",
   });
 
 // Fetch data if not already loaded
@@ -46,18 +47,19 @@ export function VouchersTab() {
     }));
   };
 
-  const openCreateModal = () => {
-    setFormData({
-      eventId: myEvents[0]?.id || "",
-      code: "",
-      discountType: "PERCENTAGE",
-      discountValue: 10,
-      startDate: "",
-      endDate: "",
-    });
-    setLocalError(null);
-    setShowModal(true);
-  };
+   const openCreateModal = () => {
+     setFormData({
+       eventId: myEvents[0]?.id || "",
+       code: "",
+       discountType: "PERCENTAGE",
+       discountValue: 10,
+       startDate: "",
+       endDate: "",
+       maxUsage: "",
+     });
+     setLocalError(null);
+     setShowModal(true);
+   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +91,11 @@ export function VouchersTab() {
     }
 
     try {
-      const success = await createVoucher(formData);
+      const submitData = {
+        ...formData,
+        maxUsage: formData.maxUsage ? Number(formData.maxUsage) : undefined,
+      };
+      const success = await createVoucher(submitData);
       if (success) {
         addToast("success", "Voucher created successfully!");
         setShowModal(false);
@@ -378,9 +384,27 @@ export function VouchersTab() {
                     className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
-              </div>
+               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4">
+               <div>
+                 <label className="block text-sm font-medium text-text-muted mb-2">
+                   Max Usage (Optional)
+                 </label>
+                 <input
+                   type="number"
+                   name="maxUsage"
+                   value={formData.maxUsage}
+                   onChange={handleChange}
+                   min={1}
+                   placeholder="Unlimited"
+                   className="w-full px-4 py-3 bg-dark-elevated border border-border-muted/10 rounded-lg focus:outline-none focus:border-accent transition-colors"
+                 />
+                 <p className="text-xs text-text-muted mt-1">
+                   Leave empty for unlimited usage
+                 </p>
+               </div>
+
+               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
