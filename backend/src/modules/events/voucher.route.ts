@@ -196,37 +196,6 @@ voucherRouter.get("/my-vouchers", authMiddleware.verifyAuthToken, authMiddleware
   }
 });
 
-// Update voucher
-voucherRouter.put("/voucher/:id", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.userId;
-    const { code, discountType, discountValue, startDate, endDate, maxUsage, isActive } = req.body;
-    
-    console.log("[DEBUG Voucher Route] updateVoucher id:", id, "userId:", userId);
-    
-    const voucher = await prisma.voucher.findFirst({
-      where: { id },
-      include: { event: { select: { organizerId: true } } },
-    });
-    
-    if (!voucher || voucher.event.organizerId !== userId) {
-      return res.status(403).json({ success: false, message: "Unauthorized" });
-    }
-    
-    const updated = await prisma.voucher.update({
-      where: { id },
-      data: { code, discountType, discountValue, startDate: new Date(startDate), endDate: new Date(endDate), maxUsage, isActive },
-    });
-    
-    console.log("[DEBUG Voucher Route] updateVoucher success:", updated.id);
-    res.json({ success: true, data: updated });
-  } catch (error: any) {
-    console.log("[DEBUG Voucher Route] updateVoucher error:", error.message);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
 // Delete voucher
 voucherRouter.delete("/voucher/:id", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, async (req, res) => {
   try {
@@ -253,8 +222,6 @@ voucherRouter.delete("/voucher/:id", authMiddleware.verifyAuthToken, authMiddlew
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
-
 
 // Get current user's coupons (authenticated)
 voucherRouter.get("/my-coupons", authMiddleware.verifyAuthToken, async (req, res) => {

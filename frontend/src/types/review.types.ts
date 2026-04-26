@@ -64,16 +64,6 @@ export interface CreateVoucherRequest {
   maxUsage?: number;
 }
 
-export interface UpdateVoucherRequest {
-  code?: string;
-  discountType?: "PERCENTAGE" | "FIXED";
-  discountValue?: number;
-  startDate?: string;
-  endDate?: string;
-  maxUsage?: number;
-  isActive?: boolean;
-}
-
 export interface VoucherWithEvent extends Voucher {
   event: {
     id: string;

@@ -151,61 +151,6 @@ export const voucherService = {
   },
 
   /**
-   * Update a voucher
-   */
-  updateVoucher: async ({
-    id,
-    organizerId,
-    code,
-    discountType,
-    discountValue,
-    startDate,
-    endDate,
-    maxUsage,
-    isActive,
-  }: {
-    id: string;
-    organizerId: string;
-    code?: string;
-    discountType?: DiscountType;
-    discountValue?: number;
-    startDate?: Date;
-    endDate?: Date;
-    maxUsage?: number;
-    isActive?: boolean;
-  }) => {
-    console.log("[DEBUG Voucher Service] updateVoucher input:", {
-      id,
-      organizerId,
-    });
-
-    const voucher = await prisma.voucher.findFirst({
-      where: { id },
-      include: { event: { select: { organizerId: true } } },
-    });
-
-    if (!voucher || voucher.event.organizerId !== organizerId) {
-      throw new AppError("Unauthorized", 403);
-    }
-
-    const updated = await prisma.voucher.update({
-      where: { id },
-      data: {
-        ...(code && { code }),
-        ...(discountType && { discountType }),
-        ...(discountValue && { discountValue }),
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate }),
-        ...(maxUsage !== undefined && { maxUsage }),
-        ...(isActive !== undefined && { isActive }),
-      },
-    });
-
-    console.log("[DEBUG Voucher Service] updateVoucher success:", updated.id);
-    return updated;
-  },
-
-  /**
    * Delete a voucher
    */
   deleteVoucher: async ({

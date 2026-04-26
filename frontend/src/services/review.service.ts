@@ -8,7 +8,6 @@ import type {
   VouchersResponse,
   ValidateVoucherResponse,
   CreateVoucherRequest,
-  UpdateVoucherRequest,
   VoucherWithEvent,
 } from "../types";
 
@@ -63,11 +62,6 @@ export const reviewService = {
 
   createVoucher: async (data: CreateVoucherRequest): Promise<{ success: boolean; data: Voucher; message?: string }> => {
     const response = await axiosInstance.post('/events/voucher', data);
-    return response.data;
-  },
-
-  updateVoucher: async (id: string, data: UpdateVoucherRequest): Promise<{ success: boolean; data: Voucher; message?: string }> => {
-    const response = await axiosInstance.put(`/events/voucher/${id}`, data);
     return response.data;
   },
 
