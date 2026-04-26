@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEventStore } from "../stores/useEventStore";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useTransactionStore } from "../stores/useTransactionStore";
 import { getEventStatus } from "../lib/eventUtils";
 import { useToastStore } from "../stores/useToastStore";
+import axiosInstance from "../lib/axiosInstance";
 
 /**
  * Custom hook untuk mengelola seluruh logika di halaman Detail Event.
@@ -36,26 +36,39 @@ export const useEventDetail = (): UseEventDetailReturn => {
   const location = useLocation();
   const { fetchEventById, currentEvent, loadingEvent, submitReview } = useEventStore();
   const { user } = useAuthStore();
-  const { fetchMyTransactions, transactions } = useTransactionStore();
   const addToast = useToastStore(state => state.addToast);
 
   // --- Local States ---
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [userReview, setUserReview] = useState({ rating: 5, comment: "" });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [canUserReview, setCanUserReview] = useState(false);
 
   /**
-   * Mengambil data event dan user transactions saat halaman pertama kali dimuat
+   * Mengambil data event dan check purchase status saat halaman pertama kali dimuat
    */
   useEffect(() => {
     if (id) {
       fetchEventById(id);
     }
-    // Fetch user transactions for review permission check
-    if (user) {
-      fetchMyTransactions();
+    // Check if user has purchased this event for review permission
+    if (user && id) {
+      checkUserPurchase();
     }
-  }, [id, fetchEventById, user, fetchMyTransactions]);
+  }, [id, fetchEventById, user]);
+
+  /**
+   * Check if user has purchased tickets for this event
+   */
+  const checkUserPurchase = useCallback(async () => {
+    try {
+      const { data } = await axiosInstance.get(`/transactions/check-purchase/${id}`);
+      setCanUserReview(data.hasPurchased);
+    } catch (error) {
+      console.error("Failed to check purchase status:", error);
+      setCanUserReview(false);
+    }
+  }, [id]);
 
   // --- Data Transformation ---
   const transformedEvent = currentEvent ? {
@@ -83,12 +96,7 @@ export const useEventDetail = (): UseEventDetailReturn => {
       : 0);
   const hasUserReviewed = !!user && !!(transformedEvent?.reviews?.some((r: any) => r.userId === user.id));
 
-  // Check if user has purchased tickets for this event with 'DONE' status
-  const canUserReview = !!user && !!transformedEvent &&
-    transactions.some(transaction =>
-      transaction.eventId === transformedEvent.id &&
-      transaction.status === 'DONE'
-    );
+  // canUserReview is set by checkUserPurchase API call
 
   /**
    * Handler untuk navigasi langsung ke halaman checkout dengan authentication check.
@@ -154,7 +162,7 @@ export const useEventDetail = (): UseEventDetailReturn => {
     userReview,
     isSubmittingReview,
     hasUserReviewed,
-    canUserReview,
+    canUserReview: !!user && canUserReview, // Only allow review if user is logged in and has purchased
     eventStatus,
     averageRating,
     handleBuyNow,

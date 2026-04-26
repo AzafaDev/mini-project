@@ -4,10 +4,7 @@ import { TransactionStatus } from "@prisma/client";
 export const createTransactionSchema = z.object({
   body: z.object({
     eventId: z.string().uuid("Invalid event ID"),
-    ticketId: z.union([
-      z.string().uuid("Invalid ticket ID"),
-      z.literal("default-ticket"),
-    ]),
+    ticketId: z.string().uuid("Invalid ticket ID"),
     quantity: z.coerce.number().int().positive("Quantity must be at least 1"),
     voucherCode: z.string().optional(),
     couponCode: z.string().optional(),

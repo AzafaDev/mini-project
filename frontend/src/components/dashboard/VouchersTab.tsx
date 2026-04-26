@@ -47,19 +47,23 @@ export function VouchersTab() {
     }));
   };
 
-   const openCreateModal = () => {
-     setFormData({
-       eventId: myEvents[0]?.id || "",
-       code: "",
-       discountType: "PERCENTAGE",
-       discountValue: 10,
-       startDate: "",
-       endDate: "",
-       maxUsage: "",
-     });
-     setLocalError(null);
-     setShowModal(true);
-   };
+    const openCreateModal = () => {
+      if (myEvents.length === 0) {
+        addToast("error", "You need to create an event before adding vouchers");
+        return;
+      }
+      setFormData({
+        eventId: myEvents[0]?.id || "",
+        code: "",
+        discountType: "PERCENTAGE",
+        discountValue: 10,
+        startDate: "",
+        endDate: "",
+        maxUsage: "",
+      });
+      setLocalError(null);
+      setShowModal(true);
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,6 +159,7 @@ export function VouchersTab() {
         <button
           onClick={openCreateModal}
           disabled={myEvents.length === 0}
+          title={myEvents.length === 0 ? "Create an event first" : undefined}
           className="bg-accent hover:bg-accent-hover disabled:bg-accent/50 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
         >
           <span className="material-symbols-outlined">add</span>

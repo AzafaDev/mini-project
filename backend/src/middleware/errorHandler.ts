@@ -3,6 +3,19 @@ import { AppError } from "../utils/AppError";
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Fallback for crypto.randomUUID in older Node.js versions
+const generateUUID = () => {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback to a simple UUID-like string (not cryptographically secure but OK for error tracking)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 // Global error handler untuk menangkap SEMUA error di aplikasi
 // Semua error baik yang di-throw manual maupun error sistem akan melewati ini
 // Mengembalikan response error yang konsisten untuk client
@@ -23,7 +36,7 @@ export const errorHandler = (
 
   // Untuk error generic / error sistem yang tidak terduga
   // Generate unique ID untuk tracking error di log production
-  const errorId = crypto.randomUUID();
+  const errorId = generateUUID();
   // Semua detail error dicatat di server log untuk debugging
   console.error(`[ERROR:${errorId}] Unhandled error:`, {
     message: err.message,

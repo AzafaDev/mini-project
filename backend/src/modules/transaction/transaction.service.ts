@@ -130,25 +130,17 @@ export const transactionService = {
       );
     }
 
-    const ticket =
-      ticketId === "default-ticket"
-        ? {
-            id: "default-ticket",
-            price: event.price,
-            available: event.availableSeats,
-            name: "General Admission",
-          }
-        : event.tickets.find((t) => t.id === ticketId);
+     const ticket = event.tickets.find((t) => t.id === ticketId);
 
-    console.log(
-      "[DEBUG Transaction Service] ticket found:",
-      !!ticket,
-      ticket?.id,
-    );
+     console.log(
+       "[DEBUG Transaction Service] ticket found:",
+       !!ticket,
+       ticket?.id,
+     );
 
-    if (!ticket) {
-      throw new AppError("Ticket not found", 404);
-    }
+     if (!ticket) {
+       throw new AppError("Ticket not found", 404);
+     }
 
     console.log(
       "[DEBUG Transaction Service] ticket available:",
@@ -320,51 +312,61 @@ export const transactionService = {
         // Deduct poin dengan operasi atomic di level database
         // Menggunakan updateMany dengan kondisi untuk mencegah negative balance
         // Tidak ada celah race condition antara cek dan update
-        const updateResult = await tx.user.updateMany({
-          where: {
-            id: userId,
-            points: { gte: pointsUsed },
-          },
-          data: { points: { decrement: pointsUsed } },
-        });
+         const updateResult = await tx.user.updateMany({
+           where: {
+             id: userId,
+             points: { gte: pointsUsed },
+           },
+           data: { points: { decrement: pointsUsed } },
+         });
 
-        // Jika tidak ada baris yang terupdate, berarti poin tidak cukup
-        if (updateResult.count === 0) {
-          throw new AppError(
-            "Failed to deduct points: insufficient balance or user not found",
-            400,
-          );
-        }
+         // Jika tidak ada baris yang terupdate, berarti poin tidak cukup
+         if (updateResult.count === 0) {
+           throw new AppError(
+             "Failed to deduct points: insufficient balance or user not found",
+             400,
+           );
+         }
 
-        console.log(
-          "[DEBUG Transaction Service] points deducted:",
-          pointsUsed,
-          "remaining active:",
-          activePoints - pointsUsed,
-        );
+         // Catat penggunaan poin (redeem)
+         await tx.pointTransaction.create({
+           data: {
+             userId: userId,
+             amount: -pointsUsed, // negatif untuk pengurangan
+             reason: `Redeemed ${pointsUsed} points for event ticket`,
+             expiresAt: new Date(), // tidak berlaku karena poin sudah terpakai
+           },
+         });
+
+         console.log(
+           "[DEBUG Transaction Service] points deducted:",
+           pointsUsed,
+           "remaining active:",
+           activePoints - pointsUsed,
+         );
       }
 
-      const transaction = await tx.transaction.create({
-        data: {
-          userId,
-          eventId,
-          ticketId: ticketId === "default-ticket" ? null : ticketId,
-          quantity,
-          totalPrice,
-          discount,
-          pointsUsed,
-          couponId,
-          voucherId,
-          finalPrice,
-          // Auto-complete free events (no payment needed)
-          status:
-            finalPrice === 0
-              ? TransactionStatus.DONE
-              : TransactionStatus.WAITING_PAYMENT,
-          expiresAt: finalPrice === 0 ? new Date() : expiresAt,
-          autoCancelAt,
-        },
-      });
+       const transaction = await tx.transaction.create({
+         data: {
+           userId,
+           eventId,
+           ticketId: ticketId,
+           quantity,
+           totalPrice,
+           discount,
+           pointsUsed,
+           couponId,
+           voucherId,
+           finalPrice,
+           // Auto-complete free events (no payment needed)
+           status:
+             finalPrice === 0
+               ? TransactionStatus.DONE
+               : TransactionStatus.WAITING_PAYMENT,
+           expiresAt: finalPrice === 0 ? new Date() : expiresAt,
+           autoCancelAt,
+         },
+       });
 
        // If free event, mark as paid immediately
        if (finalPrice === 0) {
@@ -421,39 +423,31 @@ export const transactionService = {
          );
        }
 
-       // Cek dan update ketersediaan tiket dalam satu operasi atomic
-      // Semua operasi ini berjalan di level database
-      // Tidak ada celah waktu antara cek ketersediaan dan update
-      // Sehingga dua user tidak bisa mendapatkan tiket yang sama secara bersamaan
-       try {
-         if (ticketId === "default-ticket") {
-           // Untuk tiket default, kurangi availableSeats di event
-           await tx.event.update({
-             where: { id: eventId },
-             data: { availableSeats: { decrement: quantity } },
-           });
-         } else {
-           // Untuk tiket custom, kurangi available di ticket
-           await tx.ticket.update({
-             where: {
-               id: ticketId,
-               available: { gte: quantity },
-             },
-             data: { available: { decrement: quantity } },
-           });
-           // Juga kurangi availableSeats di event untuk sinkronisasi
-           await tx.event.update({
-             where: { id: eventId },
-             data: { availableSeats: { decrement: quantity } },
-           });
+        // Cek dan update ketersediaan tiket dalam satu operasi atomic
+       // Semua operasi ini berjalan di level database
+       // Tidak ada celah waktu antara cek ketersediaan dan update
+       // Sehingga dua user tidak bisa mendapatkan tiket yang sama secara bersamaan
+        try {
+          // Untuk tiket custom, kurangi available di ticket
+          await tx.ticket.update({
+            where: {
+              id: ticketId,
+              available: { gte: quantity },
+            },
+            data: { available: { decrement: quantity } },
+          });
+          // Juga kurangi availableSeats di event untuk sinkronisasi
+          await tx.event.update({
+            where: { id: eventId },
+            data: { availableSeats: { decrement: quantity } },
+          });
+        } catch (error: any) {
+         // Error code P2025 = record tidak ditemukan / kondisi tidak terpenuhi
+         if (error.code === "P2025") {
+           throw new AppError("Not enough tickets available", 400);
          }
-       } catch (error: any) {
-        // Error code P2025 = record tidak ditemukan / kondisi tidak terpenuhi
-        if (error.code === "P2025") {
-          throw new AppError("Not enough tickets available", 400);
-        }
-        throw error;
-      }
+         throw error;
+       }
 
       console.log("[DEBUG Transaction Service] ticket availability updated");
 

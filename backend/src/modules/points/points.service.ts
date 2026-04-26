@@ -31,46 +31,20 @@ export const pointsService = {
     return { data: transactions, pagination: { total, page, limit } };
   },
 
-  getActivePoints: async ({ userId }: { userId: string }) => {
-    console.log("[DEBUG Points Service] getActivePoints input:", { userId });
+   getActivePoints: async ({ userId }: { userId: string }) => {
+     console.log("[DEBUG Points Service] getActivePoints input:", { userId });
 
-    const now = new Date();
+     const user = await prisma.user.findUnique({
+       where: { id: userId },
+       select: { points: true },
+     });
 
-    // Hitung total poin yang sudah kadaluarsa
-    // Poin yang sudah expired tidak bisa digunakan lagi
-    const expiredPoints = await prisma.pointTransaction.aggregate({
-      where: {
-        userId,
-        expiresAt: { lte: now },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    console.log("[DEBUG Points Service] expired points sum:", expiredPoints._sum.amount);
-
-    // Ambil semua transaksi poin yang masih aktif
-    // Poin dihitung dengan sistem FIFO: poin yang lebih dulu masuk akan lebih dulu expired
-    const activeTransactions = await prisma.pointTransaction.findMany({
-      where: {
-        userId,
-        expiresAt: { gt: now },
-      },
-      // Diurutkan dari yang paling tua (sudah paling dekat expire)
-      orderBy: { expiresAt: 'asc' }
-    });
-
-    const activePoints = activeTransactions.reduce((sum, tx) => sum + tx.amount, 0);
-
-    console.log("[DEBUG Points Service] active points:", activePoints);
-
-    return {
-      activePoints,
-      expiredPoints: expiredPoints._sum.amount || 0,
-      transactions: activeTransactions,
-    };
-  },
+     return {
+       activePoints: user?.points || 0,
+       expiredPoints: 0, // or calculate from expired PointTransaction if needed for reporting
+       transactions: [],
+     };
+   },
 
   /**
    * Calculate active (non-expired) points for a user within a transaction.
