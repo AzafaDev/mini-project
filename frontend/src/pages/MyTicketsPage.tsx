@@ -92,6 +92,7 @@ const TicketCard = ({
             : "bg-dark-surface"
       } rounded-xl overflow-hidden flex flex-col md:flex-row group transition-all duration-300`}
     >
+      {/* Image section */}
       <div className="md:w-48 h-40 md:h-auto relative overflow-hidden flex-shrink-0">
         <img
           className={`w-full h-full object-cover transition-all duration-500 ${
@@ -115,53 +116,47 @@ const TicketCard = ({
         </div>
       </div>
 
+      {/* Content section */}
       <div className="flex-1 p-4 sm:p-6 flex flex-col justify-between min-w-0">
-        <div className="flex justify-between items-start">
-            <div>
-              <Link
-                to={`/events/${eventId}`}
-                className={`text-lg sm:text-xl font-bold tracking-tight mb-1 hover:text-primary transition-colors ${
-                  isPast ? "text-text-muted" : "text-text-light"
-                }`}
-              >
-                {title}
-              </Link>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-text-muted text-xs sm:text-sm">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">
-                    calendar_month
-                  </span>{" "}
-                  {date}
+        {/* Top row: event info + price */}
+        <div className="flex justify-between items-start gap-4">
+          <div>
+            <Link
+              to={`/events/${eventId}`}
+              className={`text-lg sm:text-xl font-bold tracking-tight mb-1 hover:text-primary transition-colors ${
+                isPast ? "text-text-muted" : "text-text-light"
+              }`}
+            >
+              {title}
+            </Link>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-text-muted text-xs sm:text-sm">
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">
+                  calendar_month
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">
-                    location_on
-                  </span>{" "}
-                  {location}
+                {date}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">
+                  location_on
                 </span>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-text-muted mb-1">{orderId}</p>
-              <p
-                className={`text-lg sm:text-xl font-black ${
-                  isPending ? "text-warning" : "text-primary"
-                }`}
-              >
-                {price}
-              </p>
+                {location}
+              </span>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right flex-shrink-0">
             <p className="text-[10px] text-text-muted mb-1">{orderId}</p>
             <p
-              className={`text-xl font-black ${isPending ? "text-warning" : "text-primary"}`}
+              className={`text-lg sm:text-xl font-black ${
+                isPending ? "text-warning" : "text-primary"
+              }`}
             >
               {price}
             </p>
           </div>
         </div>
 
+        {/* Bottom row: warning or avatar stack + buttons */}
         <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           {isPending ? (
             <div className="flex items-center gap-3 text-sm text-warning">
@@ -190,9 +185,7 @@ const TicketCard = ({
               View Details
             </button>
             {isPending && (
-              <button
-                className={`py-2 px-6 rounded-lg font-bold transition-all flex items-center gap-2 text-sm bg-gradient-to-br from-warning to-warning-dark text-[#351000]`}
-              >
+              <button className="py-2 px-6 rounded-lg font-bold transition-all flex items-center gap-2 text-sm bg-gradient-to-br from-warning to-warning-dark text-[#351000]">
                 <span className="material-symbols-outlined text-sm">
                   upload
                 </span>
@@ -201,7 +194,8 @@ const TicketCard = ({
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
+    </motion.div>
   );
 };
 
@@ -209,15 +203,12 @@ const TicketCard = ({
 export const MyTickets = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const {
-    transactions,
-    fetchMyTransactions,
-    pagination,
-    loading,
-    error,
-  } = useTransactionStore();
+  const { transactions, fetchMyTransactions, pagination, loading, error } =
+    useTransactionStore();
 
-  const [activeTab, setActiveTab] = useState<"upcoming" | "pending" | "past">("upcoming");
+  const [activeTab, setActiveTab] = useState<"upcoming" | "pending" | "past">(
+    "upcoming",
+  );
 
   // Fetch transactions on mount
   useEffect(() => {
@@ -230,10 +221,14 @@ export const MyTickets = () => {
   const upcomingCount = transactions.filter((tx) => {
     const eventDate = tx.event?.startDate ? new Date(tx.event.startDate) : null;
     const isFuture = eventDate ? eventDate >= now : false;
-    return (tx.status === "DONE" || tx.status === "WAITING_CONFIRMATION") && isFuture;
+    return (
+      (tx.status === "DONE" || tx.status === "WAITING_CONFIRMATION") && isFuture
+    );
   }).length;
 
-  const pendingCount = transactions.filter((tx) => tx.status === "WAITING_PAYMENT").length;
+  const pendingCount = transactions.filter(
+    (tx) => tx.status === "WAITING_PAYMENT",
+  ).length;
 
   const pastCount = transactions.filter((tx) => {
     const eventDate = tx.event?.startDate ? new Date(tx.event.startDate) : null;
@@ -244,19 +239,26 @@ export const MyTickets = () => {
   // Next upcoming event for stats subtext
   const upcomingTransactions = transactions
     .filter((tx) => {
-      const eventDate = tx.event?.startDate ? new Date(tx.event.startDate) : null;
+      const eventDate = tx.event?.startDate
+        ? new Date(tx.event.startDate)
+        : null;
       const isFuture = eventDate ? eventDate >= now : false;
-      return (tx.status === "DONE" || tx.status === "WAITING_CONFIRMATION") && isFuture;
+      return (
+        (tx.status === "DONE" || tx.status === "WAITING_CONFIRMATION") &&
+        isFuture
+      );
     })
     .sort(
       (a, b) =>
         new Date(a.event?.startDate || 0).getTime() -
-        new Date(b.event?.startDate || 0).getTime()
+        new Date(b.event?.startDate || 0).getTime(),
     );
   const nextUpcoming = upcomingTransactions[0];
 
   const getTicketCardProps = (tx: Transaction) => {
-    const eventStart = tx.event?.startDate ? new Date(tx.event.startDate) : null;
+    const eventStart = tx.event?.startDate
+      ? new Date(tx.event.startDate)
+      : null;
     const isPast = eventStart ? eventStart < now : false;
 
     let statusDisplay = "";
@@ -321,7 +323,9 @@ export const MyTickets = () => {
 
   const getNextEventText = () => {
     if (!nextUpcoming) return "No upcoming events";
-    const dateStr = nextUpcoming.event?.startDate ? formatDate(nextUpcoming.event.startDate) : "";
+    const dateStr = nextUpcoming.event?.startDate
+      ? formatDate(nextUpcoming.event.startDate)
+      : "";
     return `Next: ${nextUpcoming.event?.name || "Unknown Event"} (${dateStr})`;
   };
 
@@ -351,7 +355,7 @@ export const MyTickets = () => {
 
   return (
     <div className="bg-dark text-text-light font-sans selection:bg-primary/30">
-      <main className=" pb-12 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
+      <main className="pb-12 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
         <section className="mb-8 sm:mb-12">
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
@@ -439,15 +443,17 @@ export const MyTickets = () => {
               {activeTab === "upcoming"
                 ? "You don't have any upcoming events."
                 : activeTab === "pending"
-                ? "You don't have any pending payments."
-                : "You haven't attended any events yet."}
+                  ? "You don't have any pending payments."
+                  : "You haven't attended any events yet."}
             </p>
           </div>
         )}
 
         {/* Help Center */}
         <div className="mt-16 p-8 rounded-2xl bg-gradient-to-r from-dark-surface to-dark-darker border border-border-muted/10 text-center">
-          <h3 className="text-xl font-bold mb-2">Need help with your tickets?</h3>
+          <h3 className="text-xl font-bold mb-2">
+            Need help with your tickets?
+          </h3>
           <p className="text-text-muted mb-6 text-sm">
             Our support team is available 24/7 for order inquiries.
           </p>

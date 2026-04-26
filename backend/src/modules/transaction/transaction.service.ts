@@ -69,7 +69,10 @@ export const transactionService = {
 
     // Prevent using both voucher and coupon simultaneously
     if (voucherCode && couponCode) {
-      throw new AppError("Cannot use both voucher and coupon simultaneously", 400);
+      throw new AppError(
+        "Cannot use both voucher and coupon simultaneously",
+        400,
+      );
     }
 
     // Cek apakah ada transaksi pending (belum selesai) untuk event yang sama
@@ -82,7 +85,10 @@ export const transactionService = {
         eventId,
         OR: [
           { status: TransactionStatus.WAITING_PAYMENT, expiresAt: { gt: now } },
-          { status: TransactionStatus.WAITING_CONFIRMATION, autoCancelAt: { gt: now } },
+          {
+            status: TransactionStatus.WAITING_CONFIRMATION,
+            autoCancelAt: { gt: now },
+          },
         ],
       },
     });
@@ -106,12 +112,15 @@ export const transactionService = {
       throw new AppError("Event not found", 404);
     }
 
-     // Validasi: Cek apakah event sudah berakhir
-     // Mencegah pembelian tiket untuk event yang sudah lewat
-     // (now already declared above for pending check)
-     if (now > event.endDate) {
-       throw new AppError("This event has already ended and tickets are no longer available", 400);
-     }
+    // Validasi: Cek apakah event sudah berakhir
+    // Mencegah pembelian tiket untuk event yang sudah lewat
+    // (now already declared above for pending check)
+    if (now > event.endDate) {
+      throw new AppError(
+        "This event has already ended and tickets are no longer available",
+        400,
+      );
+    }
 
     // Organizer tidak diperbolehkan membeli tiket event mereka sendiri
     // Mencegah manipulasi statistik dan penjualan palsu
@@ -130,17 +139,17 @@ export const transactionService = {
       );
     }
 
-     const ticket = event.tickets.find((t) => t.id === ticketId);
+    const ticket = event.tickets.find((t) => t.id === ticketId);
 
-     console.log(
-       "[DEBUG Transaction Service] ticket found:",
-       !!ticket,
-       ticket?.id,
-     );
+    console.log(
+      "[DEBUG Transaction Service] ticket found:",
+      !!ticket,
+      ticket?.id,
+    );
 
-     if (!ticket) {
-       throw new AppError("Ticket not found", 404);
-     }
+    if (!ticket) {
+      throw new AppError("Ticket not found", 404);
+    }
 
     console.log(
       "[DEBUG Transaction Service] ticket available:",
@@ -257,14 +266,14 @@ export const transactionService = {
       }
     }
 
-     const pointsDiscount = pointsUsed; // 1 poin = Rp1
-     const pricing = ticketPricingService.calculateFinalPrice(
-       ticket.price * quantity,
-       discount,
-       pointsDiscount,
-     );
-     const totalPrice = pricing.totalPrice;
-     const finalPrice = pricing.finalPrice;
+    const pointsDiscount = pointsUsed; // 1 poin = Rp1
+    const pricing = ticketPricingService.calculateFinalPrice(
+      ticket.price * quantity,
+      discount,
+      pointsDiscount,
+    );
+    const totalPrice = pricing.totalPrice;
+    const finalPrice = pricing.finalPrice;
 
     console.log("[DEBUG Transaction Service] pricing:", {
       totalPrice,
@@ -312,142 +321,143 @@ export const transactionService = {
         // Deduct poin dengan operasi atomic di level database
         // Menggunakan updateMany dengan kondisi untuk mencegah negative balance
         // Tidak ada celah race condition antara cek dan update
-         const updateResult = await tx.user.updateMany({
-           where: {
-             id: userId,
-             points: { gte: pointsUsed },
-           },
-           data: { points: { decrement: pointsUsed } },
-         });
+        const updateResult = await tx.user.updateMany({
+          where: {
+            id: userId,
+            points: { gte: pointsUsed },
+          },
+          data: { points: { decrement: pointsUsed } },
+        });
 
-         // Jika tidak ada baris yang terupdate, berarti poin tidak cukup
-         if (updateResult.count === 0) {
-           throw new AppError(
-             "Failed to deduct points: insufficient balance or user not found",
-             400,
-           );
-         }
+        // Jika tidak ada baris yang terupdate, berarti poin tidak cukup
+        if (updateResult.count === 0) {
+          throw new AppError(
+            "Failed to deduct points: insufficient balance or user not found",
+            400,
+          );
+        }
 
-         // Catat penggunaan poin (redeem)
-         await tx.pointTransaction.create({
-           data: {
-             userId: userId,
-             amount: -pointsUsed, // negatif untuk pengurangan
-             reason: `Redeemed ${pointsUsed} points for event ticket`,
-             expiresAt: new Date(), // tidak berlaku karena poin sudah terpakai
-           },
-         });
+        // Catat penggunaan poin (redeem)
+        await tx.pointTransaction.create({
+          data: {
+            userId: userId,
+            amount: -pointsUsed, // negatif untuk pengurangan
+            reason: `Redeemed ${pointsUsed} points for event ticket`,
+            expiresAt: new Date(), // tidak berlaku karena poin sudah terpakai
+          },
+        });
 
-         console.log(
-           "[DEBUG Transaction Service] points deducted:",
-           pointsUsed,
-           "remaining active:",
-           activePoints - pointsUsed,
-         );
+        console.log(
+          "[DEBUG Transaction Service] points deducted:",
+          pointsUsed,
+          "remaining active:",
+          activePoints - pointsUsed,
+        );
       }
 
-       const transaction = await tx.transaction.create({
-         data: {
-           userId,
-           eventId,
-           ticketId: ticketId,
-           quantity,
-           totalPrice,
-           discount,
-           pointsUsed,
-           couponId,
-           voucherId,
-           finalPrice,
-           // Auto-complete free events (no payment needed)
-           status:
-             finalPrice === 0
-               ? TransactionStatus.DONE
-               : TransactionStatus.WAITING_PAYMENT,
-           expiresAt: finalPrice === 0 ? new Date() : expiresAt,
-           autoCancelAt,
-         },
-       });
-
-       // If free event, mark as paid immediately
-       if (finalPrice === 0) {
-         await tx.transaction.update({
-           where: { id: transaction.id },
-           data: {
-             status: TransactionStatus.DONE,
-             paidAt: new Date(),
-           },
-         });
-
-         // Deactivate coupon if used (single-use)
-         if (couponId) {
-           await tx.coupon.update({
-             where: { id: couponId },
-             data: { isActive: false },
-           });
-         }
-       }
-
-       console.log(
-         "[DEBUG Transaction Service] transaction created:",
-         transaction.id,
-       );
-
-       // Increment voucher usedCount if voucher was used (within atomic transaction)
-       // Re-fetch to prevent race conditions and validate before increment
-       if (voucherId) {
-         const currentVoucher = await tx.voucher.findUnique({
-           where: { id: voucherId },
-         });
-         if (!currentVoucher) {
-           throw new AppError("Voucher not found", 404);
-         }
-         const eligibility = discountCalculatorService.validateDiscountEligibility(
-           currentVoucher.startDate,
-           currentVoucher.endDate,
-           currentVoucher.maxUsage,
-           currentVoucher.usedCount,
-         );
-         if (!eligibility.valid) {
-           throw new AppError(
-             eligibility.error || "Voucher is not eligible",
-             400,
-           );
-         }
-         await tx.voucher.update({
-           where: { id: voucherId },
-           data: { usedCount: { increment: 1 } },
-         });
-         console.log(
-           "[DEBUG Transaction Service] voucher usedCount incremented:",
+      const transaction = await tx.transaction.create({
+        data: {
+          userId,
+          eventId,
+          ticketId: ticketId,
+          quantity,
+          totalPrice,
+          discount,
+          pointsUsed,
+          couponId,
           voucherId,
-         );
-       }
+          finalPrice,
+          // Auto-complete free events (no payment needed)
+          status:
+            finalPrice === 0
+              ? TransactionStatus.DONE
+              : TransactionStatus.WAITING_PAYMENT,
+          expiresAt: finalPrice === 0 ? new Date() : expiresAt,
+          autoCancelAt,
+        },
+      });
 
-        // Cek dan update ketersediaan tiket dalam satu operasi atomic
-       // Semua operasi ini berjalan di level database
-       // Tidak ada celah waktu antara cek ketersediaan dan update
-       // Sehingga dua user tidak bisa mendapatkan tiket yang sama secara bersamaan
-        try {
-          // Untuk tiket custom, kurangi available di ticket
-          await tx.ticket.update({
-            where: {
-              id: ticketId,
-              available: { gte: quantity },
-            },
-            data: { available: { decrement: quantity } },
+      // If free event, mark as paid immediately
+      if (finalPrice === 0) {
+        await tx.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            status: TransactionStatus.DONE,
+            paidAt: new Date(),
+          },
+        });
+
+        // Deactivate coupon if used (single-use)
+        if (couponId) {
+          await tx.coupon.update({
+            where: { id: couponId },
+            data: { isActive: false },
           });
-          // Juga kurangi availableSeats di event untuk sinkronisasi
-          await tx.event.update({
-            where: { id: eventId },
-            data: { availableSeats: { decrement: quantity } },
-          });
-        } catch (error: any) {
-         // Error code P2025 = record tidak ditemukan / kondisi tidak terpenuhi
-         if (error.code === "P2025") {
-           throw new AppError("Not enough tickets available", 400);
-         }
-         throw error;
-       }
+        }
+      }
+
+      console.log(
+        "[DEBUG Transaction Service] transaction created:",
+        transaction.id,
+      );
+
+      // Increment voucher usedCount if voucher was used (within atomic transaction)
+      // Re-fetch to prevent race conditions and validate before increment
+      if (voucherId) {
+        const currentVoucher = await tx.voucher.findUnique({
+          where: { id: voucherId },
+        });
+        if (!currentVoucher) {
+          throw new AppError("Voucher not found", 404);
+        }
+        const eligibility =
+          discountCalculatorService.validateDiscountEligibility(
+            currentVoucher.startDate,
+            currentVoucher.endDate,
+            currentVoucher.maxUsage,
+            currentVoucher.usedCount,
+          );
+        if (!eligibility.valid) {
+          throw new AppError(
+            eligibility.error || "Voucher is not eligible",
+            400,
+          );
+        }
+        await tx.voucher.update({
+          where: { id: voucherId },
+          data: { usedCount: { increment: 1 } },
+        });
+        console.log(
+          "[DEBUG Transaction Service] voucher usedCount incremented:",
+          voucherId,
+        );
+      }
+
+      // Cek dan update ketersediaan tiket dalam satu operasi atomic
+      // Semua operasi ini berjalan di level database
+      // Tidak ada celah waktu antara cek ketersediaan dan update
+      // Sehingga dua user tidak bisa mendapatkan tiket yang sama secara bersamaan
+      try {
+        // Untuk tiket custom, kurangi available di ticket
+        await tx.ticket.update({
+          where: {
+            id: ticketId,
+            available: { gte: quantity },
+          },
+          data: { available: { decrement: quantity } },
+        });
+        // Juga kurangi availableSeats di event untuk sinkronisasi
+        await tx.event.update({
+          where: { id: eventId },
+          data: { availableSeats: { decrement: quantity } },
+        });
+      } catch (error: any) {
+        // Error code P2025 = record tidak ditemukan / kondisi tidak terpenuhi
+        if (error.code === "P2025") {
+          throw new AppError("Not enough tickets available", 400);
+        }
+        throw error;
+      }
 
       console.log("[DEBUG Transaction Service] ticket availability updated");
 
@@ -485,12 +495,12 @@ export const transactionService = {
       transaction?.id,
     );
 
-     if (!transaction) {
-       return null;
-     }
+    if (!transaction) {
+      return null;
+    }
 
-     return transaction;
-   },
+    return transaction;
+  },
 
   getUserTransactions: async ({
     userId,
@@ -795,25 +805,25 @@ export const transactionService = {
       earnedPoints,
     });
 
-     const updated = await prisma.$transaction(async (tx) => {
-       console.log("[DEBUG Transaction Service] accepting transaction in DB");
-       const result = await tx.transaction.update({
-         where: { id },
-         data: {
-           status: TransactionStatus.DONE,
-           paidAt: new Date(),
-         },
-       });
+    const updated = await prisma.$transaction(async (tx) => {
+      console.log("[DEBUG Transaction Service] accepting transaction in DB");
+      const result = await tx.transaction.update({
+        where: { id },
+        data: {
+          status: TransactionStatus.DONE,
+          paidAt: new Date(),
+        },
+      });
 
-       // Deactivate coupon if used (single-use)
-       if (transaction.couponId) {
-         await tx.coupon.update({
-           where: { id: transaction.couponId },
-           data: { isActive: false },
-         });
-       }
+      // Deactivate coupon if used (single-use)
+      if (transaction.couponId) {
+        await tx.coupon.update({
+          where: { id: transaction.couponId },
+          data: { isActive: false },
+        });
+      }
 
-       if (earnedPoints > 0) {
+      if (earnedPoints > 0) {
         console.log(
           "[DEBUG Transaction Service] adding earned points:",
           earnedPoints,
@@ -871,6 +881,22 @@ export const transactionService = {
     }
 
     return updated;
+  },
+  hasUserPurchased: async ({
+    userId,
+    eventId,
+  }: {
+    userId: string;
+    eventId: string;
+  }) => {
+    const count = await prisma.transaction.count({
+      where: {
+        userId,
+        eventId,
+        status: TransactionStatus.DONE,
+      },
+    });
+    return count > 0;
   },
 
   rejectTransaction: async ({ id }: { id: string }) => {
