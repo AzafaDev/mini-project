@@ -53,7 +53,10 @@ async function cleanupExpiredPoints() {
 
   // 1. Find all expired point transactions grouped by user
   const expiredTxns = await prisma.pointTransaction.findMany({
-    where: { expiresAt: { lte: now } },
+    where: {
+      expiresAt: { lte: now },
+      amount: { gt: 0 } // ONLY positive points can expire
+    },
     select: { userId: true, amount: true },
   });
 

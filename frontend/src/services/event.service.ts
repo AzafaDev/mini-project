@@ -32,8 +32,8 @@ export const eventService = {
     return response.data;
   },
 
-  getOrganizerStats: async (year?: number, month?: number, day?: number): Promise<OrganizerStatsResponse> => {
-    const response = await axiosInstance.get('/events/stats', { params: { year, month, day } });
+  getOrganizerStats: async (year?: number, month?: number, day?: number, options?: { signal?: AbortSignal }): Promise<OrganizerStatsResponse> => {
+    const response = await axiosInstance.get('/events/stats', { params: { year, month, day }, ...options });
     return response.data;
   },
 

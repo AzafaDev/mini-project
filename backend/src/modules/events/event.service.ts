@@ -15,7 +15,7 @@ const MONTH_NAMES = [
   "Dec",
 ];
 import { AppError } from "../../utils/AppError";
-import { CreateEvent, UpdateEvent } from "./event.type";
+import { CreateEvent } from "./event.type";
 
 const parseDate = (dateStr: string, fieldName: string): Date => {
   const date = new Date(dateStr);
@@ -120,7 +120,10 @@ export const eventService = {
     const orderBy: Prisma.EventOrderByWithRelationInput = {};
     const validSortFields = ["name", "startDate", "price", "createdAt"];
     if (validSortFields.includes(currentSortBy)) {
-      orderBy[currentSortBy] = currentSortOrder === "desc" ? "desc" : "asc";
+      if (currentSortBy === "name") orderBy.name = currentSortOrder === "desc" ? "desc" : "asc";
+      else if (currentSortBy === "startDate") orderBy.startDate = currentSortOrder === "desc" ? "desc" : "asc";
+      else if (currentSortBy === "price") orderBy.price = currentSortOrder === "desc" ? "desc" : "asc";
+      else if (currentSortBy === "createdAt") orderBy.createdAt = currentSortOrder === "desc" ? "desc" : "asc";
     } else {
       orderBy.startDate = "asc";
     }
@@ -217,6 +220,12 @@ export const eventService = {
     );
 
     if (!event) throw new AppError("Event not found", 404);
+
+    // Filter out vouchers that have reached max usage
+    event.vouchers = event.vouchers.filter(v =>
+      v.maxUsage === null || v.usedCount < v.maxUsage
+    );
+
     const averageRating =
       event.reviews.length > 0
         ? event.reviews.reduce((sum, r) => sum + r.rating, 0) /

@@ -1,4 +1,7 @@
 import { create } from "zustand";
+
+// AbortController for canceling previous requests
+let abortController: AbortController | null = null;
 import { getErrorMessage } from "../lib/error";
 import {
   eventService,
@@ -379,17 +382,29 @@ export const useEventStore = create<EventStore>((set, get) => ({
    * @param day - Hari filter (opsional)
    */
   fetchOrganizerStats: async (year?: number, month?: number, day?: number) => {
-    if (get().loadingOrganizerStats) return;
-    
+    // Batalkan request sebelumnya jika ada
+    if (abortController) {
+      abortController.abort();
+    }
+    abortController = new AbortController();
+
     set({ loadingOrganizerStats: true, error: null });
     try {
-      const response = await eventService.getOrganizerStats(year, month, day);
+      const response = await eventService.getOrganizerStats(year, month, day, { signal: abortController.signal });
       set({ organizerStats: response.data, loadingOrganizerStats: false });
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request aborted due to new filter');
+        return;
+      }
       set({
         error: error.message || "Failed to fetch organizer stats",
         loadingOrganizerStats: false,
       });
+    } finally {
+      if (abortController?.signal?.aborted === false) {
+        abortController = null;
+      }
     }
   },
 
