@@ -20,13 +20,17 @@ export const isEventOwner = async (
     }
 
     // Cek apakah event ada di database
-    const event = await prisma.event.findUnique({
+    const event = await prisma.event.findFirst({
       where: { id: eventId },
-      select: { organizerId: true },
+      select: { organizerId: true, isDeleted: true },
     });
 
     if (!event) {
       throw new AppError("Event not found", 404);
+    }
+
+    if (event.isDeleted) {
+      throw new AppError("Event has been deleted", 410);
     }
 
     // Pastikan user yang login adalah organizer dari event ini

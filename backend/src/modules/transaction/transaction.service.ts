@@ -161,10 +161,11 @@ export const transactionService = {
     let voucherId: string | null = null;
     let couponId: string | null = null;
     let discount = 0;
+    let voucher: any = null;
 
     if (voucherCode) {
       console.log("[DEBUG Transaction Service] checking voucher:", voucherCode);
-      const voucher = await prisma.voucher.findFirst({
+      voucher = await prisma.voucher.findFirst({
         where: {
           code: voucherCode,
           eventId,
@@ -402,34 +403,20 @@ export const transactionService = {
       );
 
       // Increment voucher usedCount if voucher was used (within atomic transaction)
-      // Re-fetch to prevent race conditions and validate before increment
       if (voucherId) {
-        const currentVoucher = await tx.voucher.findUnique({
-          where: { id: voucherId },
+        const updatedVoucher = await tx.voucher.updateMany({
+          where: {
+            id: voucherId,
+            usedCount: { lt: voucher.maxUsage }
+          },
+          data: { usedCount: { increment: 1 } }
         });
-        if (!currentVoucher) {
-          throw new AppError("Voucher not found", 404);
+        if (updatedVoucher.count === 0) {
+          throw new AppError("Voucher usage limit reached", 400);
         }
-        const eligibility =
-          discountCalculatorService.validateDiscountEligibility(
-            currentVoucher.startDate,
-            currentVoucher.endDate,
-            currentVoucher.maxUsage,
-            currentVoucher.usedCount,
-          );
-        if (!eligibility.valid) {
-          throw new AppError(
-            eligibility.error || "Voucher is not eligible",
-            400,
-          );
-        }
-        await tx.voucher.update({
-          where: { id: voucherId },
-          data: { usedCount: { increment: 1 } },
-        });
         console.log(
-          "[DEBUG Transaction Service] voucher usedCount incremented:",
-          voucherId,
+          `[DEBUG Transaction Service] voucher usedCount incremented:`,
+          voucherId
         );
       }
 

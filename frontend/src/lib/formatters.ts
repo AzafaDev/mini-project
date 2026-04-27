@@ -8,7 +8,7 @@ export const formatIDR = (amount: number): string => {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
-  }).format(amount).replace("Rp", "IDR ");
+  }).format(amount).replace(/Rp\s*/, "IDR ");
 };
 
 /**

@@ -30,7 +30,7 @@ export interface Transaction {
   eventId: string;
   event: TransactionEvent;
   ticketId: string;
-  ticket: TransactionTicket;
+  ticket?: TransactionTicket;
   quantity: number;
   totalPrice: number;
   discount: number;
