@@ -220,6 +220,12 @@ export const eventService = {
     );
 
     if (!event) throw new AppError("Event not found", 404);
+
+    // Filter out vouchers that have reached max usage
+    event.vouchers = event.vouchers.filter(v =>
+      v.maxUsage === null || v.usedCount < v.maxUsage
+    );
+
     const averageRating =
       event.reviews.length > 0
         ? event.reviews.reduce((sum, r) => sum + r.rating, 0) /
