@@ -2,14 +2,14 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 import { prisma } from "../../config/prisma";
- import {
-   VERIFICATION_TOKEN_EXPIRY_HOURS,
-   RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
-   POINTS_EXPIRATION_MONTHS,
-   COUPON_EXPIRATION_MONTHS,
-   PHONE_NUMBER_REGEX,
-   REFERRAL_POINT_REWARD,
- } from "../../config/constants";
+  import {
+    VERIFICATION_TOKEN_EXPIRY_HOURS,
+    RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
+    POINTS_EXPIRATION_MONTHS,
+    COUPON_EXPIRATION_MONTHS,
+    REFERRAL_POINT_REWARD,
+  } from "../../config/constants";
+  import { validatePhoneNumber } from "../../utils/validationHelpers";
 import { Role } from "@prisma/client";
 import { AuthRegister, Login, VerifyEmail } from "./auth.type";
 import {
@@ -59,7 +59,7 @@ export const authService = {
      imageUrl,
    }: AuthRegister) => {
      // Validasi format nomor telepon jika diisi
-     if (phoneNumber && !PHONE_NUMBER_REGEX.test(phoneNumber)) {
+      if (phoneNumber && !validatePhoneNumber(phoneNumber)) {
        throw new AppError(
          "Invalid phone number format. Must be 10-15 digits, can start with +62 or 0",
          400
@@ -311,7 +311,7 @@ export const authService = {
      imageUrl?: string;
    }) => {
      // Validasi format nomor telepon jika diisi
-     if (phoneNumber !== undefined && !PHONE_NUMBER_REGEX.test(phoneNumber)) {
+      if (phoneNumber !== undefined && !validatePhoneNumber(phoneNumber)) {
        throw new AppError(
          "Invalid phone number format. Must be 10-15 digits, can start with +62 or 0",
          400

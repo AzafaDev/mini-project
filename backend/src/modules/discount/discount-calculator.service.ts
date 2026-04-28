@@ -1,19 +1,16 @@
 import { DiscountType } from "@prisma/client";
+import { DiscountStrategy, PercentageDiscountStrategy, FixedDiscountStrategy } from "./strategies";
 
-/**
- * Discount Calculator Service - Single Source of Truth untuk semua logika diskon
- * Semua fungsi adalah pure function, tidak ada side effect, mudah di test
- */
 class DiscountCalculatorService {
-  constructor() {}
+  private strategies: Record<DiscountType, DiscountStrategy>;
 
-  /**
-   * Hitung jumlah diskon berdasarkan tipe dan nilai diskon
-   * @param basePrice Harga satuan tiket
-   * @param quantity Jumlah tiket
-   * @param discountType Tipe diskon (PERCENTAGE / FIXED)
-   * @param discountValue Nilai diskon
-   */
+  constructor() {
+    this.strategies = {
+      [DiscountType.PERCENTAGE]: new PercentageDiscountStrategy(),
+      [DiscountType.FIXED]: new FixedDiscountStrategy(),
+    };
+  }
+
   calculateDiscount(
     basePrice: number,
     quantity: number,
@@ -21,25 +18,10 @@ class DiscountCalculatorService {
     discountValue: number,
   ): number {
     const subtotal = basePrice * quantity;
-
-    // Untuk tipe persentase, hitung persentase dari subtotal
-    // Diskon tidak boleh melebihi subtotal total
-    if (discountType === DiscountType.PERCENTAGE) {
-      return Math.min((subtotal * discountValue) / 100, subtotal);
-    }
-
-    // Untuk tipe fixed, langsung pakai nilai diskon
-    // Diskon tidak boleh melebihi subtotal total
-    return Math.min(discountValue, subtotal);
+    const strategy = this.strategies[discountType];
+    return strategy.calculate(subtotal, discountValue);
   }
 
-  /**
-   * Validasi kelayakan diskon secara umum
-   * @param startDate Tanggal mulai berlaku diskon
-   * @param endDate Tanggal berakhir diskon
-   * @param maxUsage Batas maksimal penggunaan
-   * @param usedCount Jumlah yang sudah digunakan
-   */
   validateDiscountEligibility(
     startDate: Date,
     endDate: Date,
@@ -48,17 +30,14 @@ class DiscountCalculatorService {
   ): { valid: boolean; error?: string } {
     const now = new Date();
 
-    // Cek apakah diskon sudah mulai berlaku
     if (startDate > now) {
       return { valid: false, error: "Discount not yet active" };
     }
 
-    // Cek apakah diskon sudah kadaluarsa
     if (endDate < now) {
       return { valid: false, error: "Discount expired" };
     }
 
-    // Cek apakah batas penggunaan sudah tercapai
     if (maxUsage && usedCount && usedCount >= maxUsage) {
       return { valid: false, error: "Discount usage limit reached" };
     }
@@ -66,13 +45,6 @@ class DiscountCalculatorService {
     return { valid: true };
   }
 
-  /**
-   * Hitung harga final setelah semua diskon diterapkan
-   * @param basePrice Harga satuan
-   * @param quantity Jumlah item
-   * @param discounts Array diskon yang akan diterapkan
-   * @param pointsUsed Jumlah poin yang digunakan
-   */
   calculateFinalPrice(
     basePrice: number,
     quantity: number,
@@ -97,11 +69,6 @@ class DiscountCalculatorService {
     };
   }
 
-  /**
-   * Terapkan diskon pada harga
-   * @param price Harga sebelum diskon
-   * @param discount Nilai diskon
-   */
   applyDiscount(price: number, discount: number): number {
     return Math.max(0, price - discount);
   }

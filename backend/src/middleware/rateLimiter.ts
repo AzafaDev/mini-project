@@ -1,6 +1,7 @@
 import rateLimit from "express-rate-limit";
+import { logger } from "../utils/logger";
 
-console.log("[DEBUG RateLimiter] Middleware loaded");
+logger.debug("[RateLimiter] Middleware loaded");
 
 // General API rate limiter
 export const apiLimiter = rateLimit({

@@ -3,12 +3,7 @@ import { sendEmail } from "../../utils/sendEmail";
 import { handleFileUpload } from "../../utils/handleFileUpload";
 import { UploadedFile } from "express-fileupload";
 import { TransactionStatus, DiscountType } from "@prisma/client";
-import {
-  restoreTicketAvailability,
-  restoreUserPoints,
-  restoreVoucher,
-  restoreCoupon,
-} from "../../utils/transactionHelpers";
+import { restoreAllResources } from "../../utils/transactionHelpers";
 import { AppError } from "../../utils/AppError";
 import { discountCalculatorService } from "../discount/discount-calculator.service";
 import { voucherService } from "../discount/voucher.service";
@@ -927,28 +922,15 @@ export const transactionService = {
         },
       });
 
-      // Kembalikan ketersediaan tiket
-      await restoreTicketAvailability(tx, {
+      await restoreAllResources(tx, {
         ticketId: transaction.ticketId,
         eventId: transaction.eventId,
         quantity: transaction.quantity,
-      });
-
-      // Kembalikan poin yang sudah di-deduct
-      await restoreUserPoints(tx, {
-        userId: transaction.userId,
         pointsUsed: transaction.pointsUsed,
+        voucherId: transaction.voucherId,
+        couponId: transaction.couponId,
+        userId: transaction.userId,
       });
-
-      // Kembalikan status voucher menjadi tersedia kembali
-      if (transaction.voucherId) {
-        await restoreVoucher(tx, { voucherId: transaction.voucherId });
-      }
-
-      // Kembalikan status coupon menjadi tersedia kembali
-      if (transaction.couponId) {
-        await restoreCoupon(tx, { couponId: transaction.couponId });
-      }
 
       console.log(
         "[DEBUG Transaction Service] transaction rejected, new status:",
@@ -1007,25 +989,15 @@ export const transactionService = {
         },
       });
 
-      // Restore all resources
-      await restoreTicketAvailability(tx, {
+      await restoreAllResources(tx, {
         ticketId: transaction.ticketId,
         eventId: transaction.eventId,
         quantity: transaction.quantity,
-      });
-
-      await restoreUserPoints(tx, {
-        userId: transaction.userId,
         pointsUsed: transaction.pointsUsed,
+        voucherId: transaction.voucherId,
+        couponId: transaction.couponId,
+        userId: transaction.userId,
       });
-
-      if (transaction.voucherId) {
-        await restoreVoucher(tx, { voucherId: transaction.voucherId });
-      }
-
-      if (transaction.couponId) {
-        await restoreCoupon(tx, { couponId: transaction.couponId });
-      }
 
       console.log(
         "[DEBUG Transaction Service] transaction expired, new status:",
@@ -1079,25 +1051,15 @@ export const transactionService = {
         },
       });
 
-      // Restore all resources
-      await restoreTicketAvailability(tx, {
+      await restoreAllResources(tx, {
         ticketId: transaction.ticketId,
         eventId: transaction.eventId,
         quantity: transaction.quantity,
-      });
-
-      await restoreUserPoints(tx, {
-        userId: transaction.userId,
         pointsUsed: transaction.pointsUsed,
+        voucherId: transaction.voucherId,
+        couponId: transaction.couponId,
+        userId: transaction.userId,
       });
-
-      if (transaction.voucherId) {
-        await restoreVoucher(tx, { voucherId: transaction.voucherId });
-      }
-
-      if (transaction.couponId) {
-        await restoreCoupon(tx, { couponId: transaction.couponId });
-      }
 
       console.log(
         "[DEBUG Transaction Service] transaction canceled, new status:",

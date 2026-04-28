@@ -7,10 +7,11 @@ import {
   createEventSchema,
   getAllEventsQuerySchema,
 } from "./event.schema";
+import { logger } from "../../utils/logger";
 
 const eventRouter = Router();
 
-console.log("[DEBUG Route] Registering Event routes");
+logger.debug("[Route] Registering Event routes");
 
 // Ambil semua event dengan filter
 eventRouter.get("/", validate(getAllEventsQuerySchema), eventController.getAllEvents);

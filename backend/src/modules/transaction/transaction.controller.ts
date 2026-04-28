@@ -1,19 +1,15 @@
-import { Request, Response, NextFunction } from "express";
-import { transactionService } from "./transaction.service";
+import { Request, Response } from "express";
 import { UploadedFile } from "express-fileupload";
 import { AuthRequest } from "../auth/auth.type";
 import { catchAsync } from "../../utils/catchAsync";
+import {
+  transactionCreationService,
+  transactionStatusService,
+  transactionQueryService,
+} from "./services";
 
-/**
- * Transaction controller handling all transaction-related endpoints.
- * Includes: create, view, upload payment proof, accept/reject/cancel transactions
- */
 export const transactionController = {
-  // Semua error otomatis ditangkap oleh catchAsync wrapper
-  // Tidak perlu buat try-catch manual di setiap controller
   createTransaction: catchAsync<AuthRequest>(async (req, res) => {
-    // userId diambil dari token JWT yang sudah di-verify oleh auth middleware
-    // Nilai ini sudah dijamin valid oleh middleware sebelumnya
     const userId = req.userId;
 
     if (!userId) {
@@ -30,7 +26,7 @@ export const transactionController = {
     const couponCode = body.couponCode as string | undefined;
     const pointsUsed = body.pointsUsed ? Number(body.pointsUsed) : 0;
 
-    const transaction = await transactionService.createTransaction({
+    const transaction = await transactionCreationService.createTransaction({
       userId,
       eventId,
       ticketId,
@@ -50,7 +46,7 @@ export const transactionController = {
   getTransactionById: catchAsync(async (req, res) => {
     const id = req.params.id as string;
 
-    const transaction = await transactionService.getTransactionById({ id });
+    const transaction = await transactionQueryService.getTransactionById({ id });
 
     if (!transaction) {
       res.status(404).json({
@@ -76,7 +72,7 @@ export const transactionController = {
 
     const { page = 1, limit = 10 } = req.query;
 
-    const { data, pagination } = await transactionService.getUserTransactions({
+    const { data, pagination } = await transactionQueryService.getUserTransactions({
       userId,
       page: Number(page),
       limit: Number(limit),
@@ -101,7 +97,7 @@ export const transactionController = {
 
     const { page = 1, limit = 10 } = req.query;
 
-    const { data, pagination } = await transactionService.getEventTransactions({
+    const { data, pagination } = await transactionQueryService.getEventTransactions({
       eventId: eventId as string,
       page: Number(page),
       limit: Number(limit),
@@ -124,7 +120,7 @@ export const transactionController = {
 
     const { page = 1, limit = 100 } = req.query;
 
-    const { data, pagination } = await transactionService.getOrganizerTransactions({
+    const { data, pagination } = await transactionQueryService.getOrganizerTransactions({
       organizerId,
       page: Number(page),
       limit: Number(limit),
@@ -150,7 +146,7 @@ export const transactionController = {
 
     const paymentProof = req.files.paymentProof as UploadedFile;
 
-    const transaction = await transactionService.uploadPaymentProof({
+    const transaction = await transactionCreationService.uploadPaymentProof({
       id,
       paymentProof,
     });
@@ -165,7 +161,7 @@ export const transactionController = {
   acceptTransaction: catchAsync<AuthRequest>(async (req, res) => {
     const id = req.params.id as string;
 
-    const transaction = await transactionService.acceptTransaction({ id });
+    const transaction = await transactionStatusService.acceptTransaction({ id });
 
     res.status(200).json({
       success: true,
@@ -177,7 +173,7 @@ export const transactionController = {
   rejectTransaction: catchAsync<AuthRequest>(async (req, res) => {
     const id = req.params.id as string;
 
-    const transaction = await transactionService.rejectTransaction({ id });
+    const transaction = await transactionStatusService.rejectTransaction({ id });
 
     res.status(200).json({
       success: true,
@@ -189,7 +185,7 @@ export const transactionController = {
    cancelTransaction: catchAsync<AuthRequest>(async (req, res) => {
      const id = req.params.id as string;
 
-     const transaction = await transactionService.cancelTransaction({ id });
+     const transaction = await transactionStatusService.cancelTransaction({ id });
 
      res.status(200).json({
        success: true,
@@ -200,9 +196,9 @@ export const transactionController = {
 
    checkUserPurchase: catchAsync<AuthRequest>(async (req, res) => {
      const eventId = req.params.eventId as string;
-     const userId = req.userId;
+     const userId = req.userId as string;
 
-     const hasPurchased = await transactionService.hasUserPurchased({ userId, eventId });
+     const hasPurchased = await transactionQueryService.hasUserPurchased({ userId, eventId });
      res.json({ success: true, hasPurchased });
    }),
 };

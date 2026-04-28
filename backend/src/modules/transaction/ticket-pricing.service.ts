@@ -143,4 +143,5 @@ class TicketPricingService {
   }
 }
 
+export { TicketPricingService };
 export const ticketPricingService = new TicketPricingService();

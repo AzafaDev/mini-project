@@ -1,13 +1,13 @@
 import { prisma } from "../config/prisma";
 import { TransactionStatus } from "@prisma/client";
-import { sendEmail } from "./sendEmail";
-import { transactionService } from "../modules/transaction/transaction.service";
+import { transactionStatusService } from "../modules/transaction/services";
+import { logger } from "./logger";
 
 const EXPIRATION_HOURS = 2;
 const AUTO_CANCEL_DAYS = 3;
 
 async function processExpiredTransactions() {
-  console.log("[CRON] Running processExpiredTransactions...");
+  logger.debug("[CRON] Running processExpiredTransactions...");
   const expiredTransactions = await prisma.transaction.findMany({
     where: {
       status: TransactionStatus.WAITING_PAYMENT,
@@ -18,16 +18,16 @@ async function processExpiredTransactions() {
 
   for (const tx of expiredTransactions) {
     try {
-      await transactionService.expireTransaction({ id: tx.id });
-      console.log("[CRON] Transaction expired:", tx.id);
+      await transactionStatusService.expireTransaction({ id: tx.id });
+      logger.debug("[CRON] Transaction expired:", tx.id);
     } catch (error) {
-      console.error("[CRON] Error expiring transaction:", tx.id, error);
+      logger.error("[CRON] Error expiring transaction:", tx.id, error);
     }
   }
 }
 
 async function processAutoCancelTransactions() {
-  console.log("[CRON] Running processAutoCancelTransactions...");
+  logger.debug("[CRON] Running processAutoCancelTransactions...");
   const autoCancelTransactions = await prisma.transaction.findMany({
     where: {
       status: TransactionStatus.WAITING_CONFIRMATION,
@@ -38,16 +38,16 @@ async function processAutoCancelTransactions() {
 
   for (const tx of autoCancelTransactions) {
     try {
-      await transactionService.cancelTransaction({ id: tx.id });
-      console.log("[CRON] Transaction auto-canceled:", tx.id);
+      await transactionStatusService.cancelTransaction({ id: tx.id });
+      logger.debug("[CRON] Transaction auto-canceled:", tx.id);
     } catch (error) {
-      console.error("[CRON] Error auto-canceling transaction:", tx.id, error);
+      logger.error("[CRON] Error auto-canceling transaction:", tx.id, error);
     }
   }
 }
 
 async function cleanupExpiredPoints() {
-  console.log("[CRON] Running cleanupExpiredPoints...");
+  logger.debug("[CRON] Running cleanupExpiredPoints...");
 
   const now = new Date();
 
@@ -61,7 +61,7 @@ async function cleanupExpiredPoints() {
   });
 
   if (expiredTxns.length === 0) {
-    console.log("[CRON] No expired points to clean up");
+    logger.debug("[CRON] No expired points to clean up");
     return;
   }
 
@@ -72,7 +72,7 @@ async function cleanupExpiredPoints() {
     userExpiredMap.set(tx.userId, current + tx.amount);
   }
 
-  console.log(
+  logger.debug(
     `[CRON] Found ${expiredTxns.length} expired point transactions across ${userExpiredMap.size} users`,
   );
 
@@ -92,11 +92,11 @@ async function cleanupExpiredPoints() {
       if (result.count === 0) {
         // User not found or points already less than totalExpired
         // This shouldn't happen if data is consistent, but log for monitoring
-        console.warn(
+        logger.warn(
           `[CRON] Could not decrement points for user ${userId}: insufficient balance or user not found`,
         );
       } else {
-        console.log(
+        logger.debug(
           `[CRON] Decremented ${totalExpired} points from user ${userId}`,
         );
       }
@@ -108,15 +108,14 @@ async function cleanupExpiredPoints() {
     where: { expiresAt: { lte: now } },
   });
 
-  console.log(
+  logger.debug(
     `[CRON] Deleted ${deleteResult.count} expired point transactions`,
   );
-  console.log("[CRON] cleanupExpiredPoints completed");
+  logger.debug("[CRON] cleanupExpiredPoints completed");
 }
 
-// Jalankan semua cron job background secara otomatis ketika server start
 export function startCronJobs() {
-  console.log("[CRON] Starting cron jobs...");
+  logger.debug("[CRON] Starting cron jobs...");
 
   // Cek transaksi expired setiap 5 menit
   setInterval(processExpiredTransactions, 5 * 60 * 1000);
@@ -127,5 +126,5 @@ export function startCronJobs() {
   // Bersihkan poin expired setiap 1 jam
   setInterval(cleanupExpiredPoints, 60 * 60 * 1000);
 
-  console.log("[CRON] Cron jobs scheduled");
+  logger.debug("[CRON] Cron jobs scheduled");
 }

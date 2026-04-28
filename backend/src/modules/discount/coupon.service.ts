@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
+import { logger } from "../../utils/logger";
 import { discountCalculatorService } from "./discount-calculator.service";
 
 export const couponService = {
@@ -15,7 +16,7 @@ export const couponService = {
     price: number;
     quantity: number;
   }) => {
-    console.log("[DEBUG Coupon Service] validateCoupon input:", { code, price, quantity });
+    logger.debug("[Coupon Service] validateCoupon input:", { code, price, quantity });
 
     if (!code) {
       throw new AppError("Coupon code is required", 400);
@@ -41,7 +42,7 @@ export const couponService = {
       coupon.discountValue
     );
 
-    console.log("[DEBUG Coupon Service] validateCoupon success:", actualDiscount);
+    logger.debug("[Coupon Service] validateCoupon success:", actualDiscount);
     return {
       discount: actualDiscount,
       discountType: coupon.discountType,
@@ -54,7 +55,7 @@ export const couponService = {
    * Get user's coupons
    */
   getUserCoupons: async ({ userId }: { userId: string }) => {
-    console.log("[DEBUG Coupon Service] getUserCoupons input:", { userId });
+    logger.debug("[Coupon Service] getUserCoupons input:", { userId });
 
     const coupons = await prisma.coupon.findMany({
       where: {
@@ -73,7 +74,7 @@ export const couponService = {
       },
     });
 
-    console.log("[DEBUG Coupon Service] getUserCoupons result:", coupons.length);
+    logger.debug("[Coupon Service] getUserCoupons result:", coupons.length);
     return coupons;
   },
 
@@ -81,7 +82,7 @@ export const couponService = {
    * Get all system-wide active coupons (optionally filtered by userId)
    */
   getCoupons: async ({ userId }: { userId?: string }) => {
-    console.log("[DEBUG Coupon Service] getCoupons input:", { userId });
+    logger.debug("[Coupon Service] getCoupons input:", { userId });
 
     const where: any = {
       isActive: true,
@@ -103,7 +104,7 @@ export const couponService = {
       },
     });
 
-    console.log("[DEBUG Coupon Service] getCoupons result:", coupons.length);
+    logger.debug("[Coupon Service] getCoupons result:", coupons.length);
     return coupons;
   },
 

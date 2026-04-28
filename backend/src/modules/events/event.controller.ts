@@ -1,11 +1,16 @@
 import { Request, Response } from "express";
-import { eventService } from "./event.service";
 import { getUploadUrl } from "../../utils/uploadHelper";
 import { UploadedFile } from "express-fileupload";
 import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
 import { catchAsync } from "../../utils/catchAsync";
 import { AppError } from "../../utils/AppError";
+import {
+  eventQueryService,
+  eventManagementService,
+  eventStatsService,
+  organizerProfileService,
+} from "./services";
 
 export const eventController = {
   getAllEvents: catchAsync(async (req: Request, res: Response) => {
@@ -24,7 +29,7 @@ export const eventController = {
       includePast,
     } = req.query;
 
-    const { data, pagination } = await eventService.getAllEvents({
+    const { data, pagination } = await eventQueryService.getAllEvents({
       search: search as string,
       category: category as string,
       location: location as string,
@@ -44,7 +49,7 @@ export const eventController = {
 
   getEventById: catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const event = await eventService.getEventById({ id: id as string });
+    const event = await eventQueryService.getEventById({ id: id as string });
     res.status(200).json({ success: true, data: event });
   }),
 
@@ -67,7 +72,6 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    // 🔹 Validasi: gambar wajib ada
     if (!req.files || !req.files.imageFile) {
       throw new AppError("Event image is required", 400);
     }
@@ -87,7 +91,7 @@ export const eventController = {
       }
     }
 
-    const event = await eventService.createEvent({
+    const event = await eventManagementService.createEvent({
       name,
       description,
       location,
@@ -117,7 +121,7 @@ export const eventController = {
       return res.status(400).json({ success: false, message: "User id not found" });
     }
     
-    await eventService.deleteEvent({ id: id as string, userId });
+    await eventManagementService.deleteEvent({ id: id as string, userId });
 
     res.status(200).json({
       success: true,
@@ -132,7 +136,7 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "User id not found" });
     }
     
-    const events = await eventService.getMyEvents({ id: userId });
+    const events = await eventQueryService.getMyEvents({ id: userId });
 
     res.status(200).json({ success: true, data: events });
   }),
@@ -145,7 +149,7 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const stats = await eventService.getEventStats({
+    const stats = await eventStatsService.getEventStats({
       id: id as string,
       organizerId: userId,
     });
@@ -161,7 +165,7 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const stats = await eventService.getOrganizerStats({
+    const stats = await eventStatsService.getOrganizerStats({
       organizerId: userId,
       year: year ? Number(year) : undefined,
       month: month ? Number(month) : undefined,
@@ -173,7 +177,7 @@ export const eventController = {
 
   getOrganizerProfile: catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const profile = await eventService.getOrganizerProfile({
+    const profile = await organizerProfileService.getOrganizerProfile({
       organizerId: id as string,
     });
 
@@ -188,7 +192,7 @@ export const eventController = {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const attendees = await eventService.getEventAttendees({
+    const attendees = await organizerProfileService.getEventAttendees({
       eventId: id as string,
       organizerId: userId,
     });

@@ -10,21 +10,17 @@ import cors from "cors";
 import authRouter from "./modules/auth/auth.route";
 import eventRouter from "./modules/events/event.route";
 import voucherRouter from "./modules/events/voucher.route";
+import couponRouter from "./modules/events/coupon.route";
 import reviewRouter from "./modules/events/review.route";
 import pointsRouter from "./modules/points/points.route";
 import transactionRouter from "./modules/transaction/transaction.route";
 import { errorHandler } from "./middleware/errorHandler";
 import { startCronJobs } from "./utils/cronJobs";
+import { validateEnv } from "./config/envValidator";
+import { apiLimiter, authLimiter } from "./middleware/rateLimiter";
 
 dotenv.config();
-
-// Validasi environment variable penting sebelum server start
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is required. Server cannot start.");
-}
-if (!process.env.CLOUDINARY_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-  throw new Error("Cloudinary environment variables (CLOUDINARY_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) are required. Server cannot start.");
-}
+validateEnv();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -63,11 +59,16 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Rate limiting
+app.use("/api", apiLimiter);
+app.use("/api/auth", authLimiter);
+
 // Urutan route: diurutkan berdasarkan dependensi
 app.use("/api/auth", authRouter);
 // Voucher harus sebelum event route karena menggunakan prefix yang sama
 app.use("/api/events", voucherRouter);
 app.use("/api/events", eventRouter);
+app.use("/api/coupons", couponRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/points", pointsRouter);
 app.use("/api/transactions", transactionRouter);

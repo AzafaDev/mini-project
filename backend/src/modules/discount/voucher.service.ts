@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../utils/AppError";
+import { logger } from "../../utils/logger";
 import { discountCalculatorService } from "./discount-calculator.service";
 import { DiscountType } from "@prisma/client";
 
@@ -40,7 +41,7 @@ export const voucherService = {
     price: number;
     quantity: number;
   }) => {
-    console.log("[DEBUG Voucher Service] validateVoucher input:", {
+    logger.debug("[Voucher Service] validateVoucher input:", {
       eventId,
       code,
       price,
@@ -77,7 +78,7 @@ export const voucherService = {
       voucher.discountValue,
     );
 
-    console.log("[DEBUG Voucher Service] validateVoucher discount:", discount);
+    logger.debug("[Voucher Service] validateVoucher discount:", discount);
     return {
       discount,
       discountType: voucher.discountType,
@@ -108,7 +109,7 @@ export const voucherService = {
     endDate: Date;
     maxUsage?: number;
   }) => {
-    console.log("[DEBUG Voucher Service] createVoucher input:", {
+    logger.debug("[Voucher Service] createVoucher input:", {
       eventId,
       code,
       discountType,
@@ -154,7 +155,7 @@ export const voucherService = {
       },
     });
 
-    console.log("[DEBUG Voucher Service] createVoucher success:", voucher.id);
+    logger.debug("[Voucher Service] createVoucher success:", voucher.id);
     return voucher;
   },
 
@@ -168,7 +169,7 @@ export const voucherService = {
     id: string;
     organizerId: string;
   }) => {
-    console.log("[DEBUG Voucher Service] deleteVoucher input:", {
+    logger.debug("[Voucher Service] deleteVoucher input:", {
       id,
       organizerId,
     });
@@ -183,7 +184,7 @@ export const voucherService = {
     }
 
     await prisma.voucher.delete({ where: { id } });
-    console.log("[DEBUG Voucher Service] deleteVoucher success:", id);
+    logger.debug("[Voucher Service] deleteVoucher success:", id);
     return { success: true };
   },
 
@@ -191,7 +192,7 @@ export const voucherService = {
    * Get all vouchers for organizer's events
    */
   getOrganizerVouchers: async ({ organizerId }: { organizerId: string }) => {
-    console.log("[DEBUG Voucher Service] getOrganizerVouchers input:", {
+    logger.debug("[Voucher Service] getOrganizerVouchers input:", {
       organizerId,
     });
 
@@ -212,8 +213,8 @@ export const voucherService = {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log(
-      "[DEBUG Voucher Service] getOrganizerVouchers result:",
+    logger.debug(
+      "[Voucher Service] getOrganizerVouchers result:",
       vouchers.length,
     );
     return vouchers;
