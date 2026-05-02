@@ -1,3 +1,4 @@
+import cron from "node-cron";
 import { prisma } from "../config/prisma";
 import { TransactionStatus } from "@prisma/client";
 import { transactionStatusService } from "../modules/transaction/services";
@@ -117,14 +118,23 @@ async function cleanupExpiredPoints() {
 export function startCronJobs() {
   logger.debug("[CRON] Starting cron jobs...");
 
-  // Cek transaksi expired setiap 5 menit
-  setInterval(processExpiredTransactions, 5 * 60 * 1000);
+  cron.schedule("*/5 * * * *", () => {
+    processExpiredTransactions().catch((err) =>
+      logger.error("[CRON] processExpiredTransactions error:", err),
+    );
+  });
 
-  // Cek transaksi yang perlu auto cancel setiap 5 menit
-  setInterval(processAutoCancelTransactions, 5 * 60 * 1000);
+  cron.schedule("*/5 * * * *", () => {
+    processAutoCancelTransactions().catch((err) =>
+      logger.error("[CRON] processAutoCancelTransactions error:", err),
+    );
+  });
 
-  // Bersihkan poin expired setiap 1 jam
-  setInterval(cleanupExpiredPoints, 60 * 60 * 1000);
+  cron.schedule("0 * * * *", () => {
+    cleanupExpiredPoints().catch((err) =>
+      logger.error("[CRON] cleanupExpiredPoints error:", err),
+    );
+  });
 
   logger.debug("[CRON] Cron jobs scheduled");
 }

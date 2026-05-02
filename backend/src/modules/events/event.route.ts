@@ -6,6 +6,7 @@ import { validate } from "../../middleware/validate";
 import {
   createEventSchema,
   getAllEventsQuerySchema,
+  eventParamsSchema,
 } from "./event.schema";
 import { logger } from "../../utils/logger";
 
@@ -22,11 +23,11 @@ eventRouter.get("/me", authMiddleware.verifyAuthToken, authMiddleware.isOrganize
 // Ambil statistik semua event milik organizer
 eventRouter.get("/stats", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, eventController.getOrganizerStats);
 // Ambil statistik untuk event tertentu
-eventRouter.get("/:id/stats", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, isEventOwner, eventController.getEventStats);
+eventRouter.get("/:id/stats", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, isEventOwner, validate(eventParamsSchema), eventController.getEventStats);
 // Ambil daftar peserta event
-eventRouter.get("/:id/attendees", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, isEventOwner, eventController.getEventAttendees);
+eventRouter.get("/:id/attendees", authMiddleware.verifyAuthToken, authMiddleware.isOrganizer, isEventOwner, validate(eventParamsSchema), eventController.getEventAttendees);
 // Ambil detail event berdasarkan ID
-eventRouter.get("/:id", eventController.getEventById);
+eventRouter.get("/:id", validate(eventParamsSchema), eventController.getEventById);
 // Buat event baru - Hanya organizer
 eventRouter.post(
   "/",

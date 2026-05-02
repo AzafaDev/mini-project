@@ -4,13 +4,15 @@ import { authMiddleware } from "../auth/auth.middleware";
 import { validate } from "../../middleware/validate";
 import {
   createTransactionSchema,
-  updateTransactionStatusSchema,
   getTransactionsQuerySchema,
+  transactionIdParamsSchema,
+  eventIdParamsSchema,
+  getUserTransactionsQuerySchema,
+  getOrganizerTransactionsQuerySchema,
 } from "./transaction.schema";
 
 const transactionRouter = Router();
 
-// Buat transaksi baru - User membeli tiket
 transactionRouter.post(
   "/",
   authMiddleware.verifyAuthToken,
@@ -18,14 +20,13 @@ transactionRouter.post(
   transactionController.createTransaction,
 );
 
-// Ambil riwayat transaksi milik user yang login
 transactionRouter.get(
   "/me",
   authMiddleware.verifyAuthToken,
+  validate(getUserTransactionsQuerySchema),
   transactionController.getMyTransactions,
 );
 
-// Ambil semua transaksi untuk event tertentu - Hanya organizer yang boleh
 transactionRouter.get(
   "/event/:eventId",
   authMiddleware.verifyAuthToken,
@@ -34,52 +35,51 @@ transactionRouter.get(
   transactionController.getEventTransactions,
 );
 
-// Ambil semua transaksi untuk semua event milik organizer
 transactionRouter.get(
   "/organizer",
   authMiddleware.verifyAuthToken,
   authMiddleware.isOrganizer,
+  validate(getOrganizerTransactionsQuerySchema),
   transactionController.getOrganizerTransactions,
 );
 
-// Ambil detail transaksi berdasarkan ID
 transactionRouter.get(
   "/:id",
   authMiddleware.verifyAuthToken,
+  validate(transactionIdParamsSchema),
   transactionController.getTransactionById,
 );
 
-// Upload bukti pembayaran
 transactionRouter.put(
   "/:id/payment-proof",
   authMiddleware.verifyAuthToken,
+  validate(transactionIdParamsSchema),
   transactionController.uploadPaymentProof,
 );
 
-// Terima transaksi - Hanya organizer yang boleh
 transactionRouter.put(
   "/:id/accept",
   authMiddleware.verifyAuthToken,
   authMiddleware.isOrganizer,
+  validate(transactionIdParamsSchema),
   transactionController.acceptTransaction,
 );
 
-// Tolak transaksi - Hanya organizer yang boleh
 transactionRouter.put(
   "/:id/reject",
   authMiddleware.verifyAuthToken,
   authMiddleware.isOrganizer,
+  validate(transactionIdParamsSchema),
   transactionController.rejectTransaction,
 );
 
-// Batalkan transaksi - User membatalkan sebelum dikonfirmasi
 transactionRouter.put(
   "/:id/cancel",
   authMiddleware.verifyAuthToken,
+  validate(transactionIdParamsSchema),
   transactionController.cancelTransaction,
 );
 
-// Cek apakah user sudah membeli tiket untuk event tertentu
 transactionRouter.get(
   "/check-purchase/:eventId",
   authMiddleware.verifyAuthToken,

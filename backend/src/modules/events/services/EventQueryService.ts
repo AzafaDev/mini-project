@@ -1,10 +1,14 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, TransactionStatus } from "@prisma/client";
 import type { PrismaClientType } from "../../../config/prisma";
 import { AppError } from "../../../utils/AppError";
 import { logger } from "../../../utils/logger";
+import type { OrganizerProfileService } from "./OrganizerProfileService";
 
 export class EventQueryService {
-  constructor(private prisma: PrismaClientType) {}
+  constructor(
+    private prisma: PrismaClientType,
+    private organizerProfileService?: OrganizerProfileService,
+  ) {}
 
   async getAllEvents({
     search,
@@ -46,7 +50,7 @@ export class EventQueryService {
     const currentSortBy = sortBy || "startDate";
     const currentSortOrder = sortOrder || "asc";
 
-    const where: Prisma.EventWhereInput = { isDeleted: false };
+    const where: Prisma.EventWhereInput = {};
     if (search)
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -100,6 +104,8 @@ export class EventQueryService {
       },
     });
 
+    logger.debug("[EventQueryService] getAllEvents:", { count: events.length, total });
+
     return {
       data: events,
       pagination: {
@@ -114,7 +120,7 @@ export class EventQueryService {
   async getEventById({ id }: { id: string }) {
     const now = new Date();
     const event = await this.prisma.event.findUnique({
-      where: { id, isDeleted: false },
+      where: { id },
       include: {
         organizer: {
           select: {
@@ -159,26 +165,17 @@ export class EventQueryService {
           event.reviews.length
         : 0;
 
-    const organizerEvents = await this.prisma.event.findMany({
-      where: { organizerId: event.organizerId, isDeleted: false },
-      include: {
-        reviews: true,
-      },
-    });
-
-    const allReviews = organizerEvents.flatMap((e) => e.reviews);
-    const organizerRating =
-      allReviews.length > 0
-        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
-        : 0;
-    const reviewCount = allReviews.length;
+    const { rating: organizerRating, reviewCount } =
+      this.organizerProfileService
+        ? await this.organizerProfileService.calculateOrganizerRating(event.organizerId)
+        : { rating: 0, reviewCount: 0 };
 
     const transformedOrganizer = {
       id: event.organizer.id,
       name: event.organizer.fullName,
       imageUrl: event.organizer.profilePicture,
       rating: organizerRating,
-      reviewCount: reviewCount,
+      reviewCount,
     };
 
     const transformedReviews = event.reviews.map((r) => ({
@@ -201,14 +198,13 @@ export class EventQueryService {
     const events = await this.prisma.event.findMany({
       where: {
         organizerId: id,
-        isDeleted: false,
       },
     });
 
     const eventsWithSold = await Promise.all(
       events.map(async (event) => {
         const transactions = await this.prisma.transaction.aggregate({
-          where: { eventId: event.id, status: "DONE" },
+          where: { eventId: event.id, status: TransactionStatus.DONE },
           _sum: { quantity: true },
         });
         return {
@@ -217,6 +213,8 @@ export class EventQueryService {
         };
       }),
     );
+
+    logger.debug("[EventQueryService] getMyEvents:", { count: eventsWithSold.length });
 
     return eventsWithSold;
   }

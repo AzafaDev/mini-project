@@ -97,6 +97,7 @@ model Transaction {
   paidAt                 DateTime?
   expiresAt              DateTime
   autoCancelAt           DateTime?
+  idempotencyKey         String?           @unique
   createdAt              DateTime          @default(now())
   coupon                 Coupon?           @relation(fields: [couponId], references: [id])
   event                  Event             @relation(fields: [eventId], references: [id])
@@ -108,6 +109,9 @@ model Transaction {
   @@index([eventId])
   @@index([status])
   @@index([expiresAt])
+  @@index([createdAt])
+  @@index([eventId, status])
+  @@index([userId, eventId])
 }
 
 model Review {
@@ -143,6 +147,7 @@ model Voucher {
   @@unique([code, eventId])
   @@index([eventId])
   @@index([code])
+  @@index([eventId, isActive, startDate, endDate])
 }
 
 model Coupon {

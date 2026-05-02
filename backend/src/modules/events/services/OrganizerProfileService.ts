@@ -1,9 +1,26 @@
+import { TransactionStatus } from "@prisma/client";
 import type { PrismaClientType } from "../../../config/prisma";
 import { AppError } from "../../../utils/AppError";
 import { logger } from "../../../utils/logger";
 
 export class OrganizerProfileService {
   constructor(private prisma: PrismaClientType) {}
+
+  async calculateOrganizerRating(organizerId: string): Promise<{ rating: number; reviewCount: number }> {
+    const events = await this.prisma.event.findMany({
+      where: { organizerId },
+      include: { reviews: true },
+    });
+
+    const allReviews = events.flatMap((e) => e.reviews);
+    const reviewCount = allReviews.length;
+    const rating =
+      reviewCount > 0
+        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+        : 0;
+
+    return { rating, reviewCount };
+  }
 
   async getOrganizerProfile({ organizerId }: { organizerId: string }) {
     const organizer = await this.prisma.user.findUnique({
@@ -19,18 +36,11 @@ export class OrganizerProfileService {
     if (!organizer) throw new AppError("Organizer not found", 404);
 
     const events = await this.prisma.event.findMany({
-      where: { organizerId, isDeleted: false },
-      include: {
-        reviews: true,
-      },
+      where: { organizerId },
+      include: { reviews: true },
     });
 
-    const allReviews = events.flatMap((e) => e.reviews);
-    const organizerRating =
-      allReviews.length > 0
-        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
-        : 0;
-    const reviewCount = allReviews.length;
+    const { rating: organizerRating, reviewCount } = await this.calculateOrganizerRating(organizerId);
 
     const reviews = await this.prisma.review.findMany({
       where: {
@@ -54,6 +64,12 @@ export class OrganizerProfileService {
       },
       orderBy: { createdAt: "desc" },
       take: 20,
+    });
+
+    logger.debug("[OrganizerProfileService] getOrganizerProfile:", {
+      organizerId,
+      rating: organizerRating,
+      reviewCount,
     });
 
     return {
@@ -104,7 +120,7 @@ export class OrganizerProfileService {
     }
 
     const event = await this.prisma.event.findFirst({
-      where: { id: eventId, organizerId, isDeleted: false },
+      where: { id: eventId, organizerId },
     });
     if (!event) {
       throw new AppError("Event not found or unauthorized", 404);
@@ -113,7 +129,7 @@ export class OrganizerProfileService {
     const transactions = await this.prisma.transaction.findMany({
       where: {
         eventId,
-        status: "DONE",
+        status: TransactionStatus.DONE,
       },
       include: {
         user: {
@@ -129,6 +145,11 @@ export class OrganizerProfileService {
         },
       },
       orderBy: { createdAt: "desc" },
+    });
+
+    logger.debug("[OrganizerProfileService] getEventAttendees:", {
+      eventId,
+      count: transactions.length,
     });
 
     return transactions.map((tx) => ({

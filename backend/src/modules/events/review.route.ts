@@ -4,7 +4,8 @@ import { authMiddleware } from "../auth/auth.middleware";
 import { validate } from "../../middleware/validate";
 import { createReviewSchema, updateReviewSchema } from "./review.schema";
 
-console.log("[DEBUG Route] Registering Review routes");
+import { logger } from "../../utils/logger";
+logger.debug("[Route] Registering Review routes");
 
 const reviewRouter = Router();
 

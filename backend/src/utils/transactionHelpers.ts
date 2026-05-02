@@ -1,4 +1,6 @@
-import { prisma } from "../config/prisma";
+import { Prisma } from "@prisma/client";
+
+type TxClient = Omit<Prisma.TransactionClient, Prisma.ITXClientDenyList>;
 
 interface RestoreResourcesParams {
   ticketId: string | null;
@@ -10,27 +12,20 @@ interface RestoreResourcesParams {
   userId: string;
 }
 
-/**
- * Restores ticket availability after transaction is rejected/expired/canceled.
- * Handles both custom tickets and default event seats.
- */
 export async function restoreTicketAvailability(
-  tx: any,
+  tx: TxClient,
   { ticketId, eventId, quantity }: Pick<RestoreResourcesParams, "ticketId" | "eventId" | "quantity">
-) {
+): Promise<void> {
   if (ticketId) {
-    // Restore custom ticket availability
     await tx.ticket.update({
       where: { id: ticketId },
       data: { available: { increment: quantity } },
     });
-    // Also restore event availableSeats (sync)
     await tx.event.update({
       where: { id: eventId },
       data: { availableSeats: { increment: quantity } },
     });
   } else {
-    // Default ticket: only event seats
     await tx.event.update({
       where: { id: eventId },
       data: { availableSeats: { increment: quantity } },
@@ -38,10 +33,10 @@ export async function restoreTicketAvailability(
   }
 }
 
-/**
- * Restores user points after transaction is rejected/expired/canceled.
- */
-export async function restoreUserPoints(tx: any, { userId, pointsUsed }: Pick<RestoreResourcesParams, "userId" | "pointsUsed">) {
+export async function restoreUserPoints(
+  tx: TxClient,
+  { userId, pointsUsed }: Pick<RestoreResourcesParams, "userId" | "pointsUsed">
+): Promise<void> {
   if (pointsUsed > 0) {
     await tx.user.update({
       where: { id: userId },
@@ -50,13 +45,10 @@ export async function restoreUserPoints(tx: any, { userId, pointsUsed }: Pick<Re
   }
 }
 
-/**
- * Restores voucher usage count after transaction is rejected/expired/canceled.
- */
 export async function restoreVoucher(
-  tx: any,
+  tx: TxClient,
   { voucherId }: Pick<RestoreResourcesParams, "voucherId">,
-) {
+): Promise<void> {
   if (voucherId) {
     await tx.voucher.updateMany({
       where: { id: voucherId, usedCount: { gt: 0 } },
@@ -65,10 +57,10 @@ export async function restoreVoucher(
   }
 }
 
-/**
- * Reactivates coupon after transaction is rejected/expired/canceled.
- */
-export async function restoreCoupon(tx: any, { couponId }: Pick<RestoreResourcesParams, "couponId">) {
+export async function restoreCoupon(
+  tx: TxClient,
+  { couponId }: Pick<RestoreResourcesParams, "couponId">
+): Promise<void> {
   if (couponId) {
     await tx.coupon.update({
       where: { id: couponId },
@@ -77,16 +69,7 @@ export async function restoreCoupon(tx: any, { couponId }: Pick<RestoreResources
   }
 }
 
-/**
- * Restores all resources (ticket, points, voucher, coupon) after a transaction
- * is rejected, expired, or canceled.
- */
-export async function restoreAllResources(tx: any, params: RestoreResourcesParams) {
-  // Semua operasi restore dijalankan paralel dengan Promise.all
-  // Alasannya:
-  // 1. Tidak ada dependensi antar operasi restore
-  // 2. Lebih cepat daripada await satu-satu secara sequential
-  // 3. Semua tetap berjalan dalam satu atomic transaction
+export async function restoreAllResources(tx: TxClient, params: RestoreResourcesParams): Promise<void> {
   await Promise.all([
     restoreTicketAvailability(tx, params),
     restoreUserPoints(tx, params),

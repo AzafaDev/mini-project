@@ -5,8 +5,7 @@ import { formatDate } from "../lib/formatters";
 
 export default function PointsHistoryPage() {
   const navigate = useNavigate();
-  // const { user } = useAuthStore(); // Unused for now
-  
+
   const [points, setPoints] = useState<number>(0);
   const [history, setHistory] = useState<PointsHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);

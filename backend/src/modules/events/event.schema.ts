@@ -74,6 +74,23 @@ export const getAllEventsQuerySchema = z.object({
   }),
 });
 
+export const eventParamsSchema = z.object({
+  body: z.object({}).optional(),
+  query: z.object({}).optional(),
+  params: z.object({
+    id: z.string().uuid("Invalid event ID"),
+  }),
+});
+
+export const organizerParamsSchema = z.object({
+  body: z.object({}).optional(),
+  query: z.object({}).optional(),
+  params: z.object({
+    id: z.string().uuid("Invalid organizer ID"),
+  }),
+});
+
 // Type exports
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type GetAllEventsQueryInput = z.infer<typeof getAllEventsQuerySchema>;
+export type EventParamsInput = z.infer<typeof eventParamsSchema>;

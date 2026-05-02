@@ -2,15 +2,15 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 import { prisma } from "../../config/prisma";
-  import {
-    VERIFICATION_TOKEN_EXPIRY_HOURS,
-    RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
-    POINTS_EXPIRATION_MONTHS,
-    COUPON_EXPIRATION_MONTHS,
-    REFERRAL_POINT_REWARD,
-  } from "../../config/constants";
-  import { validatePhoneNumber } from "../../utils/validationHelpers";
-import { Role } from "@prisma/client";
+import {
+  VERIFICATION_TOKEN_EXPIRY_HOURS,
+  RESET_PASSWORD_TOKEN_EXPIRY_MINUTES,
+  POINTS_EXPIRATION_MONTHS,
+  COUPON_EXPIRATION_MONTHS,
+  REFERRAL_POINT_REWARD,
+} from "../../config/constants";
+import { validatePhoneNumber } from "../../utils/validationHelpers";
+import { Role, User } from "@prisma/client";
 import { AuthRegister, Login, VerifyEmail } from "./auth.type";
 import {
   generateUniqueReferralCode,
@@ -20,11 +20,10 @@ import { sendEmail } from "../../utils/sendEmail";
 import { AppError } from "../../utils/AppError";
 
 const DISCOUNT_PERCENTAGE = 10;
-// Referral reward points (use constant from config)
 
-// Menghapus field sensitif dari object user sebelum dikirim ke client
-// Agar password, token, dan data sensitif tidak pernah keluar dari server
-const sanitizeUser = (user: any) => {
+const sanitizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const sanitizeUser = (user: User) => {
   const {
     password,
     resetPasswordToken,
@@ -37,6 +36,47 @@ const sanitizeUser = (user: any) => {
 };
 
 export const authService = {
+  sanitizeEmail,
+
+  findByEmail: async (email: string) => {
+    return prisma.user.findUnique({ where: { email: sanitizeEmail(email) } });
+  },
+
+  handleExistingUnverifiedUser: async (
+    email: string,
+    password: string,
+    updateData: {
+      phoneNumber: string;
+      profilePicture: string | undefined;
+      fullName: string;
+      role: Role;
+    },
+  ) => {
+    const newToken = generateVerificationCode();
+    const updatedUser = await authService.rehashAndUpdateUser(
+      email,
+      password,
+      updateData,
+      newToken,
+    );
+    return { user: updatedUser, newToken };
+  },
+
+  sendVerificationEmail: async (user: {
+    email: string;
+    fullName: string;
+    newToken: string;
+  }) => {
+    try {
+      await sendEmail.verificationEmail({
+        email: user.email,
+        token: user.newToken,
+        username: user.fullName,
+      });
+    } catch (error) {
+      console.error("Failed to send verification email:", error);
+    }
+  },
   /**
    * Registers a new user with email verification flow.
    *

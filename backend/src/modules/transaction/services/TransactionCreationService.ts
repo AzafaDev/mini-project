@@ -27,6 +27,7 @@ export class TransactionCreationService {
     voucherCode,
     couponCode,
     pointsUsed = 0,
+    idempotencyKey,
   }: {
     userId: string;
     eventId: string;
@@ -35,6 +36,7 @@ export class TransactionCreationService {
     voucherCode?: string;
     couponCode?: string;
     pointsUsed?: number;
+    idempotencyKey?: string;
   }) {
     if (pointsUsed < 0) {
       throw new AppError("Points used cannot be negative", 400);
@@ -45,6 +47,16 @@ export class TransactionCreationService {
         "Cannot use both voucher and coupon simultaneously",
         400,
       );
+    }
+
+    if (idempotencyKey) {
+      const existingByIdempotency = await this.prisma.transaction.findFirst({
+        where: { idempotencyKey },
+      });
+      if (existingByIdempotency) {
+        logger.debug("[TransactionCreationService] duplicate idempotencyKey detected:", idempotencyKey);
+        return existingByIdempotency;
+      }
     }
 
     const now = new Date();
@@ -242,6 +254,7 @@ export class TransactionCreationService {
           couponId,
           voucherId,
           finalPrice,
+          idempotencyKey,
           status:
             finalPrice === 0
               ? TransactionStatus.DONE

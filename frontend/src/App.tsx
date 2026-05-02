@@ -7,7 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import { MyTickets } from "./pages/MyTicketsPage";
 import CheckoutPage from "./pages/CheckoutPage";
-import EventDetaiPage from "./pages/EventDetaiPage";
+import EventDetailPage from "./pages/EventDetailPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import ProfilePage from "./pages/ProfilePage";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -114,7 +114,7 @@ const App = () => {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/events/:id" element={<EventDetaiPage />} />
+          <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/organizer/:id" element={<OrganizerProfilePage />} />
 
            {/* Protected routes - require authentication */}

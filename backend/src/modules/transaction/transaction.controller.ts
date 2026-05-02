@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UploadedFile } from "express-fileupload";
 import { AuthRequest } from "../auth/auth.type";
 import { catchAsync } from "../../utils/catchAsync";
+import { AppError } from "../../utils/AppError";
 import {
   transactionCreationService,
   transactionStatusService,
@@ -13,8 +14,7 @@ export const transactionController = {
     const userId = req.userId;
 
     if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
-      return;
+      throw new AppError("Unauthorized", 401);
     }
 
     const body = req.body as Record<string, any>;
@@ -25,6 +25,7 @@ export const transactionController = {
     const voucherCode = body.voucherCode as string | undefined;
     const couponCode = body.couponCode as string | undefined;
     const pointsUsed = body.pointsUsed ? Number(body.pointsUsed) : 0;
+    const idempotencyKey = body.idempotencyKey as string | undefined;
 
     const transaction = await transactionCreationService.createTransaction({
       userId,
@@ -34,6 +35,7 @@ export const transactionController = {
       voucherCode,
       couponCode,
       pointsUsed,
+      idempotencyKey,
     });
 
     res.status(201).json({
@@ -49,11 +51,7 @@ export const transactionController = {
     const transaction = await transactionQueryService.getTransactionById({ id });
 
     if (!transaction) {
-      res.status(404).json({
-        success: false,
-        message: "Transaction not found",
-      });
-      return;
+      throw new AppError("Transaction not found", 404);
     }
 
     res.status(200).json({
@@ -66,8 +64,7 @@ export const transactionController = {
     const userId = req.userId;
 
     if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
-      return;
+      throw new AppError("Unauthorized", 401);
     }
 
     const { page = 1, limit = 10 } = req.query;
@@ -89,8 +86,7 @@ export const transactionController = {
     const organizerId = req.userId;
 
     if (!organizerId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
-      return;
+      throw new AppError("Unauthorized", 401);
     }
 
     const eventId = req.params.eventId as string;
@@ -114,8 +110,7 @@ export const transactionController = {
     const organizerId = req.userId;
 
     if (!organizerId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
-      return;
+      throw new AppError("Unauthorized", 401);
     }
 
     const { page = 1, limit = 100 } = req.query;
@@ -137,11 +132,7 @@ export const transactionController = {
     const id = req.params.id as string;
 
     if (!req.files || !("paymentProof" in req.files)) {
-      res.status(400).json({
-        success: false,
-        message: "Payment proof is required",
-      });
-      return;
+      throw new AppError("Payment proof is required", 400);
     }
 
     const paymentProof = req.files.paymentProof as UploadedFile;

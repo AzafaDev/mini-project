@@ -1,9 +1,11 @@
-import { prisma } from "../../config/prisma";
+import type { PrismaClientType, TxClient } from "../../config/prisma";
+import { prisma as prismaClient } from "../../config/prisma";
+import { logger } from "../../utils/logger";
 
-// Service untuk mengelola sistem poin user
-// Menangani riwayat poin, perhitungan poin aktif, dan pembersihan poin expired
-export const pointsService = {
-  getPointsHistory: async ({
+export class PointsService {
+  constructor(private prisma: PrismaClientType) {}
+
+  async getPointsHistory({
     userId,
     page = 1,
     limit = 10,
@@ -11,69 +13,58 @@ export const pointsService = {
     userId: string;
     page?: number;
     limit?: number;
-  }) => {
-    console.log("[DEBUG Points Service] getPointsHistory input:", { userId, page, limit });
-
+  }) {
     const skip = (page - 1) * limit;
 
     const [transactions, total] = await Promise.all([
-      prisma.pointTransaction.findMany({
+      this.prisma.pointTransaction.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.pointTransaction.count({ where: { userId } }),
+      this.prisma.pointTransaction.count({ where: { userId } }),
     ]);
 
-    console.log("[DEBUG Points Service] getPointsHistory result:", { count: transactions.length, total });
+    logger.debug("[PointsService] getPointsHistory:", { userId, count: transactions.length, total });
 
     return { data: transactions, pagination: { total, page, limit } };
-  },
+  }
 
-   getActivePoints: async ({ userId }: { userId: string }) => {
-     console.log("[DEBUG Points Service] getActivePoints input:", { userId });
+  async getActivePoints({ userId }: { userId: string }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { points: true },
+    });
 
-     const user = await prisma.user.findUnique({
-       where: { id: userId },
-       select: { points: true },
-     });
+    logger.debug("[PointsService] getActivePoints:", { userId, activePoints: user?.points });
 
-     return {
-       activePoints: user?.points || 0,
-       expiredPoints: 0, // or calculate from expired PointTransaction if needed for reporting
-       transactions: [],
-     };
-   },
+    return {
+      activePoints: user?.points || 0,
+      expiredPoints: 0,
+      transactions: [],
+    };
+  }
 
-  /**
-   * Calculate active (non-expired) points for a user within a transaction.
-   * Use this inside prisma.$transaction blocks for atomic consistency.
-   */
-  getActivePointsTx: async (tx: any, userId: string): Promise<number> => {
+  async getActivePointsTx(tx: TxClient, userId: string): Promise<number> {
     const now = new Date();
     const result = await tx.pointTransaction.aggregate({
       where: { userId, expiresAt: { gt: now } },
       _sum: { amount: true },
     });
     return result._sum.amount || 0;
-  },
+  }
 
-  // Menghapus semua poin yang sudah kadaluarsa dari database
-  // Dijalankan otomatis oleh cron job secara berkala
-  cleanupExpiredPoints: async () => {
-    console.log("[DEBUG Points Service] cleanupExpiredPoints called");
-
+  async cleanupExpiredPoints() {
     const now = new Date();
-
-    const result = await prisma.pointTransaction.deleteMany({
-      where: {
-        expiresAt: { lte: now },
-      },
+    const result = await this.prisma.pointTransaction.deleteMany({
+      where: { expiresAt: { lte: now } },
     });
 
-    console.log("[DEBUG Points Service] deleted expired points:", result.count);
+    logger.debug("[PointsService] cleanupExpiredPoints:", { deleted: result.count });
 
     return result;
-  },
-};
+  }
+}
+
+export const pointsService = new PointsService(prismaClient);

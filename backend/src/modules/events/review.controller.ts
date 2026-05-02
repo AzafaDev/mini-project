@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { reviewService } from "./review.service";
 import { AuthRequest } from "../auth/auth.type";
 import { catchAsync } from "../../utils/catchAsync";
+import { AppError } from "../../utils/AppError";
 
 export const reviewController = {
   createReview: catchAsync<AuthRequest>(async (req, res) => {
@@ -10,7 +11,7 @@ export const reviewController = {
     const { rating, comment } = req.body;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     const review = await reviewService.createReview({
@@ -33,7 +34,7 @@ export const reviewController = {
     const { rating, comment } = req.body;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     const review = await reviewService.updateReview({
@@ -55,7 +56,7 @@ export const reviewController = {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     await reviewService.deleteReview({

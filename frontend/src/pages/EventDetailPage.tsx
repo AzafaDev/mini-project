@@ -7,7 +7,7 @@ import { ReviewSection } from "../components/event/ReviewSection";
 import { ReviewModal } from "../components/event/ReviewModal";
 import { formatIDR } from "../lib/formatters";
 
-const EventDetaiPage: React.FC = () => {
+const EventDetailPage: React.FC = () => {
   const {
     event,
     loading,
@@ -210,4 +210,4 @@ const EventDetaiPage: React.FC = () => {
   );
 };
 
-export default EventDetaiPage;
+export default EventDetailPage;

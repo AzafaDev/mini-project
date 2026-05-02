@@ -124,19 +124,21 @@ export class EventManagementService {
 
   async deleteEvent({ id, userId }: { id: string; userId: string }) {
     const event = await this.prisma.event.findUnique({
-      where: { id, organizerId: userId, isDeleted: false },
+      where: { id, organizerId: userId },
     });
 
     if (!event) throw new AppError("Event not found", 404);
 
     const deletedEvent = await this.prisma.event.update({
-      where: { id, isDeleted: false },
+      where: { id },
       data: {
         isDeleted: true,
         deletedAt: new Date(),
         deletedBy: userId,
       },
     });
+
+    logger.debug("[EventManagementService] deleteEvent:", { id, userId });
 
     return deletedEvent;
   }

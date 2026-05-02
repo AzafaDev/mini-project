@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { UploadedFile } from "express-fileupload";
 import { catchAsync } from "../../utils/catchAsync";
+import { AppError } from "../../utils/AppError";
+import { logger } from "../../utils/logger";
 
 import { getUploadUrl } from "../../utils/uploadHelper";
 import {
@@ -13,48 +15,19 @@ import {
   VerifyEmail,
 } from "./auth.type";
 import { authService } from "./auth.service";
-import { prisma } from "../../config/prisma";
-import {
-  generateTokenForAuth,
-  generateVerificationCode,
-} from "../../utils/generateToken";
+import { generateTokenForAuth } from "../../utils/generateToken";
 import { sendEmail } from "../../utils/sendEmail";
 
-// Normalisasi email: hapus spasi dan ubah ke lowercase
-// Mencegah duplikasi user karena perbedaan case atau spasi
-const sanitizeEmail = (email: string): string => email.trim().toLowerCase();
-
-// Kirim email verifikasi dan set cookie token sementara
-// Digunakan untuk user yang belum verifikasi email
-const sendVerificationAndSetCookie = async (
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    verifyToken: string | null;
-  },
-  res: Response,
-) => {
-  try {
-    await sendEmail.verificationEmail({
-      email: user.email,
-      token: user.verifyToken as string,
-      username: user.fullName,
-    });
-  } catch (error) {
-    console.error("Failed to send verification email:", error);
-  }
-
+const setVerificationCookie = (res: Response, userId: string) => {
   if (!process.env.JWT_SECRET) {
-    console.error("CRITICAL: JWT_SECRET is undefined in .env");
+    logger.error("CRITICAL: JWT_SECRET is undefined in .env");
+    throw new AppError("Internal server error", 500);
   }
 
-  // Generate token sementara yang berlaku 30 menit
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+  const token = jwt.sign({ userId }, process.env.JWT_SECRET!, {
     expiresIn: "30m",
   });
 
-  // Set cookie temp_token dengan security flag
   res.cookie("temp_token", token, {
     maxAge: 30 * 60 * 1000,
     httpOnly: true,
@@ -62,18 +35,8 @@ const sendVerificationAndSetCookie = async (
     secure: process.env.NODE_ENV === "production",
     path: "/",
   });
-
-  return res.status(200).json({
-    success: true,
-    message: "Verification code has been sent to your email",
-    requiresVerification: true,
-  });
 };
 
-/**
- * Authentication controller handling all auth-related endpoints.
- * Includes: register, login, logout, verify email, forgot password, etc.
- */
 export const authController = {
   register: catchAsync(async (req: Request, res: Response) => {
     const {
@@ -85,43 +48,34 @@ export const authController = {
       referrerCode,
     }: AuthRegister = req.body;
 
-    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedEmail = authService.sanitizeEmail(email);
     const imageUrl = await getUploadUrl(req.files?.profilePicture as UploadedFile, "profile-picture");
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: sanitizedEmail },
-    });
+    const existingUser = await authService.findByEmail(sanitizedEmail);
 
     if (existingUser) {
       if (existingUser.isVerified) {
-        return res.status(409).json({
-          success: false,
-          message: "Email already exists. Please login or use forgot password.",
-        });
+        throw new AppError("Email already exists. Please login or use forgot password.", 409);
       }
 
-      const newToken = generateVerificationCode();
-      const updatedUser = await authService.rehashAndUpdateUser(
-        existingUser.email,
+      const { newToken } = await authService.handleExistingUnverifiedUser(
+        sanitizedEmail,
         password,
-        {
-          phoneNumber,
-          profilePicture: imageUrl,
-          fullName,
-          role,
-        },
-        newToken,
+        { phoneNumber, profilePicture: imageUrl, fullName, role },
       );
 
-      return sendVerificationAndSetCookie(
-        {
-          id: updatedUser.id,
-          email: updatedUser.email,
-          fullName: updatedUser.fullName,
-          verifyToken: newToken,
-        },
-        res,
-      );
+      setVerificationCookie(res, existingUser.id);
+      authService.sendVerificationEmail({
+        email: sanitizedEmail,
+        fullName,
+        newToken,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Verification code has been sent to your email",
+        requiresVerification: true,
+      });
     }
 
     const result = await authService.register({
@@ -134,21 +88,24 @@ export const authController = {
       imageUrl,
     });
 
-    return sendVerificationAndSetCookie(
-      {
-        id: result.newUser.id,
-        email: result.newUser.email,
-        fullName: result.newUser.fullName,
-        verifyToken: result.newUser.verifyToken,
-      },
-      res,
-    );
+    setVerificationCookie(res, result.newUser.id);
+    authService.sendVerificationEmail({
+      email: sanitizedEmail,
+      fullName,
+      newToken: result.newUser.verifyToken as string,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Verification code has been sent to your email",
+      requiresVerification: true,
+    });
   }),
 
   verifyEmail: catchAsync(async (req: Request, res: Response) => {
     const { token }: VerifyEmail = req.body;
     if (!token.trim() || token.trim().length < 6) {
-      return res.status(400).json({ success: false, message: "Token is required" });
+      throw new AppError("Token is required", 400);
     }
     const user = await authService.verifyEmail({ token });
     generateTokenForAuth({ res, userId: user.id, userRole: user.role });
@@ -169,20 +126,23 @@ export const authController = {
     const { email, password }: Login = req.body;
 
     const { user, requiresVerification } = await authService.login({
-      email: sanitizeEmail(email),
+      email: authService.sanitizeEmail(email),
       password,
     });
 
     if (requiresVerification) {
-      return sendVerificationAndSetCookie(
-        {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
-          verifyToken: user.verifyToken,
-        },
-        res,
-      );
+      setVerificationCookie(res, user.id);
+      authService.sendVerificationEmail({
+        email: user.email,
+        fullName: user.fullName,
+        newToken: user.verifyToken as string,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Verification code has been sent to your email",
+        requiresVerification: true,
+      });
     }
 
     generateTokenForAuth({ res, userId: user.id, userRole: user.role });
@@ -195,7 +155,7 @@ export const authController = {
     });
   }),
 
-  logout: catchAsync<AuthRequest>(async (req, res) => {
+  logout: catchAsync<AuthRequest>(async (_req, res) => {
     res.clearCookie("auth_token", {
       path: "/",
       httpOnly: true,
@@ -213,14 +173,11 @@ export const authController = {
 
   getCurrentUser: catchAsync<AuthRequest>(async (req, res) => {
     const userId = req.userId;
-    const userRole = req.userRole;
-
     if (!userId) {
-      return res.status(400).json({ success: false, message: "User id not found" });
+      throw new AppError("User id not found", 400);
     }
 
     const user = await authService.getCurrentUser(userId);
-
     res.status(200).json({ success: true, user });
   }),
 
@@ -228,7 +185,7 @@ export const authController = {
     const { fullName, phoneNumber } = req.body || {};
     const userId = req.userId;
     if (!userId) {
-      return res.status(400).json({ success: false, message: "User id not found" });
+      throw new AppError("User id not found", 400);
     }
 
     const imageUrl = await getUploadUrl(req.files?.profilePicture as UploadedFile, "profile-picture");
@@ -247,7 +204,7 @@ export const authController = {
     const { currentPassword, newPassword } = req.body;
     const userId = req.userId;
     if (!userId) {
-      return res.status(400).json({ success: false, message: "User id not found" });
+      throw new AppError("User id not found", 400);
     }
     const user = await authService.changePassword({
       currentPassword,
@@ -264,9 +221,9 @@ export const authController = {
   forgotPassword: catchAsync(async (req: Request, res: Response) => {
     const { email }: ForgotPassword = req.body;
     if (!email.trim()) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      throw new AppError("Email is required", 400);
     }
-    await authService.forgotPassword(sanitizeEmail(email));
+    await authService.forgotPassword(authService.sanitizeEmail(email));
     res.status(200).json({
       success: true,
       message: "If the email exists, a reset link has been sent",
@@ -277,13 +234,10 @@ export const authController = {
     const { token } = req.params;
     const { newPassword }: ResetPassword = req.body;
     if (!newPassword.trim() || newPassword.trim().length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 8 characters",
-      });
+      throw new AppError("Password must be at least 8 characters", 400);
     }
     const user = await authService.resetPassword({
-      token: token as string,
+      token,
       newPassword,
     });
     res.status(200).json({ success: true, message: "Reset password successfully", user });

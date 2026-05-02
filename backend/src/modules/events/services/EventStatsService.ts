@@ -1,3 +1,4 @@
+import { TransactionStatus } from "@prisma/client";
 import type { PrismaClientType } from "../../../config/prisma";
 import { AppError } from "../../../utils/AppError";
 import { logger } from "../../../utils/logger";
@@ -18,7 +19,7 @@ export class EventStatsService {
     organizerId: string;
   }) {
     const event = await this.prisma.event.findUnique({
-      where: { id: id, organizerId: organizerId, isDeleted: false },
+      where: { id: id, organizerId: organizerId },
       select: {
         name: true,
         availableSeats: true,
@@ -30,21 +31,18 @@ export class EventStatsService {
       throw new AppError("Event not found", 404);
     }
 
-    const soldResult = await this.prisma.transaction.aggregate({
-      where: { eventId: id, status: "DONE" },
-      _sum: { quantity: true },
-    });
-    const ticketsSold = soldResult._sum.quantity || 0;
+    const [aggregated, attendeeCount] = await Promise.all([
+      this.prisma.transaction.aggregate({
+        where: { eventId: id, status: TransactionStatus.DONE },
+        _sum: { quantity: true, finalPrice: true },
+      }),
+      this.prisma.transaction.count({
+        where: { eventId: id, status: TransactionStatus.DONE },
+      }),
+    ]);
 
-    const revenueResult = await this.prisma.transaction.aggregate({
-      where: { eventId: id, status: "DONE" },
-      _sum: { finalPrice: true },
-    });
-    const totalRevenue = revenueResult._sum.finalPrice || 0;
-
-    const attendeeCount = await this.prisma.transaction.count({
-      where: { eventId: id, status: "DONE" },
-    });
+    const ticketsSold = aggregated._sum.quantity || 0;
+    const totalRevenue = aggregated._sum.finalPrice || 0;
 
     return {
       totalRevenue,
@@ -70,140 +68,185 @@ export class EventStatsService {
   }) {
     const currentYear = year || new Date().getFullYear();
     const currentMonth = month;
-    const currentDay = day;
 
     const allOrganizerEvents = await this.prisma.event.findMany({
-      where: {
-        organizerId,
-        isDeleted: false,
-      },
+      where: { organizerId },
       select: { id: true, startDate: true, endDate: true },
     });
 
     const allEventIds = allOrganizerEvents.map((e) => e.id);
 
-    const allTransactions = await this.prisma.transaction.findMany({
-      where: {
-        eventId: { in: allEventIds },
-        status: "DONE",
-      },
+    if (allEventIds.length === 0) {
+      return {
+        totalRevenue: 0,
+        totalTicketsSold: 0,
+        totalEvents: 0,
+        totalAttendees: 0,
+        monthlyStats: [],
+        dailyStats: [],
+        yearlyStats: [],
+      };
+    }
+
+    const buildDateFilter = () => {
+      if (year && month && day) {
+        const start = new Date(year, month - 1, day);
+        const end = new Date(year, month - 1, day + 1);
+        return { createdAt: { gte: start, lt: end } };
+      }
+      if (year && month) {
+        const start = new Date(year, month - 1, 1);
+        const end = new Date(year, month, 1);
+        return { createdAt: { gte: start, lt: end } };
+      }
+      if (year) {
+        const start = new Date(year, 0, 1);
+        const end = new Date(year + 1, 0, 1);
+        return { createdAt: { gte: start, lt: end } };
+      }
+      return {};
+    };
+
+    const dateFilter = buildDateFilter();
+
+    const [periodAggregation, countResult] = await Promise.all([
+      this.prisma.transaction.aggregate({
+        where: {
+          eventId: { in: allEventIds },
+          status: TransactionStatus.DONE,
+          ...dateFilter,
+        },
+        _sum: { finalPrice: true, quantity: true },
+        _count: true,
+      }),
+      this.prisma.transaction.count({
+        where: {
+          eventId: { in: allEventIds },
+          status: TransactionStatus.DONE,
+          ...dateFilter,
+        },
+      }),
+    ]);
+
+    const totalRevenue = periodAggregation._sum.finalPrice || 0;
+    const totalTicketsSold = periodAggregation._sum.quantity || 0;
+    const totalAttendees = countResult;
+
+    let totalEvents = 0;
+    if (year && month) {
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 1);
+      totalEvents = allOrganizerEvents.filter(
+        (e) => e.startDate >= startOfMonth && e.startDate < endOfMonth,
+      ).length;
+    } else if (year) {
+      totalEvents = allOrganizerEvents.filter(
+        (e) => e.startDate.getFullYear() === year,
+      ).length;
+    } else {
+      totalEvents = allOrganizerEvents.length;
+    }
+
+    const startOfYear = new Date(currentYear, 0, 1);
+    const startOfNextYear = new Date(currentYear + 1, 0, 1);
+
+    const monthlyRows = await this.prisma.$queryRaw<
+      Array<{ month: string; revenue: bigint; tickets: bigint }>
+    >`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', "createdAt"), 'Mon') as month,
+        COALESCE(SUM("finalPrice"), 0) as revenue,
+        COALESCE(SUM("quantity"), 0) as tickets
+      FROM "Transaction"
+      WHERE "eventId" IN (${allEventIds})
+        AND "status" = ${TransactionStatus.DONE}::text
+        AND "createdAt" >= ${startOfYear}
+        AND "createdAt" < ${startOfNextYear}
+      GROUP BY DATE_TRUNC('month', "createdAt")
+      ORDER BY DATE_TRUNC('month', "createdAt")
+    `;
+
+    const monthlyMap = new Map(monthlyRows.map((r) => [r.month, r]));
+
+    const monthlyStats = MONTH_NAMES.map((mn) => {
+      const row = monthlyMap.get(mn);
+      return {
+        month: mn,
+        revenue: Number(row?.revenue || 0),
+        tickets: Number(row?.tickets || 0),
+      };
     });
-
-    let filteredTransactions = allTransactions;
-    if (currentYear && currentMonth && currentDay) {
-      filteredTransactions = allTransactions.filter((tx) => {
-        const txDate = new Date(tx.createdAt);
-        return (
-          txDate.getDate() === currentDay &&
-          txDate.getMonth() + 1 === currentMonth &&
-          txDate.getFullYear() === currentYear
-        );
-      });
-    } else if (currentYear && currentMonth) {
-      filteredTransactions = allTransactions.filter((tx) => {
-        const txDate = new Date(tx.createdAt);
-        return (
-          txDate.getMonth() + 1 === currentMonth &&
-          txDate.getFullYear() === currentYear
-        );
-      });
-    } else if (currentYear) {
-      filteredTransactions = allTransactions.filter((tx) => {
-        const txDate = new Date(tx.createdAt);
-        return txDate.getFullYear() === currentYear;
-      });
-    }
-
-    const totalRevenue = filteredTransactions.reduce(
-      (sum, tx) => sum + tx.finalPrice,
-      0,
-    );
-    const totalTicketsSold = filteredTransactions.reduce(
-      (sum, tx) => sum + tx.quantity,
-      0,
-    );
-    const totalAttendees = filteredTransactions.length;
-
-    let filteredEvents = allOrganizerEvents;
-    if (currentYear && currentMonth) {
-      filteredEvents = allOrganizerEvents.filter((e) => {
-        const startDate = new Date(e.startDate);
-        return (
-          startDate.getFullYear() === currentYear &&
-          startDate.getMonth() + 1 === currentMonth
-        );
-      });
-    } else if (currentYear) {
-      filteredEvents = allOrganizerEvents.filter((e) => {
-        const startDate = new Date(e.startDate);
-        return startDate.getFullYear() === currentYear;
-      });
-    }
-    const totalEvents = filteredEvents.length;
-
-    const monthlyStats: { month: string; revenue: number; tickets: number }[] =
-      [];
-    const yearTransactions = allTransactions.filter((tx) => {
-      const txDate = new Date(tx.createdAt);
-      return txDate.getFullYear() === currentYear;
-    });
-
-    for (let m = 1; m <= 12; m++) {
-      const monthTransactions = yearTransactions.filter((tx) => {
-        const txDate = new Date(tx.createdAt);
-        return txDate.getMonth() + 1 === m;
-      });
-
-      monthlyStats.push({
-        month: MONTH_NAMES[m - 1],
-        revenue: monthTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0),
-        tickets: monthTransactions.reduce((sum, tx) => sum + tx.quantity, 0),
-      });
-    }
 
     const dailyStats: { day: string; revenue: number; tickets: number }[] = [];
     if (currentMonth) {
+      const startOfMonthD = new Date(currentYear, currentMonth - 1, 1);
+      const startOfNextMonthD = new Date(currentYear, currentMonth, 1);
+
+      const dailyRows = await this.prisma.$queryRaw<
+        Array<{ day: string; revenue: bigint; tickets: bigint }>
+      >`
+        SELECT
+          CAST(EXTRACT(DAY FROM "createdAt") AS TEXT) as day,
+          COALESCE(SUM("finalPrice"), 0) as revenue,
+          COALESCE(SUM("quantity"), 0) as tickets
+        FROM "Transaction"
+        WHERE "eventId" IN (${allEventIds})
+          AND "status" = ${TransactionStatus.DONE}::text
+          AND "createdAt" >= ${startOfMonthD}
+          AND "createdAt" < ${startOfNextMonthD}
+        GROUP BY EXTRACT(DAY FROM "createdAt")
+        ORDER BY EXTRACT(DAY FROM "createdAt")
+      `;
+
+      const dailyMap = new Map(dailyRows.map((r) => [r.day, r]));
       const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-      const monthTransactions = allTransactions.filter((tx) => {
-        const txDate = new Date(tx.createdAt);
-        return (
-          txDate.getMonth() + 1 === currentMonth &&
-          txDate.getFullYear() === currentYear
-        );
-      });
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const dayTransactions = monthTransactions.filter((tx) => {
-          const txDate = new Date(tx.createdAt);
-          return txDate.getDate() === d;
-        });
-
+        const ds = String(d);
+        const row = dailyMap.get(ds);
         dailyStats.push({
-          day: String(d),
-          revenue: dayTransactions.reduce((sum, tx) => sum + tx.finalPrice, 0),
-          tickets: dayTransactions.reduce((sum, tx) => sum + tx.quantity, 0),
+          day: ds,
+          revenue: Number(row?.revenue || 0),
+          tickets: Number(row?.tickets || 0),
         });
       }
     }
 
-    const yearlyStats: { year: number; revenue: number; tickets: number }[] =
-      [];
     const currentFullYear = new Date().getFullYear();
-    for (let y = currentFullYear - 4; y <= currentFullYear; y++) {
-      const yearTransactionsData = allTransactions.filter((tx) => {
-        const txDate = new Date(tx.createdAt);
-        return txDate.getFullYear() === y;
-      });
+    const yearlyResults = await this.prisma.$queryRaw<
+      Array<{ year: number; revenue: bigint; tickets: bigint }>
+    >`
+      SELECT
+        CAST(EXTRACT(YEAR FROM "createdAt") AS INTEGER) as year,
+        COALESCE(SUM("finalPrice"), 0) as revenue,
+        COALESCE(SUM("quantity"), 0) as tickets
+      FROM "Transaction"
+      WHERE "eventId" IN (${allEventIds})
+        AND "status" = ${TransactionStatus.DONE}::text
+        AND EXTRACT(YEAR FROM "createdAt") >= ${currentFullYear - 4}
+        AND EXTRACT(YEAR FROM "createdAt") <= ${currentFullYear}
+      GROUP BY EXTRACT(YEAR FROM "createdAt")
+      ORDER BY EXTRACT(YEAR FROM "createdAt")
+    `;
 
+    const yearlyMap = new Map(yearlyResults.map((r) => [r.year, r]));
+    const yearlyStats = [];
+    for (let y = currentFullYear - 4; y <= currentFullYear; y++) {
+      const row = yearlyMap.get(y);
       yearlyStats.push({
         year: y,
-        revenue: yearTransactionsData.reduce(
-          (sum, tx) => sum + tx.finalPrice,
-          0,
-        ),
-        tickets: yearTransactionsData.reduce((sum, tx) => sum + tx.quantity, 0),
+        revenue: Number(row?.revenue || 0),
+        tickets: Number(row?.tickets || 0),
       });
     }
+
+    logger.debug("[EventStatsService] getOrganizerStats:", {
+      organizerId,
+      totalRevenue,
+      totalTicketsSold,
+      totalEvents,
+      totalAttendees,
+    });
 
     return {
       totalRevenue,

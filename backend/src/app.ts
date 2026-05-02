@@ -6,6 +6,7 @@ import os from "node:os";
 import fs from "node:fs";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import helmet from "helmet";
 
 import authRouter from "./modules/auth/auth.route";
 import eventRouter from "./modules/events/event.route";
@@ -18,6 +19,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import { startCronJobs } from "./utils/cronJobs";
 import { validateEnv } from "./config/envValidator";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter";
+import { logger } from "./utils/logger";
 
 dotenv.config();
 validateEnv();
@@ -35,6 +37,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   }),
 );
+
+app.use(helmet());
 
 // Cookie parser harus sebelum middleware yang butuh akses cookie
 app.use(cookieParser());
@@ -83,7 +87,7 @@ startCronJobs();
 // Menjalankan server pada port yang ditentukan
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`Server is running on port: ${PORT}`);
+    logger.info(`Server is running on port: ${PORT}`);
   });
 }
 

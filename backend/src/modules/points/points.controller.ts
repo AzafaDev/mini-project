@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { pointsService } from "./points.service";
 import { AuthRequest } from "../auth/auth.type";
 import { catchAsync } from "../../utils/catchAsync";
+import { AppError } from "../../utils/AppError";
 
 export const pointsController = {
   getPointsHistory: catchAsync<AuthRequest>(async (req, res) => {
@@ -9,7 +10,7 @@ export const pointsController = {
     const { page, limit } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     const result = await pointsService.getPointsHistory({
@@ -29,7 +30,7 @@ export const pointsController = {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     const result = await pointsService.getActivePoints({

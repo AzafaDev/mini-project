@@ -5,6 +5,7 @@ import { CreateEvent } from "./event.type";
 import { AuthRequest } from "../auth/auth.type";
 import { catchAsync } from "../../utils/catchAsync";
 import { AppError } from "../../utils/AppError";
+import { logger } from "../../utils/logger";
 import {
   eventQueryService,
   eventManagementService,
@@ -69,7 +70,7 @@ export const eventController = {
 
     const organizerId = req.userId;
     if (!organizerId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     if (!req.files || !req.files.imageFile) {
@@ -106,6 +107,8 @@ export const eventController = {
       tickets: parsedTickets,
     });
 
+    logger.debug("[EventController] createEvent success:", event.id);
+
     res.status(201).json({
       success: true,
       message: "Created event successfully",
@@ -118,9 +121,9 @@ export const eventController = {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(400).json({ success: false, message: "User id not found" });
+      throw new AppError("Unauthorized", 401);
     }
-    
+
     await eventManagementService.deleteEvent({ id: id as string, userId });
 
     res.status(200).json({
@@ -133,9 +136,9 @@ export const eventController = {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "User id not found" });
+      throw new AppError("Unauthorized", 401);
     }
-    
+
     const events = await eventQueryService.getMyEvents({ id: userId });
 
     res.status(200).json({ success: true, data: events });
@@ -146,7 +149,7 @@ export const eventController = {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     const stats = await eventStatsService.getEventStats({
@@ -162,7 +165,7 @@ export const eventController = {
     const { year, month, day } = req.query;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     const stats = await eventStatsService.getOrganizerStats({
@@ -189,7 +192,7 @@ export const eventController = {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      throw new AppError("Unauthorized", 401);
     }
 
     const attendees = await organizerProfileService.getEventAttendees({

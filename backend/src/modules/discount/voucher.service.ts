@@ -10,21 +10,25 @@ export const voucherService = {
    */
   getEventVouchers: async ({ eventId }: { eventId: string }) => {
     const now = new Date();
-    const vouchers = await prisma.$queryRaw`
-      SELECT code, "discountType", "discountValue"
-      FROM "Voucher"
-      WHERE "eventId" = ${eventId}
-        AND "isActive" = true
-        AND "startDate" <= ${now}
-        AND "endDate" >= ${now}
-        AND ("maxUsage" IS NULL OR "usedCount" < "maxUsage")
-    `;
+    const vouchers = await prisma.voucher.findMany({
+      where: {
+        eventId,
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      select: {
+        code: true,
+        discountType: true,
+        discountValue: true,
+        maxUsage: true,
+        usedCount: true,
+      },
+    });
 
-    return vouchers as Array<{
-      code: string;
-      discountType: DiscountType;
-      discountValue: number;
-    }>;
+    return vouchers
+      .filter((v) => v.maxUsage === null || v.usedCount < v.maxUsage)
+      .map(({ maxUsage, usedCount, ...rest }) => rest);
   },
 
   /**
