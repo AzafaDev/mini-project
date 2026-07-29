@@ -2,6 +2,10 @@
 
 Full-stack event ticketing system with real-time seat availability, voucher/coupon system, loyalty points, referral program, and organizer analytics.
 
+## About this project
+
+This was a scoped bootcamp mini-project built with one teammate, not solo. I carried backend and most of the frontend; my teammate contributed a smaller share. Built with Claude Code assisting on implementation across the scope I owned — my contribution was the module design (auth, events/reviews, transactions, discounts/points), API structure, and the testing/debugging.
+
 ## Features
 
 - **User Authentication** – JWT-based auth with email verification, password reset, and role-based access (Customer / Organizer)
@@ -19,39 +23,42 @@ Full-stack event ticketing system with real-time seat availability, voucher/coup
 
 ## Tech Stack
 
-**Backend**  
-- Node.js + Express (TypeScript)  
-- Prisma ORM (PostgreSQL)  
-- JWT authentication (httpOnly cookies)  
-- Cloudinary (image hosting)  
-- Resend (email delivery)  
-- Zod (validation)  
+**Backend**
 
-**Frontend**  
-- React 19 with Vite  
-- Tailwind CSS 4  
-- Zustand (state)  
-- React Router v7  
-- Recharts (dashboard graphs)  
-- Formik + Yup (forms)  
-- Framer Motion (animations)  
+- Node.js + Express (TypeScript)
+- Prisma ORM (PostgreSQL)
+- JWT authentication (httpOnly cookies)
+- Cloudinary (image hosting)
+- Resend (email delivery)
+- Zod (validation)
 
-**Database** – PostgreSQL (Prisma adapter)  
+**Frontend**
+
+- React 19 with Vite
+- Tailwind CSS 4
+- Zustand (state)
+- React Router v7
+- Recharts (dashboard graphs)
+- Formik + Yup (forms)
+- Framer Motion (animations)
+
+**Database** – PostgreSQL (Prisma adapter)
 **Deployment** – Vercel (serverless functions + static frontend)
 
 ## Prerequisites
 
-- Node.js v20+  
-- PostgreSQL database (local or cloud – e.g. Neon, Supabase)  
-- Cloudinary account (for image uploads)  
-- Resend API key (for email)  
+- Node.js v20+
+- PostgreSQL database (local or cloud – e.g. Neon, Supabase)
+- Cloudinary account (for image uploads)
+- Resend API key (for email)
 
 ## Environment Variables
 
 Create `.env` files in both `backend/` and `frontend/` folders.
 
 ### Backend (.env)
-```env
+
+```
 DATABASE_URL="postgresql://..."
 JWT_SECRET="your-secret-key"
 FRONTEND_URL="http://localhost:5173"
@@ -64,45 +71,52 @@ NODE_ENV=development
 ```
 
 ### Frontend (.env)
-```env
+
+```
 VITE_API_URL="http://localhost:8000/api"
 ```
 
 ## Installation & Setup
 
 ### 1. Clone repository
-```bash
-git clone https://github.com/your-username/kinetix-events.git
+
+```
+git clone https://github.com/AzafaDev/kinetix-events.git
 cd kinetix-events
 ```
 
 ### 2. Install dependencies (workspaces)
-```bash
+
+```
 npm install
 ```
 
 ### 3. Configure database & Prisma
-```bash
+
+```
 cd backend
 npx prisma migrate dev --name init
 npx prisma generate
 ```
 
 ### 4. Seed database (optional – creates sample data)
-```bash
+
+```
 npm run seed
 ```
 
 ### 5. Start development servers
 
 **Backend** (port 8000)
-```bash
+
+```
 cd backend
 npm run dev
 ```
 
 **Frontend** (port 5173)
-```bash
+
+```
 cd frontend
 npm run dev
 ```
@@ -138,38 +152,42 @@ npm run dev
 
 ## API Documentation (Overview)
 
-| Endpoint Group | Description |
-|----------------|-------------|
-| `/api/auth`    | Register, login, logout, verify email, forgot/reset password, profile update |
-| `/api/events`  | List events, get by ID, create/delete (organizer), stats, attendees |
-| `/api/transactions` | Create, view, upload proof, accept/reject, cancel |
-| `/api/reviews` | CRUD reviews for events |
-| `/api/points`  | Get points history & active balance |
-| `/api/events/check-voucher` | Validate event‑specific vouchers |
-| `/api/events/coupons/validate` | Validate system‑wide coupons |
-| `/api/events/my-vouchers` | Organizer voucher management |
+| Endpoint Group                 | Description                                                                  |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| `/api/auth`                    | Register, login, logout, verify email, forgot/reset password, profile update |
+| `/api/events`                  | List events, get by ID, create/delete (organizer), stats, attendees          |
+| `/api/transactions`            | Create, view, upload proof, accept/reject, cancel                            |
+| `/api/reviews`                 | CRUD reviews for events                                                      |
+| `/api/points`                  | Get points history & active balance                                          |
+| `/api/events/check-voucher`    | Validate event‑specific vouchers                                             |
+| `/api/events/coupons/validate` | Validate system‑wide coupons                                                 |
+| `/api/events/my-vouchers`      | Organizer voucher management                                                 |
 
 Full API documentation can be generated with tools like Postman or Swagger – see `backend/src/modules/*/**.route.ts` for all routes.
 
 ## Key Business Logic
 
-- **Transaction expiry** – WAITING_PAYMENT expires after 2 hours (cron job restores seats/points).  
-- **Auto cancellation** – WAITING_CONFIRMATION auto‑cancels after 3 days if organizer doesn't act.  
-- **Points earning** – 10% cashback (configurable) on final price, max 50,000 points per transaction.  
-- **Referral reward** – Referrer gets 10,000 points; new user receives a 10% discount coupon (valid 3 months).  
-- **Voucher usage** – Single‑use per transaction; `usedCount` incremented when transaction is DONE.  
-- **Coupon** – System‑wide, single‑use, deactivated after successful purchase.  
+- **Transaction expiry** – WAITING_PAYMENT expires after 2 hours (cron job restores seats/points).
+- **Auto cancellation** – WAITING_CONFIRMATION auto‑cancels after 3 days if organizer doesn't act.
+- **Points earning** – 10% cashback (configurable) on final price, max 50,000 points per transaction.
+- **Referral reward** – Referrer gets 10,000 points; new user receives a 10% discount coupon (valid 3 months).
+- **Voucher usage** – Single‑use per transaction; `usedCount` incremented when transaction is DONE.
+- **Coupon** – System‑wide, single‑use, deactivated after successful purchase.
 
 ## Deployment on Vercel
 
-1. Connect your GitHub repository to Vercel.  
+1. Connect your GitHub repository to Vercel.
 2. Set the following environment variables in Vercel project settings (backend):
-   - `DATABASE_URL`, `JWT_SECRET`, `CLOUDINARY_*`, `RESEND_API_KEY`, `FRONTEND_URL` (your Vercel frontend URL)  
-3. Configure Vercel to use the `vercel.json` output.  
-4. The `api/index.ts` file will handle all `/api/*` requests using the Express app.  
-5. Frontend will be served from `frontend/dist`.  
+  - `DATABASE_URL`, `JWT_SECRET`, `CLOUDINARY_*`, `RESEND_API_KEY`, `FRONTEND_URL` (your Vercel frontend URL)
+3. Configure Vercel to use the `vercel.json` output.
+4. The `api/index.ts` file will handle all `/api/*` requests using the Express app.
+5. Frontend will be served from `frontend/dist`.
 
 You may need to adjust the `vercel.json` build command to generate the needed output.
+
+## One gap
+
+There's a `vitest` test script wired up in package.json but zero test files in the repo.
 
 ## Contributing
 
@@ -178,7 +196,3 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
-
----
-
-**Made with ❤️ for the event industry**
